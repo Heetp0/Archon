@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 
@@ -33,7 +33,7 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
         }
         return Math.min(next, BOOT_STEPS.length - 1);
       });
-    }, 420);
+    }, 380);
     return () => clearInterval(interval);
   }, []);
 
@@ -45,23 +45,23 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
         setPhase("ready");
         setTimeout(() => {
           setVisible(false);
-          setTimeout(onDismiss, 500);
-        }, 700);
+          setTimeout(onDismiss, 400);
+        }, 600);
       }
     }
   }, [connected, phase, onDismiss]);
 
-  // Offline timeout
+  // Offline timeout — short so users can get in quickly
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!connected) setPhase("offline");
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [connected]);
 
   const handleSkip = () => {
     setVisible(false);
-    setTimeout(onDismiss, 400);
+    setTimeout(onDismiss, 350);
   };
 
   return (
@@ -71,72 +71,78 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
           key="loading"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#010510]"
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#04050d]"
         >
-          {/* Subtle radial glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.06)_0%,transparent_70%)]" />
+          {/* Radial glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(34,211,238,0.04)_0%,transparent_65%)]" />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            initial={{ opacity: 0, scale: 0.97, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: -8 }}
+            exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="relative w-[480px] bg-[#020817] border border-slate-800/80 rounded-2xl overflow-hidden shadow-[0_0_80px_rgba(59,130,246,0.08)]"
+            className="relative w-[460px] bg-[#08090f] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_80px_rgba(34,211,238,0.06)]"
           >
-            {/* Top accent line */}
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
+            {/* Top accent */}
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
 
             <div className="p-10">
               {/* Branding */}
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-mono font-bold tracking-[0.2em] text-slate-100 mb-1">THE CORE</h1>
-                <p className="text-[11px] font-mono text-slate-600 uppercase tracking-widest">AI Operating System v2.4.1</p>
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 mb-4">
+                  <div className="w-4 h-4 rounded bg-cyan-400/80" />
+                </div>
+                <h1 className="text-2xl font-mono font-bold tracking-[0.22em] text-slate-100 mb-1">THE CORE</h1>
+                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">AI Operating System v2.4.1</p>
               </div>
 
               {/* Progress bar */}
-              <div className="mb-5">
-                <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+              <div className="mb-6">
+                <div className="h-0.5 w-full bg-white/[0.04] rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
+                    className="h-full rounded-full"
                     initial={{ width: "0%" }}
                     animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    style={{ boxShadow: "0 0 12px rgba(59,130,246,0.8)" }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    style={{
+                      background: "linear-gradient(90deg, rgba(34,211,238,0.6), rgba(59,130,246,0.9))",
+                      boxShadow: "0 0 10px rgba(34,211,238,0.5)"
+                    }}
                   />
                 </div>
                 <div className="flex justify-between mt-1.5">
-                  <span className="text-[10px] font-mono text-slate-600">{Math.round(progress)}%</span>
-                  <span className="text-[10px] font-mono text-slate-600">
+                  <span className="text-[10px] font-mono text-slate-700">{Math.round(progress)}%</span>
+                  <span className="text-[10px] font-mono text-slate-700">
                     {phase === "ready" ? "READY" : phase === "offline" ? "DAEMON OFFLINE" : "BOOTING"}
                   </span>
                 </div>
               </div>
 
               {/* Status lines */}
-              <div className="space-y-1.5 min-h-[100px]">
+              <div className="space-y-2 min-h-[110px]">
                 {BOOT_STEPS.slice(0, stepIndex + 1).map((step, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, x: -8 }}
+                    initial={{ opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2 text-[11px] font-mono"
+                    transition={{ duration: 0.18 }}
+                    className="flex items-center gap-2.5 text-[11px] font-mono"
                   >
-                    <span className={i < stepIndex ? "text-emerald-500" : "text-blue-400"}>
-                      {i < stepIndex ? "âœ”" : "â€º"}
+                    <span className={i < stepIndex ? "text-emerald-500" : "text-cyan-400/80"}>
+                      {i < stepIndex ? "✓" : "›"}
                     </span>
-                    <span className={i < stepIndex ? "text-slate-600" : "text-slate-400"}>{step}</span>
+                    <span className={i < stepIndex ? "text-slate-700" : "text-slate-400"}>{step}</span>
                   </motion.div>
                 ))}
 
                 {phase === "ready" && (
                   <motion.div
-                    initial={{ opacity: 0, x: -8 }}
+                    initial={{ opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-2 text-[11px] font-mono"
+                    className="flex items-center gap-2.5 text-[11px] font-mono"
                   >
-                    <span className="text-emerald-400">âœ”</span>
+                    <span className="text-emerald-400">✓</span>
                     <span className="text-emerald-400">Daemon connected. Interface ready.</span>
                   </motion.div>
                 )}
@@ -145,18 +151,18 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="space-y-3 pt-2"
+                    className="space-y-3 pt-1"
                   >
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-yellow-500">
-                      <span>âš </span>
-                      <span>Daemon offline</span>
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-amber-500/80">
+                      <span>⚠</span>
+                      <span>Daemon not reachable — start it locally to connect.</span>
                     </div>
                     <button
                       onClick={handleSkip}
                       data-testid="button-enter-interface"
-                      className="w-full py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 font-mono text-xs tracking-widest hover:border-blue-500/50 hover:text-blue-400 transition-all"
+                      className="w-full py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-slate-400 font-mono text-xs tracking-widest hover:border-cyan-500/30 hover:text-cyan-400 transition-all"
                     >
-                      ENTER INTERFACE ANYWAY
+                      ENTER INTERFACE
                     </button>
                   </motion.div>
                 )}
@@ -164,11 +170,10 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
             </div>
 
             {/* Bottom accent */}
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

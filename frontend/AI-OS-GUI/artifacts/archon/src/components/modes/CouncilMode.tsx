@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, Gavel, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
@@ -22,21 +22,30 @@ const VERDICT_ITEMS = [
   { icon: XCircle,      color: "text-red-400",      label: "Rejected",     value: "Greenfield microservices â€” insufficient team maturity" },
 ];
 
+// Static fallback models used when the daemon hasn't sent a model list yet
+const FALLBACK_MODELS = [
+  { model_id: "groq/llama-3.3-70b-versatile",          label: "Groq · Llama 3.3 70B" },
+  { model_id: "gemini/gemini-2.5-flash",                label: "Gemini · 2.5 Flash" },
+  { model_id: "openrouter/deepseek/deepseek-r1:free",   label: "OpenRouter · DeepSeek R1" },
+  { model_id: "cerebras/llama-3.3-70b",                 label: "Cerebras · Llama 3.3 70B" },
+];
+
 export default function CouncilMode() {
   const { councilMessages, isStreaming, sendCouncil, connected, availableModels } = useWebSocketContext();
 
-  // Dynamically map models to council roles
-  const activeModels = availableModels ? availableModels.slice(0, 4).map((m: any, i: number) => ({
+  // Use daemon-provided models if available, otherwise use the static fallback set
+  const modelSource = (availableModels && availableModels.length > 0) ? availableModels : FALLBACK_MODELS;
+  const activeModels = modelSource.slice(0, 4).map((m: any, i: number) => ({
     key: m.model_id,
-    name: m.label.split(" ? ")[1] || m.label,
+    name: (m.label || m.model_id).split(" · ")[1] || m.label || m.model_id,
     role: ROLES[i % ROLES.length],
     color: COLORS[i % COLORS.length],
     border: BORDERS[i % BORDERS.length],
     bg: BGS[i % BGS.length],
     header: HEADERS[i % HEADERS.length],
     glow: GLOWS[i % GLOWS.length],
-    dot: DOTS[i % DOTS.length]
-  })) : [];
+    dot: DOTS[i % DOTS.length],
+  }));
   const [input, setInput] = useState("");
 
   const handleBroadcast = () => {
@@ -70,7 +79,7 @@ export default function CouncilMode() {
             {isStreaming ? "DEBATE ACTIVE" : "AWAITING DEBATE"}
           </div>
           <div className="flex gap-1">
-            {MODELS.map((m) => (
+            {activeModels.map((m: any) => (
               <span key={m.key} className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${m.color} ${m.border} bg-transparent`}>
                 {m.role}
               </span>
@@ -83,9 +92,9 @@ export default function CouncilMode() {
         </Button>
       </div>
 
-      {/* â”€â”€ 3-column debate area â”€â”€ */}
+      {/* ── 3-column debate area ── */}
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {MODELS.map((col) => {
+        {activeModels.map((col: any) => {
           const msgs = getMessages(col.key);
           return (
             <div key={col.key} className={`flex-1 flex flex-col border-r border-slate-800/50 last:border-r-0 ${col.bg} ${col.glow}`}>

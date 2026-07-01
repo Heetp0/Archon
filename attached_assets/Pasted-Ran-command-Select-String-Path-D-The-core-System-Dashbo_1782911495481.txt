@@ -1,0 +1,43 @@
+Ran command: `Select-String -Path "D:\The core\System\Dashboard\Dashboard.md" -Pattern "loadCalendarEvents", "loadTodoList", "loadMailDigests" -Context 0,20`
+
+The **Core Dashboard** is a comprehensive, interactive workspace hub built directly inside Obsidian using DataviewJS and Chart.js. It aggregates data, logs, and integrations across your entire system.
+
+Here is a detailed breakdown of the functionality in each tab:
+
+---
+
+### 1. 🏠 Overview Tab
+* **Current Focus:** Displays your active priority project and its current status at the top.
+* **Key Stats Cards:** Tracks Active Projects, Code Projects, Research Items, Ideas, and overall Hours Logged (7d).
+* **Hours Logged Chart:** A bar chart showing your daily overall logged hours over 7 or 30 days.
+* **Recent Projects & Activity:** Lists recent projects with progress bars next to a chronological activity/agent log.
+
+### 2. 📚 Study Tab
+* **Study Metrics:** Displays total study hours over the past 7 days, your average daily hours, and your current study streak (consecutive days of studying).
+* **Subject Breakdown Chart:** A horizontal bar chart parsing study hours across different topics (e.g., Mathematics, Solid Mechanics, Fluid Mechanics) from your daily notes.
+* **Log Instructions:** Provides guidance on formatting daily note frontmatter (e.g., using `study-hours: 3` and `study-subjects: [...]`) to update the chart.
+
+### 3. 📁 Projects Tab
+* **Portfolio Health:** Summary cards classifying total projects into status categories: *Active, At Risk, Blocked, Complete*.
+* **Hours Spent Over Time:** A line chart mapping the hours spent on standard projects (excluding coding/study) over 7, 30, or 90 days.
+* **All Projects List:** Displays all project specs from `ProjectHub`, showing progress percentages, hours badges, and status pills.
+
+### 4. 💻 CodeSpace Tab
+* **Coding Activity Chart:** A line chart displaying your daily coding hours over the past 7 or 30 days based on `coding-hours` frontmatter.
+* **Code Projects Directory:** Automatically tracks coding projects inside `Workspace/CodeSpace` (such as `archon`), showing their active completion progress, status, and total coding hours.
+
+### 5. 🔬 Research Tab
+* **Research Pipeline:** Lists and tracks all academic proposals, papers, and projects (`type: research-proposal` from `ResearchHub`), highlighting their current phases and status.
+
+### 6. 💡 Ideas Tab
+* **Idea Pipeline:** Tracks brainstorming items, pitch docs, and concepts (`type: refined-idea` from `IdeaHub`) to ensure interesting ideas are not forgotten.
+
+### 7. ✉️ Mail Tab
+* **Gmail Digest:** Lists your 10 most recent unread emails (sender, subject, and date), populated automatically using the `/briefing` command via Gmail MCP.
+* **Direct Web Access:** Clicking any email row dynamically opens Google Mail in your web browser, pre-searched for that specific email.
+
+### 8. 📋 To-Do Tab
+* **Checklists Sync:** Displays your Google Keep checklist items synced via MCP (refreshed by `/briefing`), with completed tasks crossed off.
+
+### 9. 📅 Calendar Tab
+* **Week View Agenda:** Renders an interactive week-view calendar. It parses configurations from your `obsidian-full-calendar` plugin (or ical feeds) to display upcoming appointments, meetings, and timed events.

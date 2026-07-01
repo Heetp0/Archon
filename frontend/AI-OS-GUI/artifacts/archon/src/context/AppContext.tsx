@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-export type AppMode = "chat" | "council" | "research" | "agents" | "settings";
+export type AppMode = "dashboard" | "chat" | "council" | "research" | "agents" | "obsidian" | "directory";
 
 export interface HistoryItem {
   id: string;
@@ -27,9 +27,9 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<AppMode>("chat");
-  const [contextSidebarOpen, setContextSidebarOpen] = useState(true);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [mode, setMode] = useState<AppMode>("dashboard");
+  const [contextSidebarOpen, setContextSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [activeContextFiles, setActiveContextFiles] = useState<string[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -40,11 +40,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const handleSetMode = (newMode: AppMode) => {
-    if (newMode === "settings") {
-      setSettingsOpen(true);
-    } else {
-      setMode(newMode);
-    }
+    setMode(newMode);
   };
 
   return (
@@ -60,8 +56,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleContextFile,
         settingsOpen,
         setSettingsOpen,
-        // TODO: history should be populated from a real session log endpoint
-        // once the daemon exposes GET /sessions
         history: [],
       }}
     >
