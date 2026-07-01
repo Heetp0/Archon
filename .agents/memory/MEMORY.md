@@ -1,0 +1,1 @@
+- [Recharts + React 19 conflict](recharts-react19.md) — recharts 2.x crashes with React 19; use pure SVG charts instead (SvgBarChart pattern in DashboardMode.tsx)
