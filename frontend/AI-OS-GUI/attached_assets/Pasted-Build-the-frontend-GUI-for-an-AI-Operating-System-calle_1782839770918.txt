@@ -1,0 +1,45 @@
+Build the frontend GUI for an AI Operating System called "Archon" (or "The Core"). 
+
+TECH STACK:
+- Framework: Tauri (Rust backend)
+- Frontend: React (TypeScript) + Vite
+- Styling: Tailwind CSS (using standard utility classes for a dark, futuristic aesthetic)
+- State Management: React Context or Zustand
+
+GLOBAL UI/UX SYSTEM:
+- Theme: Deep dark mode background (e.g., bg-slate-950) with translucent, glowing panels.
+- Layout Architecture: 
+  - Left Sidebar: Main navigation (Chat, Council, Research, Agents, Settings) and a collapsible "Context Vault" file explorer.
+  - Center Workspace: The primary interaction zone.
+  - Right Sidebar: A collapsible "Context & Inspector" panel. Both sidebars must be toggleable via top-corner icon buttons.
+- Aesthetics: Use subtle glowing borders (box-shadow or Tailwind's ring utilities) to define panels. Use distinct accent colors for different modes (e.g., Blue for Chat, Orange for Council, Purple for Research, Green for Agent).
+
+CORE MODES & VIEWS:
+
+1. Chat Mode
+- Center Panel: A scrollable message history area. Fixed bottom input bar with a multi-line text area, an attachment button, and a Model Selection dropdown.
+- Right Sidebar (Inspector): Displays a "Context Vault" list (showing active files loaded) and real-time Token/Cost telemetry.
+
+2. Council Debate Mode
+- Center Panel: A split-screen or multi-column layout showing 2-3 distinct model responses side-by-side. Include prominent "Export Transcript" buttons. Fixed bottom input bar with its own model router.
+- Right Sidebar (Inspector): A "Consensus Tracker" (a list isolating agreements/disagreements) and slider controls to adjust individual agent temperatures on the fly.
+
+3. Deep Research Mode
+- Center Panel: A large visual data canvas or structural outline space. Fixed bottom input to define the research task.
+- Right Sidebar (Inspector): A live compilation workspace where the generated markdown text streams in, alongside a structured "Citation & Link Vault" for clickable sources.
+
+4. Agent Runtime Mode
+- Center Panel: A process dashboard showing a task queue, active agent status indicators, and a list of generated files (like code or markdown).
+- Right Sidebar (Inspector): A read-only, syntax-highlighted code/text viewer. Clicking a file in the center panel displays its contents here.
+
+5. Settings Dialog (Modal or Dedicated Route)
+- API Key Management: A dropdown to select a provider (OpenRouter, Groq, etc.), a list of configured profiles, and an input to add new keys (with password masking).
+- Global Presets: Dropdowns for default models per mode, and sliders for default Temperature and Max Tokens.
+- Network: A simple number input for the Daemon Port (default 8765).
+
+IMPLEMENTATION STEPS for the AI:
+1. Scaffold the basic Tauri + React layout with the top-level grid (Left Sidebar, Center Workspace, Right Sidebar).
+2. Implement the state logic to toggle the visibility of the left and right sidebars smoothly.
+3. Build the navigation router to switch the Center and Right panels based on the 4 active modes.
+4. Implement the UI shells for the 4 modes using placeholder data to demonstrate the layouts.
+5. Apply the dark mode styling and glowing panel aesthetics using Tailwind CSS.

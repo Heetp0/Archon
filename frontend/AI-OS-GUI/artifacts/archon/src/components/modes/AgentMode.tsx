@@ -1,0 +1,410 @@
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Cpu, Terminal, Loader2, CheckCircle2, Clock, XCircle,
+  ChevronDown, ChevronUp, AlertTriangle, X, Send, LayoutDashboard
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useWebSocketContext } from "@/context/WebSocketContext";
+import type { TerminalLine } from "@/types";
+
+const STATUS_ICON = {
+  complete: CheckCircle2,
+  running:  Loader2,
+  queued:   Clock,
+  failed:   XCircle,
+} as const;
+
+const STATUS_COLOR = {
+  complete: "text-emerald-500",
+  running:  "text-green-400",
+  queued:   "text-slate-500",
+  failed:   "text-red-400",
+} as const;
+
+const LINE_COLOR: Record<TerminalLine["kind"], string> = {
+  system:  "text-slate-500",
+  input:   "text-green-300",
+  output:  "text-green-400",
+  warning: "text-yellow-400",
+  error:   "text-red-400",
+  success: "text-emerald-400",
+};
+
+const LINE_PREFIX: Record<TerminalLine["kind"], string> = {
+  system:  "  ",
+  input:   "",
+  output:  "  ",
+  warning: "⚠ ",
+  error:   "✖ ",
+  success: "✔ ",
+};
+
+export default function AgentMode() {
+  const {
+    agentStatuses, taskQueue, connected,
+    terminalLines, dangerousCommand,
+    sendAgentCommand, approveCommand, denyCommand,
+  } = useWebSocketContext();
+
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [cmdInput, setCmdInput] = useState("");
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (terminalOpen && terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [terminalLines, terminalOpen]);
+
+  useEffect(() => {
+    if (terminalOpen) setTimeout(() => inputRef.current?.focus(), 150);
+  }, [terminalOpen]);
+
+  const handleSendCmd = useCallback(() => {
+    if (!cmdInput.trim()) return;
+    sendAgentCommand(cmdInput.trim());
+    setCmdInput("");
+  }, [cmdInput, sendAgentCommand]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSendCmd();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 1.02 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col h-full bg-[#01040A] relative"
+    >
+      {/* ── Header bar ── */}
+      <div className="p-4 border-b border-green-900/30 flex items-center justify-between bg-gradient-to-r from-green-950/20 to-transparent flex-shrink-0">
+        <div>
+          <h1 className="text-lg font-mono text-slate-100 font-bold tracking-tight">AGENT RUNTIME</h1>
+          <p className="text-xs font-mono text-slate-500 mt-0.5">
+            {connected ? "Sub-processes active. Memory allocated." : "Daemon offline. Displaying cached state."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
+            <div className="text-[10px] text-slate-500 font-mono uppercase">CPU</div>
+            <div className="text-sm text-green-400 font-mono">42%</div>
+          </div>
+          <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
+            <div className="text-[10px] text-slate-500 font-mono uppercase">RAM</div>
+            <div className="text-sm text-green-400 font-mono">1.2 GB</div>
+          </div>
+
+          {/* View toggle: Dashboard ↔ Terminal */}
+          <div className="flex rounded border border-slate-800 overflow-hidden">
+            <button
+              onClick={() => setTerminalOpen(false)}
+              data-testid="button-show-dashboard"
+              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs transition-colors ${
+                !terminalOpen
+                  ? "bg-slate-800 text-slate-200"
+                  : "bg-black text-slate-600 hover:text-slate-400"
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setTerminalOpen(true)}
+              data-testid="button-show-terminal"
+              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs border-l border-slate-800 transition-colors ${
+                terminalOpen
+                  ? "bg-green-900/30 text-green-400 shadow-[inset_0_0_12px_rgba(34,197,94,0.08)]"
+                  : "bg-black text-slate-600 hover:text-green-500"
+              }`}
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              Terminal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Content — swaps between dashboard and terminal ── */}
+      <div className="flex-1 overflow-hidden relative">
+
+        {/* Dashboard view */}
+        <AnimatePresence>
+          {!terminalOpen && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 p-6 flex flex-col gap-6 overflow-hidden"
+            >
+              <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
+              {/* Active Daemons */}
+              <div className="flex flex-col space-y-4 overflow-hidden">
+                <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                  <Cpu className="w-4 h-4 text-green-500" /> Active Daemons
+                </h2>
+                <div className="space-y-4 overflow-y-auto flex-1">
+                  {agentStatuses.map((agent) => (
+                    <div
+                      key={agent.id}
+                      className={`glass-panel border rounded-lg p-5 relative overflow-hidden flex-shrink-0 ${
+                        agent.status === "running" ? "border-green-500/30" : "border-slate-800"
+                      } ${agent.status === "idle" ? "opacity-60" : ""}`}
+                    >
+                      <div className={`absolute top-0 left-0 w-1 h-full ${
+                        agent.status === "running"
+                          ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+                          : "bg-slate-600"
+                      }`} />
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-mono text-slate-200 text-sm font-bold">{agent.name}</h3>
+                          <div className="text-xs font-mono text-green-400 mt-1">PID: {agent.pid}</div>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-[10px] font-mono border ${
+                          agent.status === "running"
+                            ? "bg-green-500/10 text-green-400 border-green-500/20 animate-pulse"
+                            : agent.status === "complete"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : agent.status === "failed"
+                            ? "bg-red-500/10 text-red-400 border-red-500/20"
+                            : "bg-slate-800 text-slate-400 border-slate-700"
+                        }`}>
+                          {agent.status.toUpperCase()}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-slate-500">Current Action</span>
+                          <span className="text-slate-300">{agent.action}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              agent.status === "running"
+                                ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                                : "bg-slate-600"
+                            }`}
+                            style={{ width: `${agent.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Task Queue */}
+              <div className="flex flex-col space-y-4 overflow-hidden">
+                <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                  <Terminal className="w-4 h-4 text-green-500" /> Task Queue
+                </h2>
+                <div className="flex-1 glass-panel border border-slate-800 rounded-lg overflow-hidden flex flex-col min-h-0">
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-2">
+                      {taskQueue.map((task) => {
+                        const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
+                        return (
+                          <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-slate-900/50 border border-slate-800/50">
+                            <div className="font-mono text-[10px] text-slate-500 w-12">{task.id}</div>
+                            <div className={`font-sans text-sm flex-1 ${
+                              task.status === "complete" ? "text-slate-400 line-through" : "text-slate-200"
+                            }`}>
+                              {task.name}
+                            </div>
+                            <div className={`flex items-center gap-1.5 ${STATUS_COLOR[task.status as keyof typeof STATUS_COLOR]}`}>
+                              {task.status === "running"
+                                ? <Icon className="w-4 h-4 animate-spin" />
+                                : <Icon className="w-4 h-4" />
+                              }
+                              <span className="text-[10px] font-mono uppercase tracking-wider">{task.status}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+
+              </div>{/* end grid */}
+
+              {/* Dispatch prompt — full width below the grid */}
+              <div className="flex items-center gap-3 border border-slate-800 rounded-lg bg-black px-4 py-3 flex-shrink-0">
+                <span className="text-green-600 font-mono text-sm select-none flex-shrink-0">$</span>
+                <input
+                  type="text"
+                  value={cmdInput}
+                  onChange={(e) => setCmdInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={connected ? "Dispatch command or directive to agent runtime..." : "Daemon offline"}
+                  disabled={!connected}
+                  data-testid="input-dashboard-command"
+                  className="flex-1 bg-transparent text-green-300 placeholder:text-slate-700 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={handleSendCmd}
+                  disabled={!connected || !cmdInput.trim()}
+                  data-testid="button-send-dashboard-command"
+                  className="text-green-700 hover:text-green-400 disabled:opacity-30 transition-colors flex-shrink-0"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Terminal view — covers full content area */}
+        <AnimatePresence>
+          {terminalOpen && (
+            <motion.div
+              key="terminal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 flex flex-col bg-black"
+            >
+              {/* Terminal chrome bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-[#050E05] border-b border-green-900/30 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/70" />
+                  </div>
+                  <span className="text-[11px] font-mono text-green-600 uppercase tracking-widest">archon — agent shell</span>
+                </div>
+                <button
+                  onClick={() => setTerminalOpen(false)}
+                  className="text-slate-600 hover:text-slate-400 transition-colors"
+                  data-testid="button-close-terminal"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Terminal output */}
+              <div
+                className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed min-h-0"
+                style={{ scrollbarWidth: "thin", scrollbarColor: "#1a3a1a transparent" }}
+              >
+                {terminalLines.map((line) => (
+                  <div key={line.id} className={`flex gap-3 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>
+                    <span className="text-green-900 select-none flex-shrink-0">{line.timestamp}</span>
+                    <span className="flex-shrink-0 select-none">{LINE_PREFIX[line.kind as keyof typeof LINE_PREFIX]}</span>
+                    <span className="break-all">{line.text}</span>
+                  </div>
+                ))}
+                {/* Blinking cursor */}
+                <div className="flex gap-3 text-green-400 mt-1">
+                  <span className="text-green-900 select-none">
+                    {new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </span>
+                  <span className="animate-pulse">█</span>
+                </div>
+                <div ref={terminalEndRef} />
+              </div>
+
+              {/* Terminal input bar */}
+              <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-[#020A02] flex-shrink-0">
+                <span className="text-green-500 font-mono text-sm select-none">$</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={cmdInput}
+                  onChange={(e) => setCmdInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={connected ? "Enter command or directive..." : "Daemon offline"}
+                  disabled={!connected}
+                  data-testid="input-terminal-command"
+                  className="flex-1 bg-transparent text-green-300 placeholder:text-green-900 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={handleSendCmd}
+                  disabled={!connected || !cmdInput.trim()}
+                  data-testid="button-send-command"
+                  className="text-green-600 hover:text-green-400 disabled:opacity-30 transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Dangerous Command Warning Modal ── */}
+      <AnimatePresence>
+        {dangerousCommand && (
+          <motion.div
+            key="warning-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="relative max-w-lg w-full mx-6 bg-[#0A0000] border-2 border-red-500/60 rounded-xl overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.3)]"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+              <div className="p-8">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-red-400 font-mono font-bold text-lg tracking-tight uppercase mb-1">
+                      Dangerous Command Intercepted
+                    </h2>
+                    <p className="text-slate-400 text-sm font-mono">{dangerousCommand.reason}</p>
+                  </div>
+                </div>
+                <div className="bg-black border border-red-900/50 rounded-lg p-4 mb-6 font-mono">
+                  <div className="text-[10px] text-red-600 uppercase tracking-widest mb-2">Command to Execute</div>
+                  <div className="text-red-300 text-sm break-all">$ {dangerousCommand.command}</div>
+                </div>
+                <p className="text-slate-500 text-xs font-mono mb-6">
+                  This action may modify system files, delete data, or execute privileged operations.
+                  Approve only if you understand the consequences.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={denyCommand}
+                    data-testid="button-deny-command"
+                    className="flex-1 py-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 font-mono text-sm font-bold hover:border-slate-500 hover:text-white transition-all"
+                  >
+                    DENY
+                  </button>
+                  <button
+                    onClick={approveCommand}
+                    data-testid="button-approve-command"
+                    className="flex-1 py-3 rounded-lg border border-red-500/50 bg-red-500/10 text-red-400 font-mono text-sm font-bold hover:bg-red-500/20 hover:border-red-400 transition-all shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                  >
+                    APPROVE
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+
+

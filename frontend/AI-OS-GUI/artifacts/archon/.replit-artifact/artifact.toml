@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Archon – AI Operating System"
+version = "1.0.0"
+id = "artifacts/archon"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25135
+
+[services.development]
+run = "pnpm --filter @workspace/archon run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/archon", "run", "build" ]
+publicDir = "artifacts/archon/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25135"
+BASE_PATH = "/"

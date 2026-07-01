@@ -1,0 +1,318 @@
+{
+  "communities": {
+    "0": [
+      "abc",
+      "agent_runtime",
+      "agent_runtime_agentruntime",
+      "agent_runtime_agentruntime_check_watchdog",
+      "agent_runtime_agentstate",
+      "autopilot_supervisor",
+      "base_agent",
+      "base_agent_baseagent",
+      "chat_agent",
+      "chat_agent_chatagent",
+      "chat_agent_chatagent_init",
+      "config",
+      "council_debate",
+      "council_debate_councildebate",
+      "council_debate_councildebate_init",
+      "deep_research",
+      "main",
+      "markit_down",
+      "model_router",
+      "model_router_dummyconfig",
+      "tests_test_agents",
+      "tests_test_agents_mock_services",
+      "tests_test_agents_test_agent_runtime",
+      "tests_test_agents_test_agent_runtime_watchdog_halt",
+      "tests_test_agents_test_chat_agent",
+      "tests_test_agents_test_council_debate",
+      "typeddict",
+      "vault_search",
+      "vault_search_vaultsearch",
+      "vault_search_vaultsearch_init",
+      "vault_search_vaultsearch_init_table"
+    ],
+    "1": [
+      "agent_runtime_agentruntime_init",
+      "autopilot_supervisor_autopilotsupervisor",
+      "autopilot_supervisor_autopilotsupervisor_add_tokens",
+      "autopilot_supervisor_autopilotsupervisor_add_write_volume",
+      "autopilot_supervisor_autopilotsupervisor_check_heartbeat",
+      "autopilot_supervisor_autopilotsupervisor_init",
+      "autopilot_supervisor_autopilotsupervisor_is_halted",
+      "autopilot_supervisor_autopilotsupervisor_log_action",
+      "autopilot_supervisor_autopilotsupervisor_ping",
+      "autopilot_supervisor_autopilotsupervisor_reset",
+      "autopilot_supervisor_rationale_19",
+      "autopilot_supervisor_rationale_23",
+      "autopilot_supervisor_rationale_34",
+      "autopilot_supervisor_rationale_55",
+      "autopilot_supervisor_rationale_64",
+      "deep_research_deepresearch",
+      "deep_research_deepresearch_crawl_url",
+      "deep_research_deepresearch_init",
+      "deep_research_deepresearch_run",
+      "deep_research_deepresearch_search_web",
+      "tests_test_agents_test_deep_research",
+      "tests_test_agents_test_deep_research_watchdog_halt"
+    ],
+    "2": [
+      "agent_runtime_agentruntime_run",
+      "any",
+      "base_agent_baseagent_run",
+      "base_agent_rationale_7",
+      "chat_agent_chatagent_run",
+      "council_debate_councildebate_run",
+      "tests_test_vault_parser",
+      "tests_test_vault_parser_testvaultparser",
+      "tests_test_vault_parser_testvaultparser_setup",
+      "tests_test_vault_parser_testvaultparser_teardown",
+      "tests_test_vault_parser_testvaultparser_test_parse_frontmatter_list",
+      "tests_test_vault_parser_testvaultparser_test_parse_frontmatter_standard",
+      "tests_test_vault_parser_testvaultparser_test_parse_note_complete",
+      "tests_test_vault_parser_testvaultparser_test_walk_vault_exclusions",
+      "vault_parser",
+      "vault_parser_compute_sha256",
+      "vault_parser_parse_frontmatter",
+      "vault_parser_parse_note",
+      "vault_parser_rationale_129",
+      "vault_parser_rationale_15",
+      "vault_parser_rationale_63",
+      "vault_parser_walk_vault"
+    ],
+    "3": [
+      "ecc_bridge",
+      "ecc_bridge_eccbridge",
+      "ecc_bridge_eccbridge_get_rules",
+      "ecc_bridge_eccbridge_init",
+      "ecc_bridge_eccbridge_list_skills",
+      "ecc_bridge_eccbridge_local_heuristic_scan",
+      "ecc_bridge_eccbridge_run_agentshield",
+      "ecc_bridge_rationale_10",
+      "ecc_bridge_rationale_21",
+      "ecc_bridge_rationale_36",
+      "shell_runner",
+      "shell_runner_rationale_17",
+      "shell_runner_rationale_31",
+      "shell_runner_rationale_53",
+      "shell_runner_secureshellrunner",
+      "shell_runner_secureshellrunner_check_sandbox",
+      "shell_runner_secureshellrunner_init",
+      "shell_runner_secureshellrunner_is_path_safe",
+      "shell_runner_secureshellrunner_run"
+    ],
+    "4": [
+      "opencode_client",
+      "opencode_client_opencodeclient",
+      "opencode_client_opencodeclient_execute_task",
+      "opencode_client_opencodeclient_init",
+      "opencode_client_rationale_18",
+      "tests_test_integration",
+      "tests_test_integration_testintegrationcore",
+      "tests_test_integration_testintegrationcore_setup",
+      "tests_test_integration_testintegrationcore_teardown",
+      "tests_test_integration_testintegrationcore_test_end_to_end_flow_mocked",
+      "tests_test_opencode_client",
+      "tests_test_opencode_client_testopencodeclient",
+      "tests_test_opencode_client_testopencodeclient_setup",
+      "tests_test_opencode_client_testopencodeclient_test_execute_task_failure",
+      "tests_test_opencode_client_testopencodeclient_test_execute_task_success"
+    ],
+    "5": [
+      "markit_down_markitdownnormalizer",
+      "markit_down_markitdownnormalizer_convert",
+      "markit_down_markitdownnormalizer_convert_csv",
+      "markit_down_markitdownnormalizer_convert_docx",
+      "markit_down_markitdownnormalizer_convert_excel",
+      "markit_down_markitdownnormalizer_convert_html",
+      "markit_down_markitdownnormalizer_convert_pdf",
+      "markit_down_markitdownnormalizer_convert_pptx",
+      "markit_down_markitdownnormalizer_convert_text",
+      "markit_down_markitdownnormalizer_get_file_hash",
+      "markit_down_markitdownnormalizer_init",
+      "markit_down_markitdownnormalizer_load_index",
+      "markit_down_markitdownnormalizer_save_index",
+      "markit_down_rationale_43"
+    ],
+    "6": [
+      "model_router_modelrouter",
+      "model_router_modelrouter_generate",
+      "model_router_modelrouter_get_api_key",
+      "model_router_modelrouter_get_available_models",
+      "model_router_modelrouter_init",
+      "model_router_modelrouter_is_throttled",
+      "model_router_modelrouter_throttle_model",
+      "tests_test_model_router",
+      "tests_test_model_router_testmodelrouter",
+      "tests_test_model_router_testmodelrouter_setup",
+      "tests_test_model_router_testmodelrouter_test_generate_fallback_flow",
+      "tests_test_model_router_testmodelrouter_test_get_available_models_empty",
+      "tests_test_model_router_testmodelrouter_test_get_available_models_with_keys",
+      "tests_test_model_router_testmodelrouter_test_throttling_logic"
+    ],
+    "7": [
+      "vault_graph_service",
+      "vault_graph_service_rationale_13",
+      "vault_graph_service_rationale_32",
+      "vault_graph_service_rationale_43",
+      "vault_graph_service_vaultgraphservice",
+      "vault_graph_service_vaultgraphservice_build_graph",
+      "vault_graph_service_vaultgraphservice_get_graph_json",
+      "vault_graph_service_vaultgraphservice_get_insights",
+      "vault_graph_service_vaultgraphservice_init"
+    ],
+    "8": [
+      "main_connectionmanager",
+      "main_connectionmanager_connect",
+      "main_connectionmanager_disconnect",
+      "main_connectionmanager_init",
+      "main_connectionmanager_send_event",
+      "main_websocket_endpoint",
+      "websocket"
+    ],
+    "9": [
+      "vault_search_rationale_104",
+      "vault_search_rationale_131",
+      "vault_search_vaultsearch_get_graph_connections",
+      "vault_search_vaultsearch_search"
+    ],
+    "10": [
+      "tests_test_main",
+      "tests_test_main_test_websocket_handshake",
+      "tests_test_main_test_websocket_missing_fields"
+    ],
+    "11": [
+      "vault_search_rationale_48",
+      "vault_search_vaultsearch_chunk_text",
+      "vault_search_vaultsearch_index_vault"
+    ]
+  },
+  "cohesion": {
+    "0": 0.18924731182795698,
+    "1": 0.10822510822510822,
+    "2": 0.14285714285714285,
+    "3": 0.14035087719298245,
+    "4": 0.19047619047619047,
+    "5": 0.25274725274725274,
+    "6": 0.21978021978021978,
+    "7": 0.2222222222222222,
+    "8": 0.5238095238095238,
+    "9": 0.5,
+    "10": 0.6666666666666666,
+    "11": 0.6666666666666666
+  },
+  "gods": [
+    {
+      "id": "markit_down_markitdownnormalizer",
+      "label": "MarkitDownNormalizer",
+      "degree": 29
+    },
+    {
+      "id": "model_router_modelrouter",
+      "label": "ModelRouter",
+      "degree": 29
+    },
+    {
+      "id": "vault_search_vaultsearch",
+      "label": "VaultSearch",
+      "degree": 23
+    },
+    {
+      "id": "autopilot_supervisor_autopilotsupervisor",
+      "label": "AutopilotSupervisor",
+      "degree": 16
+    },
+    {
+      "id": "agent_runtime_agentruntime",
+      "label": "AgentRuntime",
+      "degree": 15
+    },
+    {
+      "id": "deep_research_deepresearch",
+      "label": "DeepResearch",
+      "degree": 15
+    },
+    {
+      "id": "opencode_client_opencodeclient",
+      "label": "OpenCodeClient",
+      "degree": 14
+    },
+    {
+      "id": "base_agent_baseagent",
+      "label": "BaseAgent",
+      "degree": 12
+    },
+    {
+      "id": "main_connectionmanager",
+      "label": "ConnectionManager",
+      "degree": 12
+    },
+    {
+      "id": "chat_agent_chatagent",
+      "label": "ChatAgent",
+      "degree": 11
+    }
+  ],
+  "surprises": [
+    {
+      "source": "AgentState",
+      "target": "AutopilotSupervisor",
+      "source_files": [
+        "agent_runtime.py",
+        "autopilot_supervisor.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "AgentState",
+      "target": "MarkitDownNormalizer",
+      "source_files": [
+        "agent_runtime.py",
+        "markit_down.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "AgentState",
+      "target": "ModelRouter",
+      "source_files": [
+        "agent_runtime.py",
+        "model_router.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "AgentState",
+      "target": "OpenCodeClient",
+      "source_files": [
+        "agent_runtime.py",
+        "opencode_client.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "AgentRuntime",
+      "target": "AutopilotSupervisor",
+      "source_files": [
+        "agent_runtime.py",
+        "autopilot_supervisor.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

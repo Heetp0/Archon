@@ -1,0 +1,528 @@
+# Archon React GUI — Review & Replit Fix Prompt
+
+## Quick Verdict
+
+This is genuinely a strong foundation — better than either the CustomTkinter
+or the mid-build PyQt6 attempt. Real WebSocket reconnect logic with
+exponential backoff, a clean typed message protocol, resizable panels,
+full shadcn/ui component library, and actual state management via Context.
+Worth committing to.
+
+There is **one critical mismatch** and a handful of the same "mock data
+presented as real" issues from the other GUI attempts. All fixable.
+
+---
+
+## CRITICAL — Model Provider Mismatch
+
+**This is the most important fix.** The entire UI is wired for OpenAI,
+Anthropic, and Google's consumer APIs — not the free-tier stack Archon
+actually uses.
+
+**File:** `ChatMode.tsx`
+```tsx
+<SelectItem value="gpt4o">GPT-4o</SelectItem>
+<SelectItem value="claude">Claude 3.5</SelectItem>
+<SelectItem value="gemini">Gemini 1.5</SelectItem>
+```
+
+**File:** `SettingsModal.tsx`
+```tsx
+const PROVIDERS = [
+  { value: "openai",     label: "OpenAI",     desc: "GPT-4o, o1, o3" },
+  { value: "anthropic",  label: "Anthropic",  desc: "Claude 3.5, Claude 3 Opus" },
+  { value: "openrouter", label: "OpenRouter", desc: "Multi-provider routing" },
+  { value: "groq",       label: "Groq",       desc: "Llama, Mixtral (ultra-fast)" },
+  { value: "ollama",     label: "Ollama",     desc: "Local models (no key needed)" },
+];
+```
+
+**File:** `CouncilMode.tsx`
+```tsx
+const MODELS = [
+  { key: "GPT-4o",     role: "Proposer" },
+  { key: "Claude 3.5", role: "Critic" },
+  { key: "Gemini 1.5", role: "Domain Expert" },
+];
+```
+
+Archon's actual stack is **OpenRouter, Gemini, Groq, Cerebras, and Mistral
+free-tier models** — routed through `daemon/model_router.py`. There is no
+OpenAI or Anthropic key anywhere in the project, and Ollama is not part of
+the architecture either. This needs a full rewrite across all three files
+to match reality.
+
+---
+
+## Other Issues Found
+
+### 1. Duplicate/dead sidebar component
+`LeftSidebar.tsx` exists and duplicates the functionality of `NavRail.tsx`
++ `ContextSidebar.tsx` combined into one file. `Home.tsx` only imports
+`NavRail` and `ContextSidebar` — `LeftSidebar.tsx` is never used anywhere.
+Dead code, should be deleted.
+
+### 2. Mock data mixed with real data (same pattern as the CTk version)
+- `ChatMode.tsx` — `MOCK_MESSAGES` array is concatenated with real
+  `chatMessages` from the WebSocket on every render: `[...MOCK_MESSAGES, ...chatMessages]`.
+  This means fake conversation history is permanently shown above real messages.
+- `ContextSidebar.tsx` / `LeftSidebar.tsx` — `MOCK_FILES` is a hardcoded
+  5-file list, never connected to the real vault.
+- `AppContext.tsx` — `MOCK_HISTORY` is 6 hardcoded fake session entries.
+- `WebSocketContext.tsx` — `agentStatuses` and `taskQueue` initialize with
+  hardcoded fake running agents (`Security_Scanner_01`, task IDs `T-019`
+  through `T-023`) before any real daemon connection.
+- `WebSocketContext.tsx` — `researchText` initializes with a hardcoded
+  fake analysis paragraph.
+- `ResearchMode.tsx` — the entire knowledge graph (`NODES`, `EDGES`) is
+  a hardcoded fake graph about "Quantum Error Correction" with fictional
+  node positions. This isn't a placeholder — it's fake finished content
+  masquerading as a real result.
+
+### 3. Message protocol mismatch with the actual daemon
+The frontend's `useWebSocket.ts` expects message types like `chat_chunk`,
+`chat_complete`, `agent_status`, `council_chunk` — but the real Archon
+daemon (per `daemon/main.py` and `daemon/council_debate.py`) uses a
+different event envelope structure (`{id, event, payload}` with event
+types like `token`, `status`, `gate`, `done`, `error`). These two protocols
+will not talk to each other without a translation layer on one side or
+the other.
+
+### 4. Settings don't persist anywhere
+`SettingsModal.tsx` has local `useState` for the API key input but no
+save mechanism — no `localStorage`, no POST to a daemon endpoint. Typing
+a key and closing the modal loses it immediately.
+
+### 5. Port/host settings are decorative
+The Network settings tab has inputs for port (`8765`), host (`localhost`),
+and timeout (`2000`) with `defaultValue` — these are uncontrolled inputs
+that don't feed back into `useWebSocket.ts`'s hardcoded
+`const DAEMON_URL = "ws://localhost:8765"`. Changing them does nothing.
+
+---
+
+## Design Observations (Good, Not Bugs)
+
+- The color-coded glow system per mode (blue/orange/purple/green) is a
+  nice touch and more polished than either Python GUI attempt
+- Resizable right sidebar with drag handle is a genuinely useful feature
+  neither other version has
+- Connection status indicator in the top bar (`Wifi`/`WifiOff`/spinner)
+  is exactly the kind of real-time daemon-state feedback that was missing
+  elsewhere
+- Terminal mode's line-kind coloring (system/input/output/warning/error/success)
+  is a nice implementation
+
+---
+
+# Replit Prompt
+
+```
+You are working on the Archon GUI — a React + TypeScript + Vite frontend
+for a Python AI daemon. The project lives in artifacts/archon/. Do not
+touch artifacts/mockup-sandbox/, artifacts/api-server/, or anything in
+lib/ — only the archon frontend app.
+
+Make the following fixes. Do not refactor working code, do not change
+the visual design language (colors, glows, layout), only fix what is
+listed below.
+
+## FIX 1 — Replace all model/provider references (CRITICAL)
+
+The app currently references OpenAI, Anthropic, and Ollama. The real
+backend only supports these 5 providers, routed via LiteLLM through a
+Python daemon:
+
+- OpenRouter (multiple free models, prefixed openrouter/)
+- Gemini (Google, prefixed gemini/)
+- Groq (prefixed groq/)
+- Cerebras (OpenAI-compatible endpoint)
+- Mistral (prefixed mistral/)
+
+### File: src/components/modes/ChatMode.tsx
+
+Replace:
+```tsx
+<SelectItem value="gpt4o">GPT-4o</SelectItem>
+<SelectItem value="claude">Claude 3.5</SelectItem>
+<SelectItem value="gemini">Gemini 1.5</SelectItem>
+```
+
+With:
+```tsx
+<SelectItem value="groq/llama-3.1-8b-instant">Groq · Llama 3.1 8B</SelectItem>
+<SelectItem value="groq/llama-3.3-70b-versatile">Groq · Llama 3.3 70B</SelectItem>
+<SelectItem value="gemini/gemini-2.0-flash">Gemini · 2.0 Flash</SelectItem>
+<SelectItem value="gemini/gemini-2.5-flash">Gemini · 2.5 Flash</SelectItem>
+<SelectItem value="mistral/open-mistral-nemo">Mistral · Nemo</SelectItem>
+<SelectItem value="openrouter/deepseek/deepseek-r1:free">OpenRouter · DeepSeek R1</SelectItem>
+```
+
+Also change the default state:
+```tsx
+const [model, setModel] = useState("gpt4o");
+```
+to:
+```tsx
+const [model, setModel] = useState("groq/llama-3.1-8b-instant");
+```
+
+### File: src/components/SettingsModal.tsx
+
+Replace the entire PROVIDERS array:
+```tsx
+const PROVIDERS = [
+  { value: "openai",     label: "OpenAI",     desc: "GPT-4o, o1, o3" },
+  { value: "anthropic",  label: "Anthropic",  desc: "Claude 3.5, Claude 3 Opus" },
+  { value: "openrouter", label: "OpenRouter", desc: "Multi-provider routing" },
+  { value: "groq",       label: "Groq",       desc: "Llama, Mixtral (ultra-fast)" },
+  { value: "ollama",     label: "Ollama",     desc: "Local models (no key needed)" },
+];
+```
+
+With:
+```tsx
+const PROVIDERS = [
+  { value: "gemini",     label: "Gemini",     desc: "Google Gemini 2.0/2.5 Flash — free tier" },
+  { value: "groq",       label: "Groq",       desc: "Llama 3.1/3.3, Gemma — ultra-fast free tier" },
+  { value: "openrouter", label: "OpenRouter", desc: "DeepSeek, Llama, and other free-tier models" },
+  { value: "cerebras",   label: "Cerebras",   desc: "Llama 3.3 70B — free tier" },
+  { value: "mistral",    label: "Mistral",    desc: "Mistral Nemo — free tier" },
+];
+```
+
+Update the env var mapping used when saving keys (find where `provider.value`
+is used to construct a key name) so it produces:
+GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, MISTRAL_API_KEY
+
+### File: src/components/modes/CouncilMode.tsx
+
+Replace the entire MODELS array:
+```tsx
+const MODELS = [
+  { key: "GPT-4o",     role: "Proposer",      ... },
+  { key: "Claude 3.5", role: "Critic",        ... },
+  { key: "Gemini 1.5", role: "Domain Expert", ... },
+];
+```
+
+With (keep all styling properties — color, border, bg, header, glow, dot —
+exactly as they are, only change the `key` values):
+```tsx
+const MODELS = [
+  {
+    key: "Groq Llama 3.3 70B",
+    role: "Proposer",
+    color: "text-blue-400",
+    border: "border-blue-500/30",
+    bg: "bg-blue-950/10",
+    header: "bg-blue-900/30",
+    glow: "shadow-[0_0_20px_rgba(59,130,246,0.08)]",
+    dot: "bg-blue-500",
+  },
+  {
+    key: "Gemini 2.5 Flash",
+    role: "Critic",
+    color: "text-orange-400",
+    border: "border-orange-500/30",
+    bg: "bg-orange-950/10",
+    header: "bg-orange-900/30",
+    glow: "shadow-[0_0_20px_rgba(249,115,22,0.08)]",
+    dot: "bg-orange-500",
+  },
+  {
+    key: "DeepSeek R1",
+    role: "Domain Expert",
+    color: "text-purple-400",
+    border: "border-purple-500/30",
+    bg: "bg-purple-950/10",
+    header: "bg-purple-900/30",
+    glow: "shadow-[0_0_20px_rgba(168,85,247,0.08)]",
+    dot: "bg-purple-500",
+  },
+];
+```
+
+Also find and update the default `councilMessages` initial state in
+src/context/WebSocketContext.tsx:
+```tsx
+const [councilMessages, setCouncilMessages] = useState<Record<string, ChatMessage[]>>({
+  "GPT-4o": [],
+  "Claude 3.5": [],
+});
+```
+to:
+```tsx
+const [councilMessages, setCouncilMessages] = useState<Record<string, ChatMessage[]>>({
+  "Groq Llama 3.3 70B": [],
+  "Gemini 2.5 Flash": [],
+  "DeepSeek R1": [],
+});
+```
+
+## FIX 2 — Remove dead LeftSidebar.tsx file
+
+Delete src/components/LeftSidebar.tsx entirely. It is never imported by
+Home.tsx or any other file — NavRail.tsx and ContextSidebar.tsx already
+provide this functionality as separate components. Confirm with a
+project-wide search that nothing imports LeftSidebar before deleting.
+
+## FIX 3 — Remove mock data mixed into real data streams
+
+### File: src/components/modes/ChatMode.tsx
+
+Remove the MOCK_MESSAGES constant entirely (the array with 4 hardcoded
+messages about Redis caching). Find this line:
+```tsx
+const allMessages = [...MOCK_MESSAGES, ...chatMessages];
+```
+Replace with:
+```tsx
+const allMessages = chatMessages;
+```
+
+If allMessages is empty, render an empty state instead — add this inside
+the message rendering area:
+```tsx
+{allMessages.length === 0 && !isStreaming && (
+  <div className="flex items-center justify-center h-full text-slate-600 text-sm font-mono">
+    No messages yet. Start a conversation below.
+  </div>
+)}
+```
+
+### File: src/context/AppContext.tsx
+
+Remove the MOCK_HISTORY array (6 hardcoded fake sessions). Replace:
+```tsx
+history: MOCK_HISTORY,
+```
+with an empty array for now:
+```tsx
+history: [],
+```
+Add a comment above it:
+```tsx
+// TODO: history should be populated from a real session log endpoint
+// once the daemon exposes GET /sessions
+```
+
+### File: src/components/ContextSidebar.tsx (and delete from LeftSidebar.tsx
+per Fix 2)
+
+Remove the MOCK_FILES array. Replace the vault file list rendering with
+an empty state when no real vault data is available:
+```tsx
+{tab === "vault" && (
+  <div className="p-2 space-y-0.5">
+    <div className="text-xs font-mono text-slate-600 text-center py-8">
+      No vault connected.
+    </div>
+  </div>
+)}
+```
+Keep the toggleContextFile / activeContextFiles logic in AppContext.tsx
+as-is — just don't seed it with fake file entries. Change:
+```tsx
+const [activeContextFiles, setActiveContextFiles] = useState<string[]>(["brief", "api"]);
+```
+to:
+```tsx
+const [activeContextFiles, setActiveContextFiles] = useState<string[]>([]);
+```
+
+### File: src/context/WebSocketContext.tsx
+
+Remove hardcoded fake agent statuses. Replace:
+```tsx
+const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([
+  { id: "agent-1", name: "Security_Scanner_01", pid: "88392", status: "running", action: "Scanning Auth.tsx", progress: 65 },
+  { id: "agent-2", name: "Code_Generator_02", pid: "88393", status: "idle", action: "Awaiting queue...", progress: 0 },
+]);
+```
+with:
+```tsx
+const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
+```
+
+Remove hardcoded fake task queue. Replace:
+```tsx
+const [taskQueue, setTaskQueue] = useState<TaskItem[]>([
+  { id: "T-019", name: "Ingest Codebase", status: "complete" },
+  { id: "T-020", name: "Generate AST", status: "complete" },
+  { id: "T-021", name: "Identify Vulnerabilities", status: "running" },
+  { id: "T-022", name: "Draft Patch", status: "queued" },
+  { id: "T-023", name: "Run Tests", status: "queued" },
+]);
+```
+with:
+```tsx
+const [taskQueue, setTaskQueue] = useState<TaskItem[]>([]);
+```
+
+Remove hardcoded fake research analysis text. Replace:
+```tsx
+const [researchText, setResearchText] = useState(
+  "Analyzing cross-domain implications...\nFound correlation in recent arXiv papers...\nExtracting methodology...\nSynthesizing results into primary structured format..."
+);
+```
+with:
+```tsx
+const [researchText, setResearchText] = useState("");
+```
+
+### File: src/components/modes/ResearchMode.tsx
+
+The entire NODES and EDGES constants are a fake pre-built knowledge graph
+about "Quantum Error Correction" with 10 nodes and fixed x/y positions.
+Replace this with an empty initial state and a placeholder render:
+
+Remove the NODES and EDGES constant arrays entirely. Add this instead near
+the top of the component:
+```tsx
+const [nodes, setNodes] = useState<GraphNode[]>([]);
+const [edges, setEdges] = useState<GraphEdge[]>([]);
+```
+
+Where the SVG graph is rendered, wrap it in a conditional:
+```tsx
+{nodes.length === 0 ? (
+  <div className="flex items-center justify-center h-full text-slate-600 text-sm font-mono">
+    Knowledge graph will appear once research initializes.
+  </div>
+) : (
+  // existing SVG rendering using nodes/edges instead of NODES/EDGES
+)}
+```
+
+Update all references to NODES and EDGES elsewhere in the file to use
+the new nodes/edges state variables instead. The graph should populate
+dynamically once a research_chunk or citation message type arrives via
+WebSocket — for now, leaving it empty with the placeholder message is
+the correct behavior since there's no backend endpoint yet to populate
+it with real node/edge data.
+
+## FIX 4 — Fix message protocol mismatch with the real daemon
+
+The daemon uses this envelope format for all WebSocket messages:
+```json
+{ "id": "...", "event": "token" | "status" | "gate" | "done" | "error", "payload": {...} }
+```
+
+The frontend currently expects flat message types like chat_chunk,
+chat_complete, agent_status, council_chunk directly on the top-level
+message object (see src/hooks/useWebSocket.ts WSMessage union type and
+src/context/WebSocketContext.tsx's switch statement).
+
+### File: src/hooks/useWebSocket.ts
+
+Update the WSMessage type to match the daemon's actual envelope:
+```tsx
+export interface DaemonEnvelope {
+  id: string;
+  event: "token" | "status" | "gate" | "done" | "error";
+  payload: Record<string, unknown>;
+}
+```
+
+In the onmessage handler, parse the envelope and pass it through as-is —
+do not try to flatten it here. Let WebSocketContext.tsx handle interpreting
+the event/payload structure.
+
+### File: src/context/WebSocketContext.tsx
+
+Rewrite the switch statement in the useEffect that processes ws.messages.
+Instead of switching on m.type with flat fields, switch on m.event and
+read from m.payload. The exact payload shape depends on which daemon
+route sent it — coordinate with the daemon's send_token_callback and
+WebSocket handler in daemon/main.py to confirm exact payload field names
+for each event type (agent name for council tokens, model name for chat,
+etc). Add a fallback case that logs unrecognized events to the console
+rather than silently dropping them, to make future debugging easier:
+```tsx
+default:
+  console.warn("Unhandled WebSocket event:", m.event, m.payload);
+```
+
+## FIX 5 — Persist Settings to localStorage (interim solution)
+
+### File: src/components/SettingsModal.tsx
+
+API keys currently exist only in local component state and vanish when
+the modal closes. Add localStorage persistence as an interim solution
+until a proper backend settings endpoint exists.
+
+In the KeyRow component, replace:
+```tsx
+const [key, setKey] = useState("");
+```
+with:
+```tsx
+const storageKey = `archon_apikey_${provider.value}`;
+const [key, setKey] = useState(() => localStorage.getItem(storageKey) || "");
+
+useEffect(() => {
+  if (key) {
+    localStorage.setItem(storageKey, key);
+  } else {
+    localStorage.removeItem(storageKey);
+  }
+}, [key, storageKey]);
+```
+Add `useEffect` to the React import at the top of the file if not already
+present.
+
+Note: this is a temporary client-side solution. Keys stored this way are
+only available in the browser session and won't be visible to the Python
+daemon. A follow-up task (not part of this fix) will be to add a
+POST /settings/api-keys endpoint on the daemon and wire this form to call
+it via fetch instead of localStorage.
+
+## FIX 6 — Wire Network settings to actual WebSocket connection
+
+### File: src/hooks/useWebSocket.ts
+
+Currently:
+```tsx
+const DAEMON_URL = "ws://localhost:8765";
+```
+is hardcoded and the Network settings tab's port/host inputs do nothing.
+
+Change useWebSocket to accept the URL as a parameter with a sensible
+default, and read from localStorage if a custom value was saved:
+```tsx
+function getDaemonUrl(): string {
+  const host = localStorage.getItem("archon_daemon_host") || "localhost";
+  const port = localStorage.getItem("archon_daemon_port") || "8765";
+  return `ws://${host}:${port}`;
+}
+```
+Replace `const DAEMON_URL = "ws://localhost:8765";` with a call to
+`getDaemonUrl()` inside the connect function instead of a top-level
+constant (so it re-reads on each reconnect attempt).
+
+### File: src/components/SettingsModal.tsx
+
+Wire the host and port Input fields in the Network tab to localStorage:
+find the two Input components with defaultValue="localhost" and
+defaultValue="8765", convert them to controlled inputs backed by
+localStorage using the same pattern as Fix 5, with keys
+archon_daemon_host and archon_daemon_port. Note that changing these
+values requires a page reload or explicit reconnect to take effect —
+add a small note under the inputs: "Changes take effect after reconnecting."
+
+## Verification checklist after all fixes:
+
+- [ ] ChatMode model dropdown shows only Groq/Gemini/Mistral/OpenRouter options
+- [ ] SettingsModal API Keys tab shows 5 correct providers, no OpenAI/Anthropic/Ollama
+- [ ] CouncilMode shows 3 real model names, not GPT-4o/Claude/Gemini 1.5
+- [ ] LeftSidebar.tsx file no longer exists in the project
+- [ ] Opening Chat mode with no messages shows "No messages yet" not fake Redis conversation
+- [ ] Opening Context Vault tab with no vault shows "No vault connected" not 5 fake files
+- [ ] History tab shows empty state, not 6 fake sessions
+- [ ] Agent mode dashboard shows no fake running agents on load
+- [ ] Research mode graph is empty/placeholder on load, not a fake quantum computing graph
+- [ ] Entering an API key in Settings and reopening the modal shows the key still there
+- [ ] No console errors on app load
+- [ ] npm run build completes without TypeScript errors
+```
