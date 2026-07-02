@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
+import type { AppMode } from "@/context/AppContext";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import NavRail from "@/components/NavRail";
 import ContextSidebar from "@/components/ContextSidebar";
@@ -12,35 +13,54 @@ import DashboardMode from "@/components/modes/DashboardMode";
 import ObsidianMode from "@/components/modes/ObsidianMode";
 import AgentsDirectoryMode from "@/components/modes/AgentsDirectoryMode";
 import SettingsModal from "@/components/SettingsModal";
-import LoadingScreen from "@/components/LoadingScreen";
 
-// Modes that benefit from both sidebars
-const SIDEBAR_MODES = new Set(["chat", "council", "research", "agents"]);
-// Modes that only show the left context sidebar
-const LEFT_ONLY_MODES = new Set(["dashboard", "obsidian", "directory"]);
+// Modes that can show the left context sidebar (user toggles)
+const LEFT_CAPABLE_MODES = new Set<AppMode>(["chat", "council", "research", "agents", "obsidian", "directory"]);
 
 export default function Home() {
-  const { mode, settingsOpen, setSettingsOpen } = useAppContext();
+  const { mode, settingsOpen, setSettingsOpen, contextSidebarOpen, setContextSidebarOpen, rightSidebarOpen, setRightSidebarOpen } = useAppContext();
   const { connected, connecting } = useWebSocketContext();
-  const [loadingDismissed, setLoadingDismissed] = useState(false);
+  // Right sidebar width — draggable
+  const [rightWidth, setRightWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
 
-  const showLeft  = SIDEBAR_MODES.has(mode) || LEFT_ONLY_MODES.has(mode);
-  const showRight = SIDEBAR_MODES.has(mode);
+  const handleResizeStart = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  const handleResizeMove = useCallback((e: React.MouseEvent) => {
+    if (!isResizing) return;
+    const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX));
+    setRightWidth(newWidth);
+  }, [isResizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const canShowLeft = LEFT_CAPABLE_MODES.has(mode);
+  const showLeft = canShowLeft && contextSidebarOpen;
 
   return (
-    <div className="flex h-screen w-full bg-[#08090f] text-slate-300 font-sans overflow-hidden">
-      {!loadingDismissed && (
-        <LoadingScreen onDismiss={() => setLoadingDismissed(true)} />
-      )}
-
+    <div
+      className="flex h-screen w-full bg-[#08090f] text-slate-300 font-sans overflow-hidden select-none"
+      onMouseMove={handleResizeMove}
+      onMouseUp={handleResizeEnd}
+      onMouseLeave={handleResizeEnd}
+      style={{ cursor: isResizing ? "ew-resize" : "default" }}
+    >
       {/* Nav Rail */}
       <NavRail />
 
       {/* Left context sidebar */}
-      {showLeft && <ContextSidebar />}
+      {showLeft && (
+        <div className="w-56 flex-shrink-0 border-r border-slate-800/60 overflow-hidden animate-in slide-in-from-left duration-200">
+          <ContextSidebar />
+        </div>
+      )}
 
       {/* Center column */}
-      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
         <div className="flex-1 overflow-hidden">
           {mode === "dashboard" && <DashboardMode />}
           {mode === "chat"      && <ChatMode />}
@@ -52,9 +72,18 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Right sidebar */}
-      {showRight && (
-        <div className="w-64 flex-shrink-0 border-l border-slate-800/60 overflow-hidden">
+      {/* Right sidebar — universal, toggleable, resizable */}
+      {rightSidebarOpen && (
+        <div
+          className="flex-shrink-0 border-l border-slate-800/60 overflow-hidden relative animate-in slide-in-from-right duration-200"
+          style={{ width: rightWidth }}
+        >
+          {/* Resize handle */}
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-10 hover:bg-cyan-500/30 transition-colors"
+            title="Drag to resize"
+          />
           <RightSidebar />
         </div>
       )}

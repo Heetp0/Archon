@@ -38,6 +38,8 @@ type WebSocketContextType = {
   sendCouncil: (message: string, models: string[]) => void;
   sendResearch: (message: string) => void;
   clearChat: () => void;
+  calendarEvents: any[];
+  refreshCalendar: () => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -56,7 +58,31 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [availableModels, setAvailableModels] = useState<any[]>([]);
   const [terminalLines, setTerminalLines] = useState<any[]>([]);
   const [dangerousCommand, setDangerousCommand] = useState<any>(null);
-  
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+
+  const fetchCalendar = async () => {
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      const res = await fetch(`${protocol}://${host}:${port}/calendar/events?days=7`);
+      if (res.ok) {
+        const data = await res.json();
+        setCalendarEvents(data.events || []);
+      }
+    } catch {
+      // Daemon may be offline — ignore
+    }
+  };
+
+  // Fetch calendar periodically when connected
+  useEffect(() => {
+    if (!connected) return;
+    fetchCalendar();
+    const interval = setInterval(fetchCalendar, 60000);
+    return () => clearInterval(interval);
+  }, [connected]);
+
   const sendAgentCommand = (cmd: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const msgId = Math.random().toString();
@@ -283,7 +309,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <WebSocketContext.Provider value={{ connected, connecting, messages, councilMessages, isStreaming, telemetry, citations, researchText, sendChat, sendCouncil, sendResearch, clearChat, agentStatuses, taskQueue, availableModels, terminalLines, dangerousCommand, sendAgentCommand, approveCommand, denyCommand }}>
+    <WebSocketContext.Provider value={{ connected, connecting, messages, councilMessages, isStreaming, telemetry, citations, researchText, sendChat, sendCouncil, sendResearch, clearChat, agentStatuses, taskQueue, availableModels, terminalLines, dangerousCommand, sendAgentCommand, approveCommand, denyCommand, calendarEvents, refreshCalendar: fetchCalendar }}>
       {children}
     </WebSocketContext.Provider>
   );

@@ -13,6 +13,7 @@ from agent_runtime import AgentRuntime
 from model_router import ModelRouter
 from vault_search import VaultSearch
 from markit_down import MarkitDownNormalizer
+from calendar_service import CalendarService
 import config as config_module
 WORKSPACE_ROOT = config_module.WORKSPACE_ROOT
 DAEMON_PORT = config_module.DAEMON_PORT
@@ -70,6 +71,9 @@ threading.Thread(target=background_index, daemon=True).start()
 
 markit_down = MarkitDownNormalizer(cache_dir=os.path.join(WORKSPACE_ROOT, "MarkitCache"))
 
+# Initialize Google Calendar
+calendar_service = CalendarService()
+
 # Initialize agents
 chat_agent = ChatAgent(router, vault_search, markit_down)
 council_agent = CouncilDebate(router, vault_search, markit_down)
@@ -81,6 +85,12 @@ async def get_models():
     """Returns all models whose API keys are configured."""
     models = router.get_available_models_list()
     return {"models": models}
+
+@app.get("/calendar/events")
+async def get_calendar_events(days: int = 7):
+    """Returns upcoming calendar events from Google Calendar (or mock schedule)."""
+    events = calendar_service.get_events(days=days)
+    return {"events": events}
 
 @app.post("/settings/api-keys")
 async def save_api_keys(payload: dict):

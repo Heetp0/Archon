@@ -10,6 +10,7 @@ import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useAppContext } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
 import type { AppMode } from "@/context/AppContext";
+import CalendarWidget from "@/components/CalendarWidget";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface MailItem {
@@ -291,7 +292,7 @@ function useDerivedActivity(terminalLines: any[]) {
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function DashboardMode() {
-  const { agentStatuses, connected, telemetry, terminalLines } = useWebSocketContext();
+  const { agentStatuses, connected, telemetry, terminalLines, calendarEvents } = useWebSocketContext();
   const { setMode } = useAppContext();
   const uptime = useUptime();
 
@@ -332,7 +333,7 @@ export default function DashboardMode() {
         <div className="px-8 pt-8 pb-6 border-b border-white/[0.04] flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-mono font-bold text-slate-100 tracking-tight">The Core</h1>
+              <h1 className="text-xl font-mono font-bold text-slate-100 tracking-tight">Archon</h1>
               <p className="text-xs font-mono text-slate-600 mt-1">AI Operating System · Command Center</p>
             </div>
             <div className="flex items-center gap-3">
@@ -417,19 +418,9 @@ export default function DashboardMode() {
               />
             </div>
 
-            {/* Projects — empty state until daemon populates */}
-            <div className="col-span-2 rounded-2xl border border-white/[0.06] bg-[#0b0c13] p-5 flex flex-col">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Projects</h2>
-              </div>
-              {/* Empty state */}
-              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-4">
-                <Activity className="w-6 h-6 text-slate-700" />
-                <p className="text-[11px] font-mono text-slate-700 leading-relaxed">
-                  No projects tracked yet.<br />
-                  Projects will appear here once the daemon is connected and reports active tasks.
-                </p>
-              </div>
+            {/* Calendar — schedule from Google Calendar */}
+            <div className="col-span-2 flex flex-col min-h-[320px]">
+              <CalendarWidget events={calendarEvents} loading={false} />
             </div>
           </div>
 

@@ -21,7 +21,6 @@ interface AppState {
   toggleContextFile: (fileId: string) => void;
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
-  // Opens Settings modal directly to a specific project's detail page
   settingsProjectId: string | null;
   setSettingsProjectId: (id: string | null) => void;
   openProjectSettings: (id: string) => void;

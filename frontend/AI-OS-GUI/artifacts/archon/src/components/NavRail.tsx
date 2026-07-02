@@ -3,7 +3,7 @@ import { useAppContext, AppMode } from "@/context/AppContext";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import {
   LayoutDashboard, MessageSquare, Users, Search, Cpu,
-  BookOpen, Bot, Settings, Terminal
+  BookOpen, Bot, Settings, Terminal, PanelLeft, PanelRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +73,12 @@ const NAV_ITEMS: {
   },
 ];
 
+const LEFT_CAPABLE: AppMode[] = ["chat", "council", "research", "agents", "obsidian", "directory"];
+
 export default function NavRail() {
-  const { mode, setMode, setSettingsOpen } = useAppContext();
+  const { mode, setMode, setSettingsOpen, contextSidebarOpen, setContextSidebarOpen, rightSidebarOpen, setRightSidebarOpen } = useAppContext();
   const { connected } = useWebSocketContext();
+  const showSidebarToggles = LEFT_CAPABLE.includes(mode);
 
   return (
     <div className="flex flex-col items-center h-full w-14 bg-[#08090f] border-r border-white/[0.05] py-3 z-20 flex-shrink-0">
@@ -83,10 +86,40 @@ export default function NavRail() {
       <button
         onClick={() => setMode("dashboard")}
         className="mb-5 flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 hover:border-cyan-400/40 transition-all"
-        title="The Core"
+        title="Archon"
       >
         <Terminal className="w-4 h-4 text-cyan-400" />
       </button>
+
+      {/* Sidebar toggles */}
+      {showSidebarToggles && (
+        <div className="flex flex-col items-center gap-1 mb-2">
+          <button
+            onClick={() => setContextSidebarOpen((v) => !v)}
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-200",
+              contextSidebarOpen
+                ? "text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
+                : "text-slate-700 border-transparent hover:text-slate-400 hover:bg-white/[0.04] hover:border-white/[0.06]"
+            )}
+            title="Toggle left sidebar"
+          >
+            <PanelLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setRightSidebarOpen((v) => !v)}
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-200",
+              rightSidebarOpen
+                ? "text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
+                : "text-slate-700 border-transparent hover:text-slate-400 hover:bg-white/[0.04] hover:border-white/[0.06]"
+            )}
+            title="Toggle right sidebar"
+          >
+            <PanelRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="w-6 h-px bg-white/5 mb-3" />
