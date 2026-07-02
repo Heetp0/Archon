@@ -18,7 +18,8 @@ export interface WSState {
 function getDaemonUrl(): string {
   const host = localStorage.getItem("archon_daemon_host") || "localhost";
   const port = localStorage.getItem("archon_daemon_port") || "8765";
-  return `ws://${host}:${port}`;
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  return `${protocol}://${host}:${port}`;
 }
 
 const RECONNECT_BASE_MS = 2000;

@@ -1,0 +1,590 @@
+# Replit Prompt — Archon Desktop: Sidebars, Projects, File Attach, Tabbed Preview
+
+Read this entire prompt before starting. Work through sections in order.
+Only touch `artifacts/archon/src/`. Do not touch `artifacts/mockup-sandbox/`
+or `backend reference/`.
+
+---
+
+## IMPORTANT TECHNICAL CONSTRAINT — READ FIRST
+
+A browser CANNOT return a real absolute filesystem path (like
+`D:\Projects\my-app`) from a native folder-picker dialog, for security
+reasons — this is true in every browser, not a limitation specific to
+this app. The File System Access API gives a sandboxed "handle," not a
+path string a Python backend can use.
+
+Because Agent Runtime projects need a REAL PC path (the daemon/bridge
+agent will read and write files there), folder selection for Agent
+projects cannot use a true native OS dialog yet. Build it as a custom
+in-app "Browse PC" modal instead (Section 3B) — styled to look and feel
+like a native file explorer, with a manual path-entry fallback. This
+will connect to a real directory-listing endpoint once the PC Bridge
+Agent exists (a separate, later task) — for now it's a functional UI
+shell with a text-path fallback so the feature isn't blocked.
+
+File ATTACHMENT (photos, PDFs, documents) is different — that's just
+uploading file content, not resolving a path, so it CAN and MUST use a
+real native OS file picker. This works today with a standard
+`<input type="file">`, no constraint applies. Build this for real in
+Section 2.
+
+---
+
+## SECTION 1 — Two Kinds of Projects
+
+Replace the single `Project` model from any prior planning with two
+distinct kinds:
+
+**Light Project** (Chat / Council / Research modes)
+- Just a name. No PC folder required.
+- Functions as a chat-grouping AND a shared context-file filter — all
+  chats inside a Light Project automatically use the same set of
+  attached context files (from Section 2's file attach feature).
+
+**Agent Project** (Agent Runtime mode only)
+- Requires a real PC folder path (selected via Section 3's Browse PC
+  modal, or typed manually).
+- Required to use Agent Runtime at all — there is no ungrouped/no-project
+  chat option in this mode.
+
+### 1A — Update the Projects data model
+
+**File:** `context/ProjectsContext.tsx` (create if it doesn't exist yet,
+otherwise revise to match this exactly)
+
+```tsx
+import React, { createContext, useContext, useState, ReactNode } from "react";
+
+export type ProjectMode = "chat" | "council" | "research" | "agents";
+
+export interface ChatSession {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface ContextFile {
+  id: string;
+  name: string;
+  kind: "image" | "pdf" | "text" | "other";
+  // For now, files live only in browser memory (base64/blob) until a
+  // real upload endpoint exists on the daemon.
+  localBlobUrl?: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  mode: ProjectMode;
+  kind: "light" | "agent";
+  folderPath?: string; // only set when kind === "agent"
+  chats: ChatSession[];
+  contextFiles: ContextFile[];
+}
+
+interface ProjectsState {
+  projects: Project[];
+  activeProjectId: string | null;
+  activeChatId: string | null;
+  createLightProject: (mode: ProjectMode, name: string) => void;
+  createAgentProject: (name: string, folderPath: string) => void;
+  createChat: (projectId: string | null, mode: ProjectMode) => void;
+  renameChat: (chatId: string, newName: string) => void;
+  addContextFile: (projectId: string, file: ContextFile) => void;
+  removeContextFile: (projectId: string, fileId: string) => void;
+  setActiveProject: (projectId: string | null) => void;
+  setActiveChat: (chatId: string | null) => void;
+  ungroupedChats: Record<Exclude<ProjectMode, "agents">, ChatSession[]>;
+  getProjectsForMode: (mode: ProjectMode) => Project[];
+}
+
+const ProjectsContext = createContext<ProjectsState | undefined>(undefined);
+
+export function ProjectsProvider({ children }: { children: ReactNode }) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [ungroupedChats, setUngroupedChats] = useState<
+    Record<Exclude<ProjectMode, "agents">, ChatSession[]>
+  >({ chat: [], council: [], research: [] });
+
+  const createLightProject = (mode: ProjectMode, name: string) => {
+    const p: Project = {
+      id: `proj-${Date.now()}`,
+      name,
+      mode,
+      kind: "light",
+      chats: [],
+      contextFiles: [],
+    };
+    setProjects((prev) => [...prev, p]);
+    setActiveProjectId(p.id);
+  };
+
+  const createAgentProject = (name: string, folderPath: string) => {
+    const p: Project = {
+      id: `proj-${Date.now()}`,
+      name,
+      mode: "agents",
+      kind: "agent",
+      folderPath,
+      chats: [],
+      contextFiles: [],
+    };
+    setProjects((prev) => [...prev, p]);
+    setActiveProjectId(p.id);
+  };
+
+  const createChat = (projectId: string | null, mode: ProjectMode) => {
+    const newChat: ChatSession = {
+      id: `chat-${Date.now()}`,
+      name: "New Chat",
+      createdAt: new Date().toISOString(),
+    };
+    if (projectId) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, chats: [...p.chats, newChat] } : p))
+      );
+    } else if (mode !== "agents") {
+      setUngroupedChats((prev) => ({ ...prev, [mode]: [...prev[mode], newChat] }));
+    }
+    setActiveChatId(newChat.id);
+  };
+
+  const renameChat = (chatId: string, newName: string) => {
+    setProjects((prev) =>
+      prev.map((p) => ({
+        ...p,
+        chats: p.chats.map((c) => (c.id === chatId ? { ...c, name: newName } : c)),
+      }))
+    );
+    setUngroupedChats((prev) => {
+      const next = { ...prev };
+      (Object.keys(next) as Array<keyof typeof next>).forEach((m) => {
+        next[m] = next[m].map((c) => (c.id === chatId ? { ...c, name: newName } : c));
+      });
+      return next;
+    });
+  };
+
+  const addContextFile = (projectId: string, file: ContextFile) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, contextFiles: [...p.contextFiles, file] } : p))
+    );
+  };
+
+  const removeContextFile = (projectId: string, fileId: string) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? { ...p, contextFiles: p.contextFiles.filter((f) => f.id !== fileId) }
+          : p
+      )
+    );
+  };
+
+  const getProjectsForMode = (mode: ProjectMode) => projects.filter((p) => p.mode === mode);
+
+  return (
+    <ProjectsContext.Provider
+      value={{
+        projects,
+        activeProjectId,
+        activeChatId,
+        createLightProject,
+        createAgentProject,
+        createChat,
+        renameChat,
+        addContextFile,
+        removeContextFile,
+        setActiveProject: setActiveProjectId,
+        setActiveChat: setActiveChatId,
+        ungroupedChats,
+        getProjectsForMode,
+      }}
+    >
+      {children}
+    </ProjectsContext.Provider>
+  );
+}
+
+export function useProjectsContext() {
+  const context = useContext(ProjectsContext);
+  if (context === undefined) {
+    throw new Error("useProjectsContext must be used within a ProjectsProvider");
+  }
+  return context;
+}
+```
+
+Wrap `ProjectsProvider` around the app in `App.tsx` at the same level as
+the existing `AppProvider` / `WebSocketProvider`.
+
+### 1B — Sidebar project row layout
+
+In the left sidebar's History/Projects view (see Section 4), each
+project row renders as:
+
+```
+<project name>                    [+]  [⚙]
+```
+
+Not a chevron-expand-only row — the `+` button and gear (`Settings`
+icon from `lucide-react`) sit to the right of the name, matching this
+exact layout:
+
+```tsx
+<div className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-900/60 group">
+  <button
+    onClick={() => toggleExpanded(project.id)}
+    className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+  >
+    <ChevronRight className={cn("w-3 h-3 flex-shrink-0 transition-transform", expanded && "rotate-90")} />
+    <span className="text-xs font-mono text-slate-300 truncate">{project.name}</span>
+  </button>
+  <div className="flex items-center gap-1 flex-shrink-0">
+    <button
+      onClick={() => createChat(project.id, project.mode)}
+      className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-200 transition-colors"
+      title="New chat in this project"
+    >
+      <Plus className="w-3.5 h-3.5" />
+    </button>
+    <button
+      onClick={() => openProjectSettings(project.id)}
+      className="w-5 h-5 flex items-center justify-center text-slate-600 hover:text-slate-200 transition-colors"
+      title="Project settings"
+    >
+      <Settings className="w-3.5 h-3.5" />
+    </button>
+  </div>
+</div>
+```
+
+`openProjectSettings(project.id)` opens the main Settings modal
+directly to that project's settings page (Section 5).
+
+---
+
+## SECTION 2 — Native File Attachment (+ Button, All 4 Modes)
+
+The `+`/paperclip button currently exists as decoration only in
+`ChatMode.tsx` (`<Paperclip>` icon, no handler). Wire it up for real
+and add the same feature to Council, Research, and Agent modes.
+
+### 2A — Shared attach hook
+
+**New file:** `hooks/useFileAttach.ts`
+
+```tsx
+import { useRef, useState } from "react";
+import { useProjectsContext, ContextFile } from "@/context/ProjectsContext";
+
+function detectKind(file: File): ContextFile["kind"] {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type === "application/pdf") return "pdf";
+  if (file.type.startsWith("text/") || file.name.match(/\.(md|py|js|ts|json|csv)$/)) return "text";
+  return "other";
+}
+
+export function useFileAttach(activeProjectId: string | null) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { addContextFile } = useProjectsContext();
+
+  const openPicker = () => inputRef.current?.click();
+
+  const handleFilesSelected = (fileList: FileList | null) => {
+    if (!fileList || !activeProjectId) return;
+    Array.from(fileList).forEach((file) => {
+      const contextFile: ContextFile = {
+        id: `file-${Date.now()}-${file.name}`,
+        name: file.name,
+        kind: detectKind(file),
+        localBlobUrl: URL.createObjectURL(file),
+      };
+      addContextFile(activeProjectId, contextFile);
+    });
+  };
+
+  return { inputRef, openPicker, handleFilesSelected };
+}
+```
+
+### 2B — Wire it into each mode's input bar
+
+**Files:** `ChatMode.tsx`, `CouncilMode.tsx`, `ResearchMode.tsx`, `AgentMode.tsx`
+
+In each file, near the existing send/input row:
+
+```tsx
+const { activeProjectId } = useProjectsContext();
+const { inputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
+```
+
+Replace the decorative paperclip button (or add one if missing) with:
+
+```tsx
+<input
+  ref={inputRef}
+  type="file"
+  multiple
+  accept="image/*,application/pdf,.txt,.md,.py,.js,.ts,.json,.csv"
+  className="hidden"
+  onChange={(e) => handleFilesSelected(e.target.files)}
+/>
+<button
+  type="button"
+  onClick={openPicker}
+  disabled={!activeProjectId}
+  title={activeProjectId ? "Attach files" : "Select or create a project first"}
+  className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+>
+  <Paperclip className="w-4 h-4" />
+</button>
+```
+
+If no project is active (ungrouped chat), disable the button with the
+tooltip shown above — context files require a project to attach to,
+per the data model in Section 1.
+
+This uses a genuine native OS file dialog (`<input type="file">`) —
+no constraint applies here, this works exactly like the screenshot you
+shared.
+
+### 2C — Show attached files in the right sidebar's built-in tab
+
+Each mode's built-in right-sidebar tab (Telemetry/Consensus/Research
+Output/Files) should show a small "Context Files" section listing
+`project.contextFiles` for the active project, each with a remove (×)
+button calling `removeContextFile`. Add this as a new subsection in
+`RightSidebar.tsx` for each mode's existing built-in content block —
+keep it compact, just filename + kind icon + remove button.
+
+---
+
+## SECTION 3 — Agent Project Creation & the "Browse PC" Modal
+
+### 3A — Agent Runtime mode is project-only
+
+**File:** `components/modes/AgentMode.tsx`
+
+If `activeProjectId` is null OR the active project's `kind !== "agent"`,
+render a full blocking state instead of the normal command interface:
+
+```tsx
+if (!activeProject || activeProject.kind !== "agent") {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+      <Cpu className="w-10 h-10 text-slate-700" />
+      <div>
+        <h3 className="text-sm font-mono text-slate-300 mb-1">No active project</h3>
+        <p className="text-xs font-mono text-slate-600 max-w-sm">
+          Agent Runtime requires a project linked to a folder on your PC
+          before it can read or modify files. Create one from the sidebar.
+        </p>
+      </div>
+      <Button onClick={() => setShowNewAgentProjectModal(true)} className="bg-green-600 hover:bg-green-500">
+        <Plus className="w-4 h-4 mr-1.5" /> New Agent Project
+      </Button>
+    </div>
+  );
+}
+```
+
+Per your confirmation: no "+ New Chat" header button appears in Agent
+Runtime mode at all — project selection/creation only happens through
+the sidebar (Section 1B rows) or this blocking-state button, never a
+generic new-chat action in the header.
+
+### 3B — The Browse PC modal (custom, not native)
+
+**New file:** `components/BrowsePCModal.tsx`
+
+Build this styled closely after a native file explorer window — dark
+theme matching the rest of the app, but with these panels: a left
+rail with quick locations (Home, Desktop, Documents — hardcoded
+placeholder entries for now), a main pane listing folders, a path
+breadcrumb at top, and a text input at the bottom as the manual
+fallback.
+
+```tsx
+interface BrowsePCModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSelect: (path: string) => void;
+}
+
+export default function BrowsePCModal({ open, onClose, onSelect }: BrowsePCModalProps) {
+  const [manualPath, setManualPath] = useState("");
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+      <div className="w-[720px] h-[480px] bg-[#0d1117] border border-slate-800 rounded-lg flex flex-col overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <span className="text-sm font-mono text-slate-300">Select Project Folder</span>
+          <button onClick={onClose}><X className="w-4 h-4 text-slate-500 hover:text-slate-300" /></button>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-40 border-r border-slate-800 p-2 space-y-1 flex-shrink-0">
+            {["Home", "Desktop", "Documents", "Downloads"].map((loc) => (
+              <button key={loc} className="w-full text-left px-2 py-1.5 text-xs font-mono text-slate-500 hover:text-slate-300 hover:bg-slate-900/60 rounded">
+                {loc}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 p-4 flex items-center justify-center">
+            <div className="text-center text-xs font-mono text-slate-600 max-w-xs">
+              Live PC folder browsing connects once the local Bridge Agent
+              is running. For now, type the full folder path below.
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 border-t border-slate-800 flex gap-2">
+          <input
+            value={manualPath}
+            onChange={(e) => setManualPath(e.target.value)}
+            placeholder="e.g. D:\Projects\my-app"
+            className="flex-1 bg-black border border-slate-800 rounded px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-green-500/50"
+          />
+          <Button
+            onClick={() => manualPath.trim() && onSelect(manualPath.trim())}
+            disabled={!manualPath.trim()}
+            className="bg-green-600 hover:bg-green-500 disabled:opacity-40"
+          >
+            Select
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+This is intentionally honest about its current limitation (the
+in-panel note) rather than pretending to browse real folders it can't
+actually see yet.
+
+### 3C — New Agent Project flow
+
+The "+ New Agent Project" button (from 3A's blocking state, and also
+the sidebar's project-creation entry point for Agent Runtime mode)
+opens a small two-step inline form: project name, then triggers
+`BrowsePCModal` for the folder. On folder selection, calls
+`createAgentProject(name, folderPath)` from `useProjectsContext()`.
+
+---
+
+## SECTION 4 — Left Sidebar: Vault/History Toggle + Projects Panel
+
+(This section is unchanged from the earlier plan — confirmed correct.)
+
+**File:** `ContextSidebar.tsx`
+
+Replace the two-tab header with a single toggle button that flips
+between "Vault" and "History" labels/icons on click, keeping the
+existing `tab` state pattern.
+
+**New file:** `components/ProjectHistoryPanel.tsx`
+
+Rendered when `tab === "history"`. Behavior per current mode:
+
+- `chat` / `council` / `research`: show "+ New Project" (opens a
+  NAME-ONLY inline form — no folder step, since these are Light
+  Projects) and "+ New Chat" (ungrouped). List existing Light
+  Projects for this mode using the row layout from Section 1B, each
+  expandable to show its chats (renamable) and a "+ New Chat" row
+  inside.
+- `agents`: show only existing Agent Projects (row layout from
+  Section 1B) — no ungrouped chats section, no bare "+ New Chat"
+  outside a project. The "+ New Agent Project" entry point here
+  triggers the same flow as Section 3C.
+- Other modes (`dashboard`, `obsidian`, `directory`): show "History is
+  scoped to Chat, Council, Research, and Agents."
+
+---
+
+## SECTION 5 — Project Settings Page (mirrors the reference screenshot)
+
+**File:** `SettingsModal.tsx`
+
+Add a new tab to the existing `TABS` array:
+```tsx
+{ id: "projects", label: "Projects", icon: FolderKanban },
+```
+(`FolderKanban` from `lucide-react`, or `Folder` if that's unavailable.)
+
+The Projects settings page has two states:
+
+**A — List view** (default when the Projects tab is opened generally):
+List all projects (both Light and Agent kinds) grouped by mode, each
+row showing name + kind badge ("Light" / "Agent Folder"). Clicking a
+row opens that project's detail view (state B). This uses
+`useProjectsContext().projects`.
+
+**B — Detail view** (opened directly via a project row's gear icon,
+per Section 1B's `openProjectSettings`):
+
+Mirror this structure from the reference screenshot:
+
+```
+<project name>                                    [×]
+Manage project folder, agent settings, and permissions.
+
+Folders
+  <folderPath or "No folder (Light Project)">      [×]
+  [+ Add Folder]   ← only shown/enabled for Agent Projects
+
+Context Files
+  <list of contextFiles with remove buttons>
+  [+ Add File]
+
+Agent Settings   ← only shown for Agent Projects
+  Security Preset             [Custom ▾]
+  Outside-folder file access  [Always Ask ▾]
+  Terminal Command Execution  [Always Ask ▾]
+```
+
+For now these dropdowns (Security Preset, file access policy, terminal
+execution policy) can be static UI with local state only — no backend
+enforcement yet, since the Bridge Agent that would actually enforce
+them doesn't exist. Store the selected values in the `Project` object
+(extend the interface in `ProjectsContext.tsx` with an optional
+`agentSettings` field) so the UI is real and persists during the
+session, even though nothing downstream reads it yet.
+
+Add a back arrow at the top of the detail view to return to the list.
+
+---
+
+## Verification Checklist
+
+- [ ] Sidebar project rows show `<name> [+] [⚙]`, not a plain
+      expand-only row
+- [ ] Clicking a project's `+` creates a new chat inside that project
+- [ ] Clicking a project's gear icon opens Settings → Projects → that
+      project's detail page directly
+- [ ] Chat/Council/Research "+ New Project" only asks for a name, no
+      folder step
+- [ ] Agent Runtime "+ New Agent Project" asks for name, then opens
+      the Browse PC modal, then requires a folder path before creating
+- [ ] Agent Runtime mode shows the blocking "No active project" state
+      when no Agent Project is selected, with no header "+ New Chat"
+      button anywhere in this mode
+- [ ] Attach (paperclip) button in all 4 modes opens a real native OS
+      file picker via `<input type="file">`
+- [ ] Attach button is disabled with a tooltip when no project is active
+- [ ] Attached files appear in the active project's Context Files,
+      visible in both the right sidebar's built-in tab and the
+      project's Settings detail page
+- [ ] Removing a context file works from both locations
+- [ ] Settings modal has a new "Projects" tab listing all projects,
+      drilling into per-project detail pages
+- [ ] `npm run build` completes with zero TypeScript errors
+- [ ] No console errors through the full flow: create Agent Project →
+      Browse PC modal → manual path entry → project created → chat in
+      Agent Runtime becomes available

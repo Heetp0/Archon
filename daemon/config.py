@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Workspace config
-WORKSPACE_ROOT = os.getenv("WORKSPACE_ROOT", r"D:\The core")
+WORKSPACE_ROOT = os.getenv("WORKSPACE_ROOT", os.path.expanduser("~/archon-workspace"))
 VAULT_PATH = WORKSPACE_ROOT
 
 # Port configurations

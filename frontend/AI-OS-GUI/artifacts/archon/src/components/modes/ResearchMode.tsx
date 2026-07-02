@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { Paperclip } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useProjectsContext } from "@/context/ProjectsContext";
+import { useFileAttach } from "@/hooks/useFileAttach";
 
 interface GraphNode { id: string; label: string; x: number; y: number; r: number; primary?: boolean }
 interface GraphEdge { from: string; to: string }
@@ -31,6 +34,9 @@ const NODE_MAP = Object.fromEntries(NODES.map((n) => [n.id, n]));
 
 export default function ResearchMode() {
   const { isStreaming } = useWebSocketContext();
+  const { activeProjectId } = useProjectsContext();
+  const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
+
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
@@ -41,18 +47,40 @@ export default function ResearchMode() {
       transition={{ duration: 0.3 }}
       className="flex flex-col h-full bg-[#05050A]"
     >
+      {/* Hidden native file picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.txt,.md,.py,.js,.ts,.json,.csv"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+
       {/* Header */}
       <div className="px-5 py-3 border-b border-slate-800/60 flex items-center gap-3 flex-shrink-0">
         <span className="text-xs font-mono text-slate-400">Knowledge Graph</span>
         <span className="text-slate-700">·</span>
         <span className="text-xs font-mono text-slate-600">Quantum Error Correction</span>
-        <div className="ml-auto flex items-center gap-2 text-[10px] font-mono text-slate-600">
-          {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />}
-          {isStreaming ? "Traversing..." : "10 nodes · 12 edges"}
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-600">
+            {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />}
+            {isStreaming ? "Traversing..." : "10 nodes · 12 edges"}
+          </div>
+          {/* Attach */}
+          <button
+            type="button"
+            onClick={openPicker}
+            disabled={!activeProjectId}
+            title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
+            className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Graph canvas — takes all remaining space */}
+      {/* Graph canvas */}
       <div className="flex-1 relative overflow-hidden">
         <svg
           viewBox="0 0 760 460"

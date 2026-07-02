@@ -21,6 +21,10 @@ interface AppState {
   toggleContextFile: (fileId: string) => void;
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
+  // Opens Settings modal directly to a specific project's detail page
+  settingsProjectId: string | null;
+  setSettingsProjectId: (id: string | null) => void;
+  openProjectSettings: (id: string) => void;
   history: HistoryItem[];
 }
 
@@ -32,6 +36,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [activeContextFiles, setActiveContextFiles] = useState<string[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsProjectId, setSettingsProjectId] = useState<string | null>(null);
 
   const toggleContextFile = (fileId: string) => {
     setActiveContextFiles((prev) =>
@@ -39,15 +44,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const handleSetMode = (newMode: AppMode) => {
-    setMode(newMode);
+  const openProjectSettings = (id: string) => {
+    setSettingsProjectId(id);
+    setSettingsOpen(true);
   };
 
   return (
     <AppContext.Provider
       value={{
         mode,
-        setMode: handleSetMode,
+        setMode,
         contextSidebarOpen,
         setContextSidebarOpen,
         rightSidebarOpen,
@@ -56,6 +62,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleContextFile,
         settingsOpen,
         setSettingsOpen,
+        settingsProjectId,
+        setSettingsProjectId,
+        openProjectSettings,
         history: [],
       }}
     >

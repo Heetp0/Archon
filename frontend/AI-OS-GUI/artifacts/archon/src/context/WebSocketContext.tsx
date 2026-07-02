@@ -108,8 +108,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     try {
       setConnecting(true);
       const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
-      const port = localStorage.getItem("archon_daemon_port") || (window.location.port === "3000" || window.location.port === "5173" ? "8765" : window.location.port);
-      const ws = new WebSocket(`ws://${host}:${port}/ws`);
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${protocol}://${host}:${port}/ws`);
 
       ws.onopen = () => {
         setConnected(true);

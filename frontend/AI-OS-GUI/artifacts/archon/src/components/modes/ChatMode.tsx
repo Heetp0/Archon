@@ -6,20 +6,23 @@ import { Paperclip, Send, Bot, User, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useProjectsContext } from "@/context/ProjectsContext";
+import { useFileAttach } from "@/hooks/useFileAttach";
 
 export default function ChatMode() {
   const { messages: chatMessages, isStreaming, sendChat, connected, availableModels } = useWebSocketContext();
+  const { activeProjectId } = useProjectsContext();
+  const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
+
   const [input, setInput] = useState("");
   const [model, setModel] = useState("groq/llama-3.1-8b-instant");
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const allMessages = chatMessages;
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [allMessages, isStreaming]);
+  }, [chatMessages, isStreaming]);
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
@@ -42,14 +45,24 @@ export default function ChatMode() {
       transition={{ duration: 0.3 }}
       className="flex flex-col h-full bg-[#030712] relative"
     >
+      {/* Hidden native file picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.txt,.md,.py,.js,.ts,.json,.csv"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+
       <ScrollArea className="flex-1 p-4 md:p-8">
         <div ref={scrollRef} className="max-w-4xl mx-auto space-y-6 pb-32">
-          {allMessages.length === 0 && !isStreaming && (
+          {chatMessages.length === 0 && !isStreaming && (
             <div className="flex items-center justify-center h-64 text-slate-600 text-sm font-mono">
               No messages yet. Start a conversation below.
             </div>
           )}
-          {allMessages.map((msg) => (
+          {chatMessages.map((msg) => (
             <div
               key={msg.id}
               className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
@@ -104,10 +117,18 @@ export default function ChatMode() {
             />
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/50">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-300 hover:bg-slate-800">
+                {/* Real native file attach */}
+                <button
+                  type="button"
+                  onClick={openPicker}
+                  disabled={!activeProjectId}
+                  title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
+                  className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
                   <Paperclip className="w-4 h-4" />
-                </Button>
-                                <Select value={model} onValueChange={setModel}>
+                </button>
+
+                <Select value={model} onValueChange={setModel}>
                   <SelectTrigger className="w-[200px] h-8 bg-slate-900/50 border-slate-800 text-xs font-mono text-slate-400">
                     <SelectValue placeholder="Select Model" />
                   </SelectTrigger>
@@ -138,5 +159,3 @@ export default function ChatMode() {
     </motion.div>
   );
 }
-
-

@@ -2,10 +2,15 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Cpu, Terminal, Loader2, CheckCircle2, Clock, XCircle,
-  ChevronDown, ChevronUp, AlertTriangle, X, Send, LayoutDashboard
+  ChevronDown, ChevronUp, AlertTriangle, X, Send, LayoutDashboard,
+  Paperclip, Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useProjectsContext } from "@/context/ProjectsContext";
+import { useFileAttach } from "@/hooks/useFileAttach";
+import { Button } from "@/components/ui/button";
+import BrowsePCModal from "@/components/BrowsePCModal";
 import type { TerminalLine } from "@/types";
 
 const STATUS_ICON = {
@@ -40,12 +45,91 @@ const LINE_PREFIX: Record<TerminalLine["kind"], string> = {
   success: "✔ ",
 };
 
+// ── New Agent Project flow (from blocking state) ───────────────────────────────
+function NewAgentProjectBlocker() {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [browsePCOpen, setBrowsePCOpen] = useState(false);
+  const { createAgentProject } = useProjectsContext();
+
+  const goToFolder = () => {
+    if (!name.trim()) return;
+    setBrowsePCOpen(true);
+  };
+
+  const handleFolderSelect = (path: string) => {
+    setBrowsePCOpen(false);
+    createAgentProject(name.trim(), path);
+    setShowForm(false);
+    setName("");
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-8">
+      <Cpu className="w-10 h-10 text-slate-700" />
+      <div>
+        <h3 className="text-sm font-mono text-slate-300 mb-1">No active Agent Project</h3>
+        <p className="text-xs font-mono text-slate-600 max-w-sm leading-relaxed">
+          Agent Runtime requires a project linked to a folder on your PC before it can read or modify files.
+          Create one below or select an existing Agent Project from the sidebar.
+        </p>
+      </div>
+
+      {showForm ? (
+        <div className="w-full max-w-xs space-y-2">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") goToFolder(); if (e.key === "Escape") setShowForm(false); }}
+            placeholder="Project name..."
+            className="w-full bg-[#0b0c13] border border-white/[0.08] rounded-xl px-3 py-2 text-sm font-mono text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-green-500/40"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={goToFolder}
+              disabled={!name.trim()}
+              className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-mono disabled:opacity-30 transition-colors"
+            >
+              Next: Select Folder →
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-xl border border-white/[0.06] text-slate-600 hover:text-slate-300 text-xs font-mono transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          onClick={() => setShowForm(true)}
+          className="bg-green-600 hover:bg-green-500 text-white font-mono text-sm"
+        >
+          <Plus className="w-4 h-4 mr-1.5" /> New Agent Project
+        </Button>
+      )}
+
+      <BrowsePCModal
+        open={browsePCOpen}
+        onClose={() => { setBrowsePCOpen(false); setShowForm(false); }}
+        onSelect={handleFolderSelect}
+      />
+    </div>
+  );
+}
+
+// ── Main Agent Mode ────────────────────────────────────────────────────────────
 export default function AgentMode() {
   const {
     agentStatuses, taskQueue, connected,
     terminalLines, dangerousCommand,
     sendAgentCommand, approveCommand, denyCommand,
   } = useWebSocketContext();
+
+  const { projects, activeProjectId } = useProjectsContext();
+  const activeProject = projects.find((p) => p.id === activeProjectId);
+  const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [cmdInput, setCmdInput] = useState("");
@@ -72,6 +156,20 @@ export default function AgentMode() {
     if (e.key === "Enter") handleSendCmd();
   };
 
+  // Blocking state — no active agent project
+  if (!activeProject || activeProject.kind !== "agent") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col h-full bg-[#01040A]"
+      >
+        <NewAgentProjectBlocker />
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 1.02 }}
@@ -79,33 +177,53 @@ export default function AgentMode() {
       transition={{ duration: 0.3 }}
       className="flex flex-col h-full bg-[#01040A] relative"
     >
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.txt,.md,.py,.js,.ts,.json,.csv"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+
       {/* ── Header bar ── */}
       <div className="p-4 border-b border-green-900/30 flex items-center justify-between bg-gradient-to-r from-green-950/20 to-transparent flex-shrink-0">
         <div>
           <h1 className="text-lg font-mono text-slate-100 font-bold tracking-tight">AGENT RUNTIME</h1>
           <p className="text-xs font-mono text-slate-500 mt-0.5">
-            {connected ? "Sub-processes active. Memory allocated." : "Daemon offline. Displaying cached state."}
+            <span className="text-green-700">{activeProject.name}</span>
+            {activeProject.folderPath && (
+              <span className="text-slate-700"> · {activeProject.folderPath}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
             <div className="text-[10px] text-slate-500 font-mono uppercase">CPU</div>
-            <div className="text-sm text-green-400 font-mono">42%</div>
+            <div className="text-sm text-green-400 font-mono">—</div>
           </div>
           <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
             <div className="text-[10px] text-slate-500 font-mono uppercase">RAM</div>
-            <div className="text-sm text-green-400 font-mono">1.2 GB</div>
+            <div className="text-sm text-green-400 font-mono">—</div>
           </div>
 
-          {/* View toggle: Dashboard ↔ Terminal */}
+          {/* Attach */}
+          <button
+            onClick={openPicker}
+            title="Attach files to project"
+            className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 border border-slate-800 rounded bg-black transition-colors"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+
+          {/* View toggle */}
           <div className="flex rounded border border-slate-800 overflow-hidden">
             <button
               onClick={() => setTerminalOpen(false)}
               data-testid="button-show-dashboard"
               className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs transition-colors ${
-                !terminalOpen
-                  ? "bg-slate-800 text-slate-200"
-                  : "bg-black text-slate-600 hover:text-slate-400"
+                !terminalOpen ? "bg-slate-800 text-slate-200" : "bg-black text-slate-600 hover:text-slate-400"
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -127,7 +245,7 @@ export default function AgentMode() {
         </div>
       </div>
 
-      {/* ── Content — swaps between dashboard and terminal ── */}
+      {/* ── Content ── */}
       <div className="flex-1 overflow-hidden relative">
 
         {/* Dashboard view */}
@@ -142,98 +260,105 @@ export default function AgentMode() {
               className="absolute inset-0 p-6 flex flex-col gap-6 overflow-hidden"
             >
               <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
-              {/* Active Daemons */}
-              <div className="flex flex-col space-y-4 overflow-hidden">
-                <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                  <Cpu className="w-4 h-4 text-green-500" /> Active Daemons
-                </h2>
-                <div className="space-y-4 overflow-y-auto flex-1">
-                  {agentStatuses.map((agent) => (
-                    <div
-                      key={agent.id}
-                      className={`glass-panel border rounded-lg p-5 relative overflow-hidden flex-shrink-0 ${
-                        agent.status === "running" ? "border-green-500/30" : "border-slate-800"
-                      } ${agent.status === "idle" ? "opacity-60" : ""}`}
-                    >
-                      <div className={`absolute top-0 left-0 w-1 h-full ${
-                        agent.status === "running"
-                          ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
-                          : "bg-slate-600"
-                      }`} />
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-mono text-slate-200 text-sm font-bold">{agent.name}</h3>
-                          <div className="text-xs font-mono text-green-400 mt-1">PID: {agent.pid}</div>
-                        </div>
-                        <div className={`px-2 py-1 rounded text-[10px] font-mono border ${
+                {/* Active Daemons */}
+                <div className="flex flex-col space-y-4 overflow-hidden">
+                  <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                    <Cpu className="w-4 h-4 text-green-500" /> Active Daemons
+                  </h2>
+                  <div className="space-y-4 overflow-y-auto flex-1">
+                    {agentStatuses.length === 0 ? (
+                      <div className="text-xs font-mono text-slate-700 text-center py-8">
+                        No agents running. Send a command to start.
+                      </div>
+                    ) : agentStatuses.map((agent) => (
+                      <div
+                        key={agent.id}
+                        className={`glass-panel border rounded-lg p-5 relative overflow-hidden flex-shrink-0 ${
+                          agent.status === "running" ? "border-green-500/30" : "border-slate-800"
+                        } ${agent.status === "idle" ? "opacity-60" : ""}`}
+                      >
+                        <div className={`absolute top-0 left-0 w-1 h-full ${
                           agent.status === "running"
-                            ? "bg-green-500/10 text-green-400 border-green-500/20 animate-pulse"
-                            : agent.status === "complete"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                            : agent.status === "failed"
-                            ? "bg-red-500/10 text-red-400 border-red-500/20"
-                            : "bg-slate-800 text-slate-400 border-slate-700"
-                        }`}>
-                          {agent.status.toUpperCase()}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs font-mono">
-                          <span className="text-slate-500">Current Action</span>
-                          <span className="text-slate-300">{agent.action}</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                          <div
-                            className={`h-full transition-all duration-500 ${
-                              agent.status === "running"
-                                ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                                : "bg-slate-600"
-                            }`}
-                            style={{ width: `${agent.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Task Queue */}
-              <div className="flex flex-col space-y-4 overflow-hidden">
-                <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                  <Terminal className="w-4 h-4 text-green-500" /> Task Queue
-                </h2>
-                <div className="flex-1 glass-panel border border-slate-800 rounded-lg overflow-hidden flex flex-col min-h-0">
-                  <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-2">
-                      {taskQueue.map((task) => {
-                        const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
-                        return (
-                          <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-slate-900/50 border border-slate-800/50">
-                            <div className="font-mono text-[10px] text-slate-500 w-12">{task.id}</div>
-                            <div className={`font-sans text-sm flex-1 ${
-                              task.status === "complete" ? "text-slate-400 line-through" : "text-slate-200"
-                            }`}>
-                              {task.name}
-                            </div>
-                            <div className={`flex items-center gap-1.5 ${STATUS_COLOR[task.status as keyof typeof STATUS_COLOR]}`}>
-                              {task.status === "running"
-                                ? <Icon className="w-4 h-4 animate-spin" />
-                                : <Icon className="w-4 h-4" />
-                              }
-                              <span className="text-[10px] font-mono uppercase tracking-wider">{task.status}</span>
-                            </div>
+                            ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+                            : "bg-slate-600"
+                        }`} />
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-mono text-slate-200 text-sm font-bold">{agent.name}</h3>
+                            <div className="text-xs font-mono text-green-400 mt-1">PID: {agent.pid}</div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
+                          <div className={`px-2 py-1 rounded text-[10px] font-mono border ${
+                            agent.status === "running"
+                              ? "bg-green-500/10 text-green-400 border-green-500/20 animate-pulse"
+                              : agent.status === "complete"
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : agent.status === "failed"
+                              ? "bg-red-500/10 text-red-400 border-red-500/20"
+                              : "bg-slate-800 text-slate-400 border-slate-700"
+                          }`}>
+                            {agent.status.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs font-mono">
+                            <span className="text-slate-500">Current Action</span>
+                            <span className="text-slate-300">{agent.action}</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                            <div
+                              className={`h-full transition-all duration-500 ${
+                                agent.status === "running"
+                                  ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                                  : "bg-slate-600"
+                              }`}
+                              style={{ width: `${agent.progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Task Queue */}
+                <div className="flex flex-col space-y-4 overflow-hidden">
+                  <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                    <Terminal className="w-4 h-4 text-green-500" /> Task Queue
+                  </h2>
+                  <div className="flex-1 glass-panel border border-slate-800 rounded-lg overflow-hidden flex flex-col min-h-0">
+                    <ScrollArea className="flex-1 p-4">
+                      <div className="space-y-2">
+                        {taskQueue.length === 0 ? (
+                          <div className="text-xs font-mono text-slate-700 text-center py-8">
+                            No tasks queued.
+                          </div>
+                        ) : taskQueue.map((task) => {
+                          const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
+                          return (
+                            <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-slate-900/50 border border-slate-800/50">
+                              <div className="font-mono text-[10px] text-slate-500 w-12">{task.id}</div>
+                              <div className={`font-sans text-sm flex-1 ${
+                                task.status === "complete" ? "text-slate-400 line-through" : "text-slate-200"
+                              }`}>
+                                {task.name}
+                              </div>
+                              <div className={`flex items-center gap-1.5 ${STATUS_COLOR[task.status as keyof typeof STATUS_COLOR]}`}>
+                                {task.status === "running"
+                                  ? <Icon className="w-4 h-4 animate-spin" />
+                                  : <Icon className="w-4 h-4" />
+                                }
+                                <span className="text-[10px] font-mono uppercase tracking-wider">{task.status}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </div>
               </div>
 
-              </div>{/* end grid */}
-
-              {/* Dispatch prompt — full width below the grid */}
+              {/* Dispatch prompt */}
               <div className="flex items-center gap-3 border border-slate-800 rounded-lg bg-black px-4 py-3 flex-shrink-0">
                 <span className="text-green-600 font-mono text-sm select-none flex-shrink-0">$</span>
                 <input
@@ -261,7 +386,7 @@ export default function AgentMode() {
           )}
         </AnimatePresence>
 
-        {/* Terminal view — covers full content area */}
+        {/* Terminal view */}
         <AnimatePresence>
           {terminalOpen && (
             <motion.div
@@ -272,7 +397,6 @@ export default function AgentMode() {
               transition={{ duration: 0.18 }}
               className="absolute inset-0 flex flex-col bg-black"
             >
-              {/* Terminal chrome bar */}
               <div className="flex items-center justify-between px-4 py-2 bg-[#050E05] border-b border-green-900/30 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
@@ -291,7 +415,6 @@ export default function AgentMode() {
                 </button>
               </div>
 
-              {/* Terminal output */}
               <div
                 className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed min-h-0"
                 style={{ scrollbarWidth: "thin", scrollbarColor: "#1a3a1a transparent" }}
@@ -303,7 +426,6 @@ export default function AgentMode() {
                     <span className="break-all">{line.text}</span>
                   </div>
                 ))}
-                {/* Blinking cursor */}
                 <div className="flex gap-3 text-green-400 mt-1">
                   <span className="text-green-900 select-none">
                     {new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}
@@ -313,7 +435,6 @@ export default function AgentMode() {
                 <div ref={terminalEndRef} />
               </div>
 
-              {/* Terminal input bar */}
               <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-[#020A02] flex-shrink-0">
                 <span className="text-green-500 font-mono text-sm select-none">$</span>
                 <input
@@ -405,6 +526,3 @@ export default function AgentMode() {
     </motion.div>
   );
 }
-
-
-

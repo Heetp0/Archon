@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, Gavel, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { Download, Loader2, Gavel, CheckCircle2, XCircle, MinusCircle, Paperclip } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
-
+import { useProjectsContext } from "@/context/ProjectsContext";
+import { useFileAttach } from "@/hooks/useFileAttach";
 
 const ROLES = ["Proposer", "Critic", "Domain Expert", "Synthesizer"];
 const COLORS = ["text-blue-400", "text-orange-400", "text-purple-400", "text-emerald-400"];
@@ -14,26 +15,25 @@ const HEADERS = ["bg-blue-900/30", "bg-orange-900/30", "bg-purple-900/30", "bg-e
 const GLOWS = ["shadow-[0_0_20px_rgba(59,130,246,0.08)]", "shadow-[0_0_20px_rgba(249,115,22,0.08)]", "shadow-[0_0_20px_rgba(168,85,247,0.08)]", "shadow-[0_0_20px_rgba(16,185,129,0.08)]"];
 const DOTS = ["bg-blue-500", "bg-orange-500", "bg-purple-500", "bg-emerald-500"];
 
-
 const VERDICT_ITEMS = [
-  { icon: CheckCircle2, color: "text-emerald-400", label: "Architecture", value: "Modular Monolith (Phase 1 â†’ extract services at 6mo)" },
+  { icon: CheckCircle2, color: "text-emerald-400", label: "Architecture", value: "Modular Monolith (Phase 1 → extract services at 6mo)" },
   { icon: CheckCircle2, color: "text-emerald-400", label: "Database",     value: "PostgreSQL 16 + JSONB + read replica at scale" },
   { icon: MinusCircle,  color: "text-yellow-400",  label: "Deployment",   value: "PaaS initially; Kubernetes migration deferred" },
-  { icon: XCircle,      color: "text-red-400",      label: "Rejected",     value: "Greenfield microservices â€” insufficient team maturity" },
+  { icon: XCircle,      color: "text-red-400",      label: "Rejected",     value: "Greenfield microservices — insufficient team maturity" },
 ];
 
-// Static fallback models used when the daemon hasn't sent a model list yet
 const FALLBACK_MODELS = [
-  { model_id: "groq/llama-3.3-70b-versatile",          label: "Groq · Llama 3.3 70B" },
-  { model_id: "gemini/gemini-2.5-flash",                label: "Gemini · 2.5 Flash" },
-  { model_id: "openrouter/deepseek/deepseek-r1:free",   label: "OpenRouter · DeepSeek R1" },
-  { model_id: "cerebras/llama-3.3-70b",                 label: "Cerebras · Llama 3.3 70B" },
+  { model_id: "groq/llama-3.3-70b-versatile",        label: "Groq · Llama 3.3 70B" },
+  { model_id: "gemini/gemini-2.5-flash",              label: "Gemini · 2.5 Flash" },
+  { model_id: "openrouter/deepseek/deepseek-r1:free", label: "OpenRouter · DeepSeek R1" },
+  { model_id: "cerebras/llama-3.3-70b",               label: "Cerebras · Llama 3.3 70B" },
 ];
 
 export default function CouncilMode() {
   const { councilMessages, isStreaming, sendCouncil, connected, availableModels } = useWebSocketContext();
+  const { activeProjectId } = useProjectsContext();
+  const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
-  // Use daemon-provided models if available, otherwise use the static fallback set
   const modelSource = (availableModels && availableModels.length > 0) ? availableModels : FALLBACK_MODELS;
   const activeModels = modelSource.slice(0, 4).map((m: any, i: number) => ({
     key: m.model_id,
@@ -46,6 +46,7 @@ export default function CouncilMode() {
     glow: GLOWS[i % GLOWS.length],
     dot: DOTS[i % DOTS.length],
   }));
+
   const [input, setInput] = useState("");
 
   const handleBroadcast = () => {
@@ -67,7 +68,17 @@ export default function CouncilMode() {
       transition={{ duration: 0.4 }}
       className="flex flex-col h-full bg-[#020611] relative"
     >
-      {/* â”€â”€ Top bar â”€â”€ */}
+      {/* Hidden native file picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.txt,.md,.py,.js,.ts,.json,.csv"
+        className="hidden"
+        onChange={(e) => handleFilesSelected(e.target.files)}
+      />
+
+      {/* Top bar */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-slate-800/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className={`px-3 py-1 rounded border font-mono text-xs flex items-center gap-2 ${
@@ -92,13 +103,12 @@ export default function CouncilMode() {
         </Button>
       </div>
 
-      {/* ── 3-column debate area ── */}
+      {/* Debate area */}
       <div className="flex flex-1 overflow-hidden min-h-0">
         {activeModels.map((col: any) => {
           const msgs = getMessages(col.key);
           return (
             <div key={col.key} className={`flex-1 flex flex-col border-r border-slate-800/50 last:border-r-0 ${col.bg} ${col.glow}`}>
-              {/* Column header */}
               <div className={`px-4 py-2.5 ${col.header} border-b ${col.border} flex items-center justify-between flex-shrink-0`}>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${col.dot} ${isStreaming ? "animate-pulse" : ""}`} />
@@ -106,8 +116,6 @@ export default function CouncilMode() {
                 </div>
                 <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">{col.role}</span>
               </div>
-
-              {/* Messages */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                   {msgs.length === 0 && !isStreaming && (
@@ -142,7 +150,7 @@ export default function CouncilMode() {
         })}
       </div>
 
-      {/* â”€â”€ Council Verdict panel â”€â”€ */}
+      {/* Council Verdict */}
       <div className="flex-shrink-0 border-t border-amber-900/40 bg-gradient-to-r from-amber-950/20 via-[#020611] to-amber-950/20">
         <div className="px-4 py-2.5 border-b border-amber-900/30 flex items-center gap-3">
           <Gavel className="w-4 h-4 text-amber-400" />
@@ -164,8 +172,19 @@ export default function CouncilMode() {
         </div>
       </div>
 
-      {/* â”€â”€ Broadcast bar â”€â”€ */}
+      {/* Broadcast bar */}
       <div className="px-4 py-3 bg-slate-950/80 border-t border-slate-800 flex gap-3 items-center flex-shrink-0">
+        {/* Attach button */}
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={!activeProjectId}
+          title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
+          className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+        >
+          <Paperclip className="w-4 h-4" />
+        </button>
+
         <div className="flex-1 flex items-center px-4 py-2 bg-slate-950 border border-slate-700 rounded font-mono text-sm focus-within:border-orange-500/50 transition-colors">
           <span className="text-orange-500 mr-3 select-none">&gt;</span>
           <input
@@ -189,4 +208,3 @@ export default function CouncilMode() {
     </motion.div>
   );
 }
-

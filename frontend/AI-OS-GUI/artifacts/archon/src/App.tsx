@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
 import { WebSocketProvider } from "@/context/WebSocketContext";
+import { ProjectsProvider } from "@/context/ProjectsContext";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
 
@@ -23,12 +24,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <WebSocketProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
+          <ProjectsProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </ProjectsProvider>
         </WebSocketProvider>
       </AppProvider>
     </QueryClientProvider>
