@@ -11,7 +11,7 @@ export default function ContextSidebar() {
 
   return (
     <div className="flex flex-col h-full bg-[#020817]/95 border-r border-slate-800/60 w-56 flex-shrink-0">
-      {/* Header — single toggle button */}
+      {/* Header */}
       <div className="px-3 py-3 border-b border-slate-800/60 flex items-center justify-between">
         <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">
           {tab === "vault" ? "Local Brain" : "Sessions"}

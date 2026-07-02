@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import type { AppMode } from "@/context/AppContext";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { PanelLeftClose, PanelRightOpen } from "lucide-react";
 import NavRail from "@/components/NavRail";
 import ContextSidebar from "@/components/ContextSidebar";
 import RightSidebar from "@/components/RightSidebar";
@@ -43,7 +44,7 @@ export default function Home() {
 
   return (
     <div
-      className="flex h-screen w-full bg-[#08090f] text-slate-300 font-sans overflow-hidden select-none"
+      className="relative flex h-screen w-full bg-[#08090f] text-slate-300 font-sans overflow-hidden select-none"
       onMouseMove={handleResizeMove}
       onMouseUp={handleResizeEnd}
       onMouseLeave={handleResizeEnd}
@@ -53,10 +54,29 @@ export default function Home() {
       <NavRail />
 
       {/* Left context sidebar */}
-      {showLeft && (
-        <div className="w-56 flex-shrink-0 border-r border-slate-800/60 overflow-hidden animate-in slide-in-from-left duration-200">
+      {showLeft ? (
+        <div className="w-56 flex-shrink-0 border-r border-slate-800/60 overflow-hidden animate-in slide-in-from-left duration-200 relative">
+          {/* Collapse handle on left edge of sidebar */}
+          <button
+            onClick={() => setContextSidebarOpen(false)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 w-6 h-10 rounded-full bg-[#0d0e16] border border-slate-700 flex items-center justify-center text-slate-500 hover:text-cyan-400 hover:border-cyan-500/40 transition-all shadow-lg cursor-pointer"
+            title="Collapse sidebar"
+          >
+            <PanelLeftClose className="w-3 h-3" />
+          </button>
           <ContextSidebar />
         </div>
+      ) : (
+        /* Open-left button when sidebar is hidden */
+        canShowLeft && (
+          <button
+            onClick={() => setContextSidebarOpen(true)}
+            className="absolute left-[52px] top-1/2 -translate-y-1/2 z-30 w-6 h-10 rounded-full bg-[#0d0e16] border border-slate-700 flex items-center justify-center text-slate-500 hover:text-cyan-400 hover:border-cyan-500/40 transition-all shadow-lg cursor-pointer"
+            title="Open left sidebar"
+          >
+            <PanelLeftClose className="w-3 h-3 rotate-180" />
+          </button>
+        )
       )}
 
       {/* Center column */}
@@ -73,7 +93,7 @@ export default function Home() {
       </div>
 
       {/* Right sidebar — universal, toggleable, resizable */}
-      {rightSidebarOpen && (
+      {rightSidebarOpen ? (
         <div
           className="flex-shrink-0 border-l border-slate-800/60 overflow-hidden relative animate-in slide-in-from-right duration-200"
           style={{ width: rightWidth }}
@@ -84,8 +104,25 @@ export default function Home() {
             className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-10 hover:bg-cyan-500/30 transition-colors"
             title="Drag to resize"
           />
+          {/* Collapse handle on right edge of sidebar */}
+          <button
+            onClick={() => setRightSidebarOpen(false)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30 w-6 h-10 rounded-full bg-[#0d0e16] border border-slate-700 flex items-center justify-center text-slate-500 hover:text-cyan-400 hover:border-cyan-500/40 transition-all shadow-lg cursor-pointer"
+            title="Collapse sidebar"
+          >
+            <PanelRightOpen className="w-3 h-3" />
+          </button>
           <RightSidebar />
         </div>
+      ) : (
+        /* Open-right button on screen edge */
+        <button
+          onClick={() => setRightSidebarOpen(true)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-6 h-10 rounded-full bg-[#0d0e16] border border-slate-700 flex items-center justify-center text-slate-500 hover:text-cyan-400 hover:border-cyan-500/40 transition-all shadow-lg cursor-pointer"
+          title="Open right sidebar"
+        >
+          <PanelRightOpen className="w-3 h-3 rotate-180" />
+        </button>
       )}
 
       <SettingsModal />
