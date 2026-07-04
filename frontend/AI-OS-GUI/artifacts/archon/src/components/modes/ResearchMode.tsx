@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Paperclip } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
@@ -32,13 +32,79 @@ const EDGES: GraphEdge[] = [
 
 const NODE_MAP = Object.fromEntries(NODES.map((n) => [n.id, n]));
 
+function getDynamicGraph(text: string) {
+  if (!text) {
+    return { nodes: NODES, edges: EDGES, nodeMap: NODE_MAP };
+  }
+
+  const terms: string[] = [];
+  const headingRegex = /(?:^|\n)#+\s+([^\n]+)/g;
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  
+  let match;
+  while ((match = headingRegex.exec(text)) !== null && terms.length < 12) {
+    const heading = match[1].trim();
+    if (heading && !terms.includes(heading)) {
+      terms.push(heading);
+    }
+  }
+  
+  while ((match = boldRegex.exec(text)) !== null && terms.length < 12) {
+    const bold = match[1].trim();
+    if (bold && !terms.includes(bold)) {
+      terms.push(bold);
+    }
+  }
+
+  if (terms.length === 0) {
+    return { nodes: NODES, edges: EDGES, nodeMap: NODE_MAP };
+  }
+
+  const centerX = 380;
+  const centerY = 230;
+  const radius = 160;
+
+  const nodes: GraphNode[] = terms.map((term, i) => {
+    let label = term;
+    if (term.length > 15) {
+      const words = term.split(" ");
+      if (words.length > 1) {
+        const mid = Math.ceil(words.length / 2);
+        label = words.slice(0, mid).join(" ") + "\n" + words.slice(mid).join(" ");
+      }
+    }
+
+    const id = `node-${i}`;
+    if (i === 0) {
+      return { id, label, x: centerX, y: centerY, r: 28, primary: true };
+    } else {
+      const angle = ((i - 1) / (terms.length - 1)) * 2 * Math.PI;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+      return { id, label, x, y, r: 18 };
+    }
+  });
+
+  const edges: GraphEdge[] = [];
+  for (let i = 1; i < nodes.length; i++) {
+    edges.push({ from: nodes[0].id, to: nodes[i].id });
+  }
+
+  const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  return { nodes, edges, nodeMap };
+}
+
 export default function ResearchMode() {
-  const { isStreaming } = useWebSocketContext();
+  const { isStreaming, researchText } = useWebSocketContext();
   const { activeProjectId } = useProjectsContext();
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+
+  const { nodes, edges, nodeMap } = useMemo(() => {
+    return getDynamicGraph(researchText);
+  }, [researchText]);
 
   return (
     <motion.div
@@ -65,7 +131,7 @@ export default function ResearchMode() {
         <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center gap-2 text-[10px] font-mono text-slate-600">
             {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />}
-            {isStreaming ? "Traversing..." : "10 nodes · 12 edges"}
+            {isStreaming ? "Traversing..." : `${nodes.length} nodes • ${edges.length} edges`}
           </div>
           {/* Attach */}
           <button
@@ -98,11 +164,12 @@ export default function ResearchMode() {
             </filter>
           </defs>
 
-          {EDGES.map((edge, i) => {
-            const a = NODE_MAP[edge.from];
-            const b = NODE_MAP[edge.to];
+          {edges.map((edge, i) => {
+            const a = nodeMap[edge.from];
+            const b = nodeMap[edge.to];
             const active = hoveredNode === edge.from || hoveredNode === edge.to
                         || selectedNode === edge.from || selectedNode === edge.to;
+            if (!a || !b) return null;
             return (
               <line
                 key={i}
@@ -113,7 +180,7 @@ export default function ResearchMode() {
             );
           })}
 
-          {NODES.map((node) => {
+          {nodes.map((node) => {
             const active = hoveredNode === node.id || selectedNode === node.id;
             const lines = node.label.split("\n");
             return (
@@ -159,7 +226,7 @@ export default function ResearchMode() {
             animate={{ opacity: 1, y: 0 }}
             className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded font-mono text-xs text-slate-300"
           >
-            {NODE_MAP[selectedNode]?.label.replace("\n", " ")}
+            {nodeMap[selectedNode]?.label.replace("\n", " ")}
             <span className="text-slate-600 ml-2">· click to deselect</span>
           </motion.div>
         )}

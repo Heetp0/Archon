@@ -218,7 +218,7 @@ class ModelRouter:
 
         # Check semantic cache first
         if self.cache and query:
-            cached_response = self.cache.get(query)
+            cached_response = await self.cache.get(query)
             if cached_response:
                 logger.info(f"Semantic Cache HIT for query: '{query}'")
                 # Stream cache chunks back to caller
@@ -277,7 +277,7 @@ class ModelRouter:
                 
                 # Cache response on successful completion
                 if self.cache and query and response_buffer:
-                    self.cache.set(query, "".join(response_buffer))
+                    await self.cache.set(query, "".join(response_buffer))
                 
                 # Success, terminate loop
                 return

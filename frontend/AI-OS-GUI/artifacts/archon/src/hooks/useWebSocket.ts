@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
+import { getDaemonConnectionDetails } from "@/lib/storage";
 
 export interface DaemonEnvelope {
   id: string;
@@ -15,11 +16,9 @@ export interface WSState {
   flushMessages: () => void;
 }
 
-function getDaemonUrl(): string {
-  const host = localStorage.getItem("archon_daemon_host") || "localhost";
-  const port = localStorage.getItem("archon_daemon_port") || "8765";
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  return `${protocol}://${host}:${port}`;
+export function getDaemonUrl(): string {
+  const details = getDaemonConnectionDetails();
+  return details.wsUrl.endsWith("/ws") ? details.wsUrl : `${details.wsUrl}/ws`;
 }
 
 const RECONNECT_BASE_MS = 2000;
@@ -50,7 +49,20 @@ export function useWebSocket(): WSState {
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
-    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
+
+    // H-08: Close previous connection instances before opening new WebSockets
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onclose = null;
+      try {
+        wsRef.current.close();
+      } catch {
+        // ignore
+      }
+      wsRef.current = null;
+    }
 
     setConnecting(true);
     setError(null);
@@ -71,7 +83,6 @@ export function useWebSocket(): WSState {
         if (!mountedRef.current) return;
         try {
           const parsed = JSON.parse(event.data) as Record<string, unknown>;
-          // Handle ping (may come as legacy {type:"ping"} or envelope {event:"ping"})
           if (parsed.type === "ping" || parsed.event === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
             return;
@@ -83,7 +94,7 @@ export function useWebSocket(): WSState {
           };
           setMessages((prev) => [...prev, envelope]);
         } catch {
-          // non-JSON message — ignore
+          // ignore
         }
       };
 
@@ -131,7 +142,10 @@ export function useWebSocket(): WSState {
     return () => {
       mountedRef.current = false;
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      wsRef.current?.close();
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
       wsRef.current = null;
     };
   }, [connect]);

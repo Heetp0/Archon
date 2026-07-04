@@ -13,7 +13,7 @@ class ChatAgent(BaseAgent):
         self.normalizer = markit_down
 
     async def run(self, payload: dict, send_token_callback: Callable[[str, Any], Coroutine[Any, Any, None]]) -> dict:
-        text = payload.get("content", "")
+        text = payload.get("content", "") or payload.get("text", "") or payload.get("topic", "")
         context = payload.get("context", {}) or {}
         attachments = context.get("attachments", [])  # List of file paths
         
@@ -23,7 +23,7 @@ class ChatAgent(BaseAgent):
             if os.path.exists(file_path):
                 await send_token_callback("status", {"status": f"Parsing attachment: {os.path.basename(file_path)}..."})
                 try:
-                    cached_md_path = self.normalizer.convert(file_path)
+                    cached_md_path = await self.normalizer.convert(file_path)
                     with open(cached_md_path, 'r', encoding='utf-8', errors='ignore') as f:
                         md_content = f.read()
                     attachment_contents.append(f"### Attachment: {os.path.basename(file_path)}\n\n{md_content}")
@@ -65,7 +65,7 @@ class ChatAgent(BaseAgent):
         target_model = payload.get("model")
         async for token in self.router.generate(tier="fast", messages=messages, specific_model=target_model):
             full_response += token
-            await send_token_callback("token", {"content": token, "model": "chat"})
+            await send_token_callback("token", {"text": token})
 
         return {"response": full_response}
 

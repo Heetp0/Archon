@@ -1,4 +1,7 @@
-﻿import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from "react";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { subscribeActiveChat } from "@/context/ProjectsContext";
+import { clearOfflineTimer } from "@/lib/bootState";
 
 export type Message = {
   id: string;
@@ -45,9 +48,8 @@ type WebSocketContextType = {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(true);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [messagesMap, setMessagesMap] = useState<Record<string, Message[]>>({});
   const [councilMessages, setCouncilMessages] = useState<CouncilMessageMap>({});
   const [isStreaming, setIsStreaming] = useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry>({ tokens: 0, cost: 0, latency: 0 });
@@ -60,7 +62,19 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [dangerousCommand, setDangerousCommand] = useState<any>(null);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
 
-  const fetchCalendar = async () => {
+  // Subscribe to activeChatId from ProjectsProvider
+  useEffect(() => {
+    return subscribeActiveChat(setActiveChatId);
+  }, []);
+
+  // Consume our robust useWebSocket hook (H-09, M-08)
+  const { connected, connecting, send, messages: wsMessages, flushMessages } = useWebSocket();
+
+  const lastReqId = useRef<string | null>(null);
+  const tokenBuffer = useRef<{ content: string; targetModel: string }[]>([]);
+  const batchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchCalendar = useCallback(async () => {
     try {
       const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
       const port = localStorage.getItem("archon_daemon_port") || "8765";
@@ -71,9 +85,33 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         setCalendarEvents(data.events || []);
       }
     } catch {
-      // Daemon may be offline — ignore
+      // ignore
     }
-  };
+  }, []);
+
+  const fetchModels = useCallback(async () => {
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      const res = await fetch(`${protocol}://${host}:${port}/models`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.models || []);
+        setAvailableModels(list);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Clear offline screen and fetch models/calendar when connected
+  useEffect(() => {
+    if (connected) {
+      clearOfflineTimer(); // C-04 / H-05
+      fetchModels();
+    }
+  }, [connected, fetchModels]);
 
   // Fetch calendar periodically when connected
   useEffect(() => {
@@ -81,235 +119,323 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     fetchCalendar();
     const interval = setInterval(fetchCalendar, 60000);
     return () => clearInterval(interval);
-  }, [connected]);
+  }, [connected, fetchCalendar]);
 
-  const sendAgentCommand = (cmd: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const msgId = Math.random().toString();
-    lastReqId.current = msgId;
-    setIsStreaming(true);
-    
-    // Add command echo to terminal
-    setTerminalLines(prev => [...prev, {
-      id: Math.random().toString(),
-      text: `$ ${cmd}`,
-      kind: "input",
-      timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
-    }]);
+  // Throttle token state commits to prevent UI lagging (H-06)
+  const commitBufferedTokens = useCallback(() => {
+    batchTimeout.current = null;
+    const buffer = tokenBuffer.current;
+    tokenBuffer.current = [];
+    if (buffer.length === 0) return;
 
-    wsRef.current.send(JSON.stringify({
-      id: msgId,
-      mode: "agent",
-      payload: { content: cmd }
-    }));
-  }
+    const newTerminalLines: any[] = [];
+    const chatAppends: Record<string, string> = {};
+    let lastTargetModel = "";
 
-  const approveCommand = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    if (!lastReqId.current) return;
-    wsRef.current.send(JSON.stringify({
-      id: lastReqId.current,
-      type: "confirm",
-      payload: {}
-    }));
-    setDangerousCommand(null);
-  }
+    buffer.forEach(({ content, targetModel }) => {
+      const agentModels = ["Planner", "Coder", "OpenCode Delegator", "Tester", "Logger", "Journal", "Supervisor"];
+      if (agentModels.includes(targetModel)) {
+        newTerminalLines.push({
+          id: Math.random().toString(),
+          text: content.trimEnd(),
+          kind: "output",
+          timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        });
+      } else {
+        chatAppends[targetModel] = (chatAppends[targetModel] || "") + content;
+        lastTargetModel = targetModel;
+      }
+    });
 
-  const denyCommand = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    if (!lastReqId.current) return;
-    wsRef.current.send(JSON.stringify({
-      id: lastReqId.current,
-      type: "cancel",
-      payload: {}
-    }));
-    setDangerousCommand(null);
-  }
-  
-  const wsRef = useRef<WebSocket | null>(null);
-  const lastReqId = useRef<string | null>(null);
-  const reconnectTimeoutRef = useRef<any>(null);
-
-  const connect = () => {
-    try {
-      setConnecting(true);
-      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
-      const port = localStorage.getItem("archon_daemon_port") || "8765";
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${protocol}://${host}:${port}/ws`);
-
-      ws.onopen = () => {
-        setConnected(true);
-        setConnecting(false);
-        console.log("WebSocket connected to Archon Daemon");
-        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          // Changed data.type to data.event
-          if (data.event === "token") {
-            setIsStreaming(true);
-            const { content, model } = data.payload;
-            const targetModel = model || "assistant";
-            
-            // Route agent logs to terminalLines
-            const agentModels = ["Planner", "Coder", "OpenCode Delegator", "Tester", "Logger", "Journal", "Supervisor"];
-            if (agentModels.includes(targetModel)) {
-              setTerminalLines(prev => [...prev, {
-                id: Math.random().toString(),
-                text: content.trimEnd(),
-                kind: "output",
-                timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
-              }]);
-              return; // Do not bleed agent output into chat/council messages
-            }
-
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last && last.role === "assistant" && last.model === targetModel) {
-                return [...prev.slice(0, -1), { ...last, content: last.content + content }];
-              } else {
-                return [...prev, { id: Math.random().toString(), role: "assistant", content, model: targetModel }];
-              }
-            });
-
-            setCouncilMessages((prev) => {
-              const modelMsgs = prev[targetModel] || [];
-              const last = modelMsgs[modelMsgs.length - 1];
-              let updatedMsgs;
-              if (last && last.role === "assistant") {
-                updatedMsgs = [...modelMsgs.slice(0, -1), { ...last, content: last.content + content }];
-              } else {
-                updatedMsgs = [...modelMsgs, { id: Math.random().toString(), role: "assistant", content, model: targetModel }];
-              }
-              return { ...prev, [targetModel]: updatedMsgs };
-            });
-            
-            if (targetModel === "research") {
-                setResearchText(prev => prev + content);
-            }
-          } else if (data.event === "status") {
-            const statusModel = data.payload.model;
-            if (statusModel && ["Planner", "Coder", "OpenCode Delegator", "Tester", "Logger", "Journal", "Supervisor"].includes(statusModel)) {
-              setAgentStatuses(prev => {
-                const existing = prev.find(a => a.name === statusModel);
-                if (existing) {
-                  return prev.map(a => a.name === statusModel ? { ...a, status: "running", action: data.payload.status } : { ...a, status: "idle" });
-                } else {
-                  return [...prev.map(a => ({...a, status: "idle"})), { 
-                    id: Math.random().toString(), 
-                    name: statusModel, 
-                    pid: Math.floor(Math.random() * 10000 + 1000).toString(), 
-                    status: "running", 
-                    action: data.payload.status, 
-                    progress: 50 
-                  }];
-                }
-              });
-              setTerminalLines(prev => [...prev, {
-                id: Math.random().toString(),
-                text: `[SYSTEM] ${data.payload.status}`,
-                kind: "system",
-                timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
-              }]);
-            }
-            if (data.payload.status === "done") {
-              setIsStreaming(false);
-              if (data.payload.telemetry) {
-                  setTelemetry(data.payload.telemetry);
-              }
-            } else if (data.payload.status === "waiting_confirmation") {
-              // Handle safety watchdog gating
-              setDangerousCommand(data.payload.command);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to parse WebSocket message:", e);
-        }
-      };
-
-      ws.onclose = () => {
-        setConnected(false);
-        setConnecting(false);
-        console.log("WebSocket disconnected. Reconnecting in 2s...");
-        reconnectTimeoutRef.current = setTimeout(connect, 2000);
-      };
-
-      wsRef.current = ws;
-    } catch (e) {
-      console.error("WebSocket connection error:", e);
-      setConnecting(false);
-      reconnectTimeoutRef.current = setTimeout(connect, 2000);
+    if (newTerminalLines.length > 0) {
+      setTerminalLines((prev) => [...prev, ...newTerminalLines]);
     }
-  };
+
+    if (activeChatId && chatAppends[lastTargetModel]) {
+      const contentToAppend = chatAppends[lastTargetModel];
+      setMessagesMap((prev) => {
+        const sessionMsgs = prev[activeChatId] || [];
+        const last = sessionMsgs[sessionMsgs.length - 1];
+        let updatedMsgs;
+        if (last && last.role === "assistant" && last.model === lastTargetModel) {
+          updatedMsgs = [
+            ...sessionMsgs.slice(0, -1),
+            { ...last, content: last.content + contentToAppend }
+          ];
+        } else {
+          updatedMsgs = [
+            ...sessionMsgs,
+            { id: Math.random().toString(), role: "assistant" as const, content: contentToAppend, model: lastTargetModel }
+          ];
+        }
+        return { ...prev, [activeChatId]: updatedMsgs };
+      });
+    }
+
+    Object.entries(chatAppends).forEach(([mKey, contentToAppend]) => {
+      setCouncilMessages((prev) => {
+        const modelMsgs = prev[mKey] || [];
+        const last = modelMsgs[modelMsgs.length - 1];
+        let updatedMsgs;
+        if (last && last.role === "assistant") {
+          updatedMsgs = [
+            ...modelMsgs.slice(0, -1),
+            { ...last, content: last.content + contentToAppend }
+          ];
+        } else {
+          updatedMsgs = [
+            ...modelMsgs,
+            { id: Math.random().toString(), role: "assistant" as const, content: contentToAppend, model: mKey }
+          ];
+        }
+        return { ...prev, [mKey]: updatedMsgs };
+      });
+    });
+
+    if (chatAppends["research"]) {
+      setResearchText((prev) => prev + chatAppends["research"]);
+    }
+  }, [activeChatId]);
+
+  // Process raw WebSocket messages from hook
+  useEffect(() => {
+    if (wsMessages.length === 0) return;
+
+    wsMessages.forEach((data) => {
+      if (data.event === "token") {
+        setIsStreaming(true);
+        const { content, model } = data.payload as { content: string; model?: string };
+        const targetModel = model || "assistant";
+
+        tokenBuffer.current.push({ content, targetModel });
+        if (!batchTimeout.current) {
+          batchTimeout.current = setTimeout(commitBufferedTokens, 50);
+        }
+      } else if (data.event === "status") {
+        const statusModel = data.payload.model as string;
+        if (statusModel && ["Planner", "Coder", "OpenCode Delegator", "Tester", "Logger", "Journal", "Supervisor"].includes(statusModel)) {
+          setAgentStatuses((prev) => {
+            const realPid = (data.payload.pid as string) || (data.payload.process_id as string) || (data.payload.id as string) || Math.floor(Math.random() * 10000 + 1000).toString();
+            const existing = prev.find((a) => a.name === statusModel);
+            if (existing) {
+              return prev.map((a) => {
+                if (a.name === statusModel) {
+                  return {
+                    ...a,
+                    status: "running",
+                    action: (data.payload.status as string) || a.action,
+                    pid: realPid // M-02
+                  };
+                }
+                return a;
+              });
+            } else {
+              return [
+                ...prev,
+                {
+                  id: Math.random().toString(),
+                  name: statusModel,
+                  pid: realPid,
+                  status: "running",
+                  action: (data.payload.status as string) || "active",
+                  progress: 50
+                }
+              ];
+            }
+          });
+
+          setTerminalLines((prev) => [
+            ...prev,
+            {
+              id: Math.random().toString(),
+              text: `[SYSTEM] ${data.payload.status}`,
+              kind: "system",
+              timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            }
+          ]);
+        }
+
+        if (data.payload.status === "done") {
+          setIsStreaming(false);
+          if (data.payload.telemetry) {
+            setTelemetry(data.payload.telemetry as Telemetry);
+          }
+        } else if (data.payload.status === "waiting_confirmation") {
+          setDangerousCommand({
+            id: data.id || lastReqId.current,
+            command: data.payload.command
+          });
+        }
+      } else if (data.event === "gate") {
+        // C-07 / H-11
+        setDangerousCommand({
+          id: data.id,
+          command: data.payload.command || data.payload.prompt || data.payload
+        });
+      } else if (data.event === "done" || data.event === "error") {
+        // C-06
+        setIsStreaming(false);
+        if (data.payload?.telemetry) {
+          setTelemetry(data.payload.telemetry as Telemetry);
+        }
+      }
+    });
+
+    flushMessages();
+  }, [wsMessages, flushMessages, commitBufferedTokens]);
 
   useEffect(() => {
-    connect();
     return () => {
-      if (wsRef.current) {
-        wsRef.current.onclose = null; // Prevent reconnection loop on unmount
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (batchTimeout.current) clearTimeout(batchTimeout.current);
     };
   }, []);
 
-  const sendChat = (message: string, model: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+  const sendAgentCommand = useCallback((cmd: string) => {
+    if (!send) return;
     const msgId = Math.random().toString();
     lastReqId.current = msgId;
-    setMessages((prev) => [...prev, { id: msgId, role: "user", content: message, model }]);
     setIsStreaming(true);
-    wsRef.current.send(JSON.stringify({
+
+    setTerminalLines((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(),
+        text: `$ ${cmd}`,
+        kind: "input",
+        timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      }
+    ]);
+
+    send({
+      id: msgId,
+      mode: "agent",
+      payload: { content: cmd }
+    });
+  }, [send]);
+
+  const approveCommand = useCallback((reqId?: string) => {
+    if (!send) return;
+    const targetId = reqId || dangerousCommand?.id || lastReqId.current; // H-11
+    if (!targetId) return;
+    send({
+      id: targetId,
+      type: "confirm",
+      payload: {}
+    });
+    setDangerousCommand(null);
+  }, [send, dangerousCommand]);
+
+  const denyCommand = useCallback((reqId?: string) => {
+    if (!send) return;
+    const targetId = reqId || dangerousCommand?.id || lastReqId.current; // H-11
+    if (!targetId) return;
+    send({
+      id: targetId,
+      type: "cancel",
+      payload: {}
+    });
+    setDangerousCommand(null);
+  }, [send, dangerousCommand]);
+
+  const sendChat = useCallback((message: string, model: string) => {
+    if (!send) return;
+    const msgId = Math.random().toString();
+    lastReqId.current = msgId;
+
+    if (activeChatId) {
+      setMessagesMap((prev) => {
+        const sessionMsgs = prev[activeChatId] || [];
+        return {
+          ...prev,
+          [activeChatId]: [...sessionMsgs, { id: msgId, role: "user", content: message, model }]
+        };
+      });
+    }
+
+    setIsStreaming(true);
+    send({
       id: msgId,
       mode: "chat",
       payload: { content: message, model }
-    }));
-  };
+    });
+  }, [send, activeChatId]);
 
-  const sendCouncil = (message: string, models: string[]) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+  const sendCouncil = useCallback((message: string, models: string[]) => {
+    if (!send) return;
     const msgId = Math.random().toString();
     lastReqId.current = msgId;
     setIsStreaming(true);
+
     setCouncilMessages((prev) => {
       const next = { ...prev };
-      models.forEach(m => {
+      models.forEach((m) => {
         if (!next[m]) next[m] = [];
         next[m].push({ id: msgId, role: "user", content: message, model: m });
       });
       return next;
     });
-    wsRef.current.send(JSON.stringify({
+
+    send({
       id: msgId,
       mode: "council",
-      payload: { content: message }
-    }));
-  };
-  
-  const sendResearch = (message: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+      payload: { content: message, models } // M-18
+    });
+  }, [send]);
+
+  const sendResearch = useCallback((message: string) => {
+    if (!send) return;
     const msgId = Math.random().toString();
     lastReqId.current = msgId;
     setIsStreaming(true);
     setResearchText("");
-    wsRef.current.send(JSON.stringify({
+
+    send({
       id: msgId,
       mode: "research",
       payload: { content: message }
-    }));
-  };
+    });
+  }, [send]);
 
-  const clearChat = () => {
-    setMessages([]);
+  const clearChat = useCallback(() => {
+    if (activeChatId) {
+      setMessagesMap((prev) => ({
+        ...prev,
+        [activeChatId]: []
+      }));
+    }
     setCouncilMessages({});
     setResearchText("");
-  };
+  }, [activeChatId]);
+
+  const activeMessages = activeChatId ? (messagesMap[activeChatId] || []) : [];
 
   return (
-    <WebSocketContext.Provider value={{ connected, connecting, messages, councilMessages, isStreaming, telemetry, citations, researchText, sendChat, sendCouncil, sendResearch, clearChat, agentStatuses, taskQueue, availableModels, terminalLines, dangerousCommand, sendAgentCommand, approveCommand, denyCommand, calendarEvents, refreshCalendar: fetchCalendar }}>
+    <WebSocketContext.Provider
+      value={{
+        connected,
+        connecting,
+        messages: activeMessages,
+        councilMessages,
+        isStreaming,
+        telemetry,
+        citations,
+        researchText,
+        sendChat,
+        sendCouncil,
+        sendResearch,
+        clearChat,
+        agentStatuses,
+        taskQueue,
+        availableModels,
+        terminalLines,
+        dangerousCommand,
+        sendAgentCommand,
+        approveCommand,
+        denyCommand,
+        calendarEvents,
+        refreshCalendar: fetchCalendar
+      }}
+    >
       {children}
     </WebSocketContext.Provider>
   );
@@ -320,12 +446,3 @@ export function useWebSocketContext() {
   if (!context) throw new Error("useWebSocketContext must be used within a WebSocketProvider");
   return context;
 }
-
-
-
-
-
-
-
-
-

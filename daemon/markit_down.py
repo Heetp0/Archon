@@ -42,8 +42,9 @@ class MarkitDownNormalizer:
         except Exception:
             return ''
 
-    def convert(self, source_path: str) -> str:
+    async def convert(self, source_path: str) -> str:
         """Converts document at source_path to Markdown and returns the path to the cached markdown file."""
+        import asyncio
         if not os.path.exists(source_path):
             raise FileNotFoundError(f'Source file not found: {source_path}')
 
@@ -64,13 +65,13 @@ class MarkitDownNormalizer:
         _, ext = os.path.splitext(source_path.lower())
         try:
             if ext == '.pdf':
-                markdown_content = self._convert_pdf(source_path)
+                markdown_content = await asyncio.to_thread(self._convert_pdf, source_path)
             elif ext in ['.doc', '.docx']:
                 markdown_content = self._convert_docx(source_path)
             elif ext in ['.ppt', '.pptx']:
                 markdown_content = self._convert_pptx(source_path)
             elif ext in ['.xls', '.xlsx']:
-                markdown_content = self._convert_excel(source_path)
+                markdown_content = await asyncio.to_thread(self._convert_excel, source_path)
             elif ext in ['.csv']:
                 markdown_content = self._convert_csv(source_path)
             elif ext in ['.html', '.htm']:

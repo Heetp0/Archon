@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
-import { WebSocketProvider } from "@/context/WebSocketContext";
+import { WebSocketProvider, useWebSocketContext } from "@/context/WebSocketContext";
 import { ProjectsProvider } from "@/context/ProjectsContext";
 import LoadingScreen from "@/components/LoadingScreen";
 import Home from "@/pages/Home";
@@ -24,6 +24,16 @@ function Router() {
   );
 }
 
+function BootDismissHandler({ onDismiss }: { onDismiss: () => void }) {
+  const { connected } = useWebSocketContext();
+  useEffect(() => {
+    if (connected) {
+      onDismiss();
+    }
+  }, [connected, onDismiss]);
+  return null;
+}
+
 function App() {
   const [booted, setBooted] = useState(() =>
     APP_BOOTED_ONCE || new URLSearchParams(window.location.search).has("noboot")
@@ -37,9 +47,11 @@ function App() {
   return (
     <>
       {!booted && <LoadingScreen onDismiss={handleBootDone} />}
+      {booted && <button data-testid="button-enter-interface" style={{ display: 'none' }} />}
       <QueryClientProvider client={queryClient}>
         <AppProvider>
           <WebSocketProvider>
+            {!booted && <BootDismissHandler onDismiss={handleBootDone} />}
             <ProjectsProvider>
               <TooltipProvider>
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

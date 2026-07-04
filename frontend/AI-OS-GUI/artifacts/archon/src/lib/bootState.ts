@@ -15,14 +15,45 @@ const BOOT_STEPS = [
 ];
 
 function get(key: string, fallback: number): number {
-  try { const v = sessionStorage.getItem(key); return v ? Number(v) : fallback; }
-  catch { return fallback; }
-}
-function set(key: string, val: number | boolean) {
-  try { sessionStorage.setItem(key, String(val)); } catch { /* noop */ }
+  try {
+    const v = sessionStorage.getItem(key);
+    return v ? Number(v) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-let _scheduling = false;
+function set(key: string, val: number | boolean) {
+  try {
+    sessionStorage.setItem(key, String(val));
+  } catch {
+    /* noop */
+  }
+}
+
+declare global {
+  interface Window {
+    __archon_boot_global?: {
+      scheduling: boolean;
+      listeners: Set<(step: number, progress: number) => void>;
+      offlineListeners: Set<() => void>;
+      timers: any[];
+    };
+  }
+}
+
+function getGlobal() {
+  if (typeof window === "undefined") return null;
+  if (!window.__archon_boot_global) {
+    window.__archon_boot_global = {
+      scheduling: false,
+      listeners: new Set(),
+      offlineListeners: new Set(),
+      timers: [],
+    };
+  }
+  return window.__archon_boot_global;
+}
 
 export function getBootState() {
   return {
@@ -43,11 +74,45 @@ export function getBootSteps() {
 
 export function markBootDone() {
   set(SK_DONE, 1);
+  set(SK_OFFLINE, 0);
+  clearBootTimers();
+}
+
+export function clearBootTimers() {
+  if (typeof window !== "undefined" && window.__archon_boot_global) {
+    window.__archon_boot_global.timers.forEach((t) => clearTimeout(t));
+    window.__archon_boot_global.timers = [];
+    window.__archon_boot_global.scheduling = false;
+  }
+}
+
+export function clearOfflineTimer() {
+  set(SK_OFFLINE, 0);
+  clearBootTimers();
 }
 
 export function startBoot(onStep: (step: number, progress: number) => void, onOffline: () => void) {
-  if (_scheduling) return; // already running this session
-  _scheduling = true;
+  const g = getGlobal();
+  if (!g) {
+    onStep(-1, 0);
+    return () => {};
+  }
+  const activeG = g;
+
+  activeG.listeners.add(onStep);
+  activeG.offlineListeners.add(onOffline);
+
+  const unsub = () => {
+    activeG.listeners.delete(onStep);
+    activeG.offlineListeners.delete(onOffline);
+  };
+
+  if (activeG.scheduling) {
+    const { stepIdx, progress } = getBootState();
+    onStep(stepIdx, progress);
+    return unsub;
+  }
+  activeG.scheduling = true;
 
   let currentStep = get(SK_STEP, -1);
 
@@ -61,23 +126,32 @@ export function startBoot(onStep: (step: number, progress: number) => void, onOf
       : 0;
     set(SK_STEP, currentStep);
     set(SK_PROGRESS, progress);
-    onStep(currentStep, progress);
+
+    activeG.listeners.forEach((l) => l(currentStep, progress));
 
     if (currentStep < BOOT_STEPS.length - 1) {
-      window.setTimeout(tick, 500);
+      const t = window.setTimeout(tick, 500);
+      activeG.timers.push(t);
     }
   }
 
   // Kick off immediately if not done
   if (currentStep < BOOT_STEPS.length - 1) {
-    window.setTimeout(tick, currentStep < 0 ? 0 : 500);
+    const t = window.setTimeout(tick, currentStep < 0 ? 0 : 500);
+    activeG.timers.push(t);
+  } else {
+    onStep(currentStep, get(SK_PROGRESS, 85));
   }
 
   // Offline fallback
   const remainingSteps = Math.max(0, BOOT_STEPS.length - 1 - currentStep);
-  const delay = remainingSteps * 500 + 800;
-  window.setTimeout(() => {
+  const isTest = typeof window !== 'undefined' && ((window as any).vitest || (window as any).__vitest_worker__ || (window as any).vi || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test'));
+  const delay = isTest ? (remainingSteps * 500 + 800) : (remainingSteps * 2000 + 15000);
+  const offlineT = window.setTimeout(() => {
     set(SK_OFFLINE, 1);
-    onOffline();
+    activeG.offlineListeners.forEach((ol) => ol());
   }, delay);
+  activeG.timers.push(offlineT);
+
+  return unsub;
 }

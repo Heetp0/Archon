@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from "react";
 
 export type ProjectMode = "chat" | "council" | "research" | "agents";
 
@@ -51,6 +51,18 @@ interface ProjectsState {
 
 const ProjectsContext = createContext<ProjectsState | undefined>(undefined);
 
+// Cross-context subscription to share activeChatId regardless of provider nesting order
+export let globalActiveChatId: string | null = null;
+const activeChatListeners = new Set<(id: string | null) => void>();
+
+export function subscribeActiveChat(cb: (id: string | null) => void) {
+  activeChatListeners.add(cb);
+  cb(globalActiveChatId);
+  return () => {
+    activeChatListeners.delete(cb);
+  };
+}
+
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -59,7 +71,15 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     Record<Exclude<ProjectMode, "agents">, ChatSession[]>
   >({ chat: [], council: [], research: [] });
 
-  const createLightProject = (mode: ProjectMode, name: string) => {
+  const revokedUrls = useRef<string[]>([]);
+
+  const handleSetActiveChat = useCallback((chatId: string | null) => {
+    globalActiveChatId = chatId;
+    activeChatListeners.forEach((l) => l(chatId));
+    setActiveChatId(chatId);
+  }, []);
+
+  const createLightProject = useCallback((mode: ProjectMode, name: string) => {
     const p: Project = {
       id: `proj-${Date.now()}`,
       name,
@@ -70,9 +90,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     };
     setProjects((prev) => [...prev, p]);
     setActiveProjectId(p.id);
-  };
+  }, []);
 
-  const createAgentProject = (name: string, folderPath: string) => {
+  const createAgentProject = useCallback((name: string, folderPath: string) => {
     const p: Project = {
       id: `proj-${Date.now()}`,
       name,
@@ -89,9 +109,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     };
     setProjects((prev) => [...prev, p]);
     setActiveProjectId(p.id);
-  };
+  }, []);
 
-  const createChat = (projectId: string | null, mode: ProjectMode) => {
+  const createChat = useCallback((projectId: string | null, mode: ProjectMode) => {
     const newChat: ChatSession = {
       id: `chat-${Date.now()}`,
       name: "New Chat",
@@ -104,10 +124,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     } else if (mode !== "agents") {
       setUngroupedChats((prev) => ({ ...prev, [mode]: [...prev[mode], newChat] }));
     }
+    globalActiveChatId = newChat.id;
+    activeChatListeners.forEach((l) => l(newChat.id));
     setActiveChatId(newChat.id);
-  };
+  }, []);
 
-  const renameChat = (chatId: string, newName: string) => {
+  const renameChat = useCallback((chatId: string, newName: string) => {
     setProjects((prev) =>
       prev.map((p) => ({
         ...p,
@@ -121,42 +143,46 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
       return next;
     });
-  };
+  }, []);
 
-  const addContextFile = (projectId: string, file: ContextFile) => {
+  const addContextFile = useCallback((projectId: string, file: ContextFile) => {
+    if (file.localBlobUrl) {
+      revokedUrls.current.push(file.localBlobUrl);
+    }
     setProjects((prev) =>
       prev.map((p) =>
         p.id === projectId ? { ...p, contextFiles: [...p.contextFiles, file] } : p
       )
     );
-  };
+  }, []);
 
-  const removeContextFile = (projectId: string, fileId: string) => {
+  const removeContextFile = useCallback((projectId: string, fileId: string) => {
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== projectId) return p;
         const removed = p.contextFiles.find((f) => f.id === fileId);
-        if (removed?.localBlobUrl) URL.revokeObjectURL(removed.localBlobUrl);
+        if (removed?.localBlobUrl) {
+          try { URL.revokeObjectURL(removed.localBlobUrl); } catch {}
+        }
         return { ...p, contextFiles: p.contextFiles.filter((f) => f.id !== fileId) };
       })
     );
-  };
+  }, []);
 
-  // Revoke all blob URLs on unmount to prevent memory leaks
+  // Revoke all blob URLs on unmount to prevent memory leaks (M-01)
   useEffect(() => {
     return () => {
-      setProjects((prev) => {
-        prev.forEach((p) =>
-          p.contextFiles.forEach((f) => {
-            if (f.localBlobUrl) URL.revokeObjectURL(f.localBlobUrl);
-          })
-        );
-        return prev;
+      revokedUrls.current.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          // ignore
+        }
       });
     };
   }, []);
 
-  const updateAgentSettings = (projectId: string, settings: Partial<AgentSettings>) => {
+  const updateAgentSettings = useCallback((projectId: string, settings: Partial<AgentSettings>) => {
     setProjects((prev) =>
       prev.map((p) =>
         p.id === projectId
@@ -164,9 +190,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           : p
       )
     );
-  };
+  }, []);
 
-  const getProjectsForMode = (mode: ProjectMode) => projects.filter((p) => p.mode === mode);
+  const getProjectsForMode = useCallback((mode: ProjectMode) => {
+    return projects.filter((p) => p.mode === mode);
+  }, [projects]);
 
   return (
     <ProjectsContext.Provider
@@ -181,7 +209,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         addContextFile,
         removeContextFile,
         setActiveProject: setActiveProjectId,
-        setActiveChat: setActiveChatId,
+        setActiveChat: handleSetActiveChat,
         updateAgentSettings,
         ungroupedChats,
         getProjectsForMode,

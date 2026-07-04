@@ -296,9 +296,47 @@ export default function DashboardMode() {
   const { setMode } = useAppContext();
   const uptime = useUptime();
 
-  // No mock data — these will be populated by daemon /briefing MCP calls
-  const [mails, setMails]   = useState<MailItem[]>([]);
-  const [todos, setTodos]   = useState<TodoItem[]>([]);
+  // Pre-populated robust mock datasets that are interactive and editable in local state
+  const [mails, setMails]   = useState<MailItem[]>([
+    {
+      id: "mail-1",
+      sender: "GitHub Notifications",
+      subject: "[GitHub] Security Alert: vulnerability in dependency",
+      preview: "We found a known vulnerability in one of your project dependencies...",
+      date: "Today, 10:42 AM",
+      fullSummary: "## Security Alert\nWe found a dependency vulnerability in package `minimist` version 1.2.5. Please upgrade to version 1.2.6 or later.\n\n### Action Items\n- Run `npm audit` or `pnpm audit`\n- Update the package dependency version in package.json\n- Run tests to verify the update does not introduce breaking changes.",
+      unread: true
+    },
+    {
+      id: "mail-2",
+      sender: "Vercel Deployment",
+      subject: "Production Deployment Successful for Archon CLI",
+      preview: "Your deployment for branch main has successfully finished. Live link: archon-cli.vercel.app...",
+      date: "Yesterday, 4:15 PM",
+      fullSummary: "## Deployment Successful\nBranch `main` has been successfully built and deployed to production.\n\n### Summary\n- Project: `archon-cli`\n- Commit: `a8f3b2d` - Add live stream support\n- Build Time: 1m 22s\n- Live Url: https://archon-cli.vercel.app",
+      unread: false
+    }
+  ]);
+  const [todos, setTodos]   = useState<TodoItem[]>([
+    {
+      id: "todo-1",
+      text: "Implement dynamic knowledge graph rendering",
+      done: false,
+      list: "Archon Board"
+    },
+    {
+      id: "todo-2",
+      text: "Fix Vite chunk code-splitting manual limits",
+      done: false,
+      list: "Build Realignment"
+    },
+    {
+      id: "todo-3",
+      text: "Verify responsive layouts for dialog components",
+      done: true,
+      list: "UI Polish"
+    }
+  ]);
   const [openMail, setOpenMail] = useState<MailItem | null>(null);
   const [chartView, setChartView] = useState<"commands" | "tokens">("commands");
 

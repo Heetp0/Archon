@@ -14,6 +14,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class CalendarService:
 
     # ── Public API ─────────────────────────────────────────────────
 
-    def get_events(self, days: int = 7, max_results: int = 50) -> List[Dict[str, Any]]:
+    async def get_events(self, days: int = 7, max_results: int = 50) -> List[Dict[str, Any]]:
         """Return events from now through `days` ahead."""
         if self._client is None:
             return self._mock[:max_results]
@@ -108,20 +109,21 @@ class CalendarService:
             time_min = now.isoformat()
             time_max = (now + timedelta(days=days)).isoformat()
 
-            events_result = self._client.events().list(
+            req = self._client.events().list(
                 calendarId=self._calendar_id,
                 timeMin=time_min,
                 timeMax=time_max,
                 maxResults=max_results,
                 singleEvents=True,
                 orderBy="startTime",
-            ).execute()
+            )
+            events_result = await asyncio.to_thread(req.execute)
             return events_result.get("items", [])
         except Exception as e:
             logger.error(f"Calendar fetch failed: {e}")
             return self._mock[:max_results]
 
-    def add_event(
+    async def add_event(
         self,
         summary: str,
         start_iso: str,
@@ -140,17 +142,19 @@ class CalendarService:
                 "start": {"dateTime": start_iso, "timeZone": "UTC"},
                 "end": {"dateTime": end_iso, "timeZone": "UTC"},
             }
-            return self._client.events().insert(calendarId=self._calendar_id, body=body).execute()
+            req = self._client.events().insert(calendarId=self._calendar_id, body=body)
+            return await asyncio.to_thread(req.execute)
         except Exception as e:
             logger.error(f"Calendar add failed: {e}")
             return None
 
-    def delete_event(self, event_id: str) -> bool:
+    async def delete_event(self, event_id: str) -> bool:
         if self._client is None:
             logger.warning("Cannot delete event — no Google Calendar credentials")
             return False
         try:
-            self._client.events().delete(calendarId=self._calendar_id, eventId=event_id).execute()
+            req = self._client.events().delete(calendarId=self._calendar_id, eventId=event_id)
+            await asyncio.to_thread(req.execute)
             return True
         except Exception as e:
             logger.error(f"Calendar delete failed: {e}")

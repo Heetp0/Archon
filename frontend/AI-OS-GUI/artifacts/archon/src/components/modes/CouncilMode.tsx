@@ -104,11 +104,11 @@ export default function CouncilMode() {
       </div>
 
       {/* Debate area */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
         {activeModels.map((col: any) => {
           const msgs = getMessages(col.key);
           return (
-            <div key={col.key} className={`flex-1 flex flex-col border-r border-slate-800/50 last:border-r-0 ${col.bg} ${col.glow}`}>
+            <div key={col.key} className={`flex flex-col border-b md:border-b-0 md:border-r border-slate-800/50 last:border-b-0 last:border-r-0 min-h-[300px] lg:min-h-0 ${col.bg} ${col.glow}`}>
               <div className={`px-4 py-2.5 ${col.header} border-b ${col.border} flex items-center justify-between flex-shrink-0`}>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${col.dot} ${isStreaming ? "animate-pulse" : ""}`} />
@@ -159,7 +159,7 @@ export default function CouncilMode() {
             <div className="text-[10px] font-mono text-slate-600">Consensus pending</div>
           </div>
         </div>
-        <div className="px-4 py-3 grid grid-cols-4 gap-3">
+        <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {VERDICT_ITEMS.map(({ icon: Icon, color, label, value }) => (
             <div key={label} className="flex items-start gap-2 p-2.5 rounded bg-slate-900/50 border border-slate-800">
               <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${color}`} />

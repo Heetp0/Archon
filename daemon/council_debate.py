@@ -26,7 +26,7 @@ class CouncilDebate(BaseAgent):
         for file_path in attachments:
             if os.path.exists(file_path):
                 try:
-                    cached_md_path = self.normalizer.convert(file_path)
+                    cached_md_path = await self.normalizer.convert(file_path)
                     with open(cached_md_path, 'r', encoding='utf-8', errors='ignore') as f:
                         md_content = f.read()
                     attachment_contents.append(f"### Attachment: {os.path.basename(file_path)}\n\n{md_content}")
@@ -51,14 +51,30 @@ class CouncilDebate(BaseAgent):
         if vault_context:
             shared_context += "\n\n## Vault Context\n" + vault_context
 
-        # Get available fast models for Round 1 & 2
-        fast_models = self.router.get_available_models("fast")
-        if not fast_models:
-            # Fallback to whatever is available
-            fast_models = self.router.get_available_models("heavy")
+        # Parse selected models from payload if present
+        requested_models = payload.get("models") or payload.get("selected_models")
         
-        # Limit to top 3 models
-        council_models = fast_models[:3]
+        # Get all configured/available models across fast and heavy tiers
+        all_available_models = self.router.get_available_models("fast") + self.router.get_available_models("heavy")
+        # De-duplicate by model name to be clean
+        seen_models = set()
+        unique_available = []
+        for m in all_available_models:
+            if m["model"] not in seen_models:
+                unique_available.append(m)
+                seen_models.add(m["model"])
+
+        if requested_models and isinstance(requested_models, list):
+            council_models = [m for m in unique_available if m["model"] in requested_models]
+        else:
+            # Get available fast models for Round 1 & 2
+            fast_models = self.router.get_available_models("fast")
+            if not fast_models:
+                # Fallback to whatever is available
+                fast_models = self.router.get_available_models("heavy")
+            # Limit to top 3 models
+            council_models = fast_models[:3]
+
         if not council_models:
             raise RuntimeError("No models available for Council Debate.")
 
@@ -87,11 +103,11 @@ class CouncilDebate(BaseAgent):
                     content = chunk.choices[0].delta.content
                     if content:
                         full_text += content
-                        await send_token_callback("token", {"content": content, "model": agent_name})
+                        await send_token_callback("token", {"text": content})
             except Exception as e:
                 err_msg = f"\n[Error from {model_name}: {str(e)}]\n"
                 full_text += err_msg
-                await send_token_callback("token", {"content": err_msg, "model": agent_name})
+                await send_token_callback("token", {"text": err_msg})
             return full_text
 
         # ROUND 1: Parallel Draft

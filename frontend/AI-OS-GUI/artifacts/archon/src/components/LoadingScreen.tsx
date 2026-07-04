@@ -13,7 +13,7 @@ export default function LoadingScreen({ onDismiss }: LoadingScreenProps) {
   useEffect(() => {
     if (!visible) return;
     startBoot(
-      (s, p) => setState({ stepIdx: s, progress: p, offline }),
+      (s, p) => setState((prev) => ({ ...prev, stepIdx: s, progress: p })),
       () => setState((prev) => ({ ...prev, offline: true }))
     );
   }, [visible, offline]);

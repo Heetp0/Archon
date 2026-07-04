@@ -13,7 +13,7 @@ def compute_sha256(text: str) -> str:
 
 def parse_frontmatter(lines: List[str]) -> tuple[Dict[str, Any], int]:
     """
-    Parses YAML-like frontmatter at the start of a list of lines.
+    Parses YAML frontmatter at the start of a list of lines.
     Returns parsed dictionary and the index where frontmatter ends.
     """
     frontmatter = {}
@@ -29,38 +29,14 @@ def parse_frontmatter(lines: List[str]) -> tuple[Dict[str, Any], int]:
     if end_idx == -1:
         return frontmatter, 0
 
-    current_key = None
-    for i in range(1, end_idx):
-        line = lines[i].strip()
-        if not line or line.startswith("#"):
-            continue
-
-        # Check for list items under key
-        if line.startswith("-") and current_key:
-            item_val = line[1:].strip().strip('"').strip("'")
-            existing = frontmatter[current_key]
-            if not isinstance(existing, list):
-                # If there was a previous non-empty string, preserve it as the first item
-                if isinstance(existing, str) and existing:
-                    frontmatter[current_key] = [existing]
-                else:
-                    frontmatter[current_key] = []
-            frontmatter[current_key].append(item_val)
-            continue
-
-        # Standard key-value split
-        if ":" in line:
-            parts = line.split(":", 1)
-            key = parts[0].strip()
-            val = parts[1].strip().strip('"').strip("'")
-            
-            # Simple array parsing like [tag1, tag2]
-            if val.startswith("[") and val.endswith("]"):
-                items = [x.strip().strip('"').strip("'") for x in val[1:-1].split(",") if x.strip()]
-                frontmatter[key] = items
-            else:
-                frontmatter[key] = val
-            current_key = key
+    yaml_text = "\n".join(lines[1:end_idx])
+    try:
+        import yaml
+        parsed = yaml.safe_load(yaml_text)
+        if isinstance(parsed, dict):
+            frontmatter = parsed
+    except Exception:
+        pass
 
     return frontmatter, end_idx + 1
 
@@ -100,8 +76,11 @@ def parse_note(filepath: str, root_path: str) -> Dict[str, Any]:
     elif isinstance(fm_tags, str):
         tags.extend([x.strip() for x in fm_tags.split(",") if x.strip()])
         
+    # Strip code blocks to avoid tag pollution from comments
+    sanitized_body = re.sub(r"`.*?`", "", body_text, flags=re.DOTALL)
+    
     # Find inline tags (e.g. #my-tag)
-    inline_tags = TAG_PATTERN.findall(body_text)
+    inline_tags = TAG_PATTERN.findall(sanitized_body)
     tags.extend(inline_tags)
     # Deduplicate tags
     tags = list(set(t.strip() for t in tags if t.strip()))

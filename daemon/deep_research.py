@@ -77,7 +77,7 @@ class DeepResearch(BaseAgent):
             return f"Failed to parse content from {url}: {str(e)}"
 
     async def run(self, payload: dict, send_token_callback: Callable[[str, Any], Coroutine[Any, Any, None]]) -> dict:
-        text = payload.get("content", "") or payload.get("topic", "")
+        text = payload.get("content", "") or payload.get("text", "") or payload.get("topic", "")
         req_id = payload.get("req_id")
 
         if not text:
@@ -144,7 +144,12 @@ class DeepResearch(BaseAgent):
 
         # --- Phase 2: Crawl ---
         crawled_summaries = []
+        visited_urls = set()
         for url in approved_urls:
+            if url in visited_urls:
+                logger.info(f"Skipping already visited URL: {url}")
+                continue
+            visited_urls.add(url)
             self.supervisor.ping("DeepResearch")
             if not self.supervisor.log_action("DeepResearch", f"crawl_{url}"):
                 halted, reason = self.supervisor.is_halted()
@@ -189,7 +194,7 @@ class DeepResearch(BaseAgent):
         async for chunk in self.router.generate(tier="heavy", messages=[{"role": "user", "content": synthesis_prompt}]):
             final_report += chunk
             self.supervisor.add_tokens(len(chunk) / 4.0)
-            await send_token_callback("token", {"content": chunk, "model": "research"})
+            await send_token_callback("token", {"text": chunk})
 
         halted, reason = self.supervisor.is_halted()
         if halted:

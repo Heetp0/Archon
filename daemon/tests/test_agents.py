@@ -27,7 +27,7 @@ def mock_services():
     ]
     
     # Mock markit_down.convert
-    markit_down.convert.return_value = "cached_path.md"
+    markit_down.convert = AsyncMock(return_value="cached_path.md")
     
     return router, vault_search, markit_down
 

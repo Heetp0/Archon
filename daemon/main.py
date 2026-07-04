@@ -4,6 +4,8 @@ import logging
 import asyncio
 from typing import Dict, Any, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 # Import agent modules
 from chat_agent import ChatAgent
@@ -21,7 +23,7 @@ DAEMON_PORT = config_module.DAEMON_PORT
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Archon Daemon")
+
 
 class ConnectionManager:
     def __init__(self):
@@ -57,17 +59,25 @@ manager = ConnectionManager()
 # Initialize core services
 router = ModelRouter()
 vault_search = VaultSearch(db_path=os.path.join(WORKSPACE_ROOT, ".lancedb"), vault_path=WORKSPACE_ROOT)
-# Index vault on startup in background to avoid blocking
-import threading
-def background_index():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Index vault on startup in background to avoid blocking
     try:
         logger.info("Starting background vault index...")
-        vault_search.index_vault()
-        logger.info("Background vault index complete.")
+        asyncio.create_task(asyncio.to_thread(vault_search.index_vault))
     except Exception as e:
-        logger.error(f"Error indexing vault on startup: {e}")
+        logger.error(f"Error starting background vault index: {e}")
+    yield
 
-threading.Thread(target=background_index, daemon=True).start()
+app = FastAPI(title="Archon Daemon", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 markit_down = MarkitDownNormalizer(cache_dir=os.path.join(WORKSPACE_ROOT, "MarkitCache"))
 
@@ -89,7 +99,7 @@ async def get_models():
 @app.get("/calendar/events")
 async def get_calendar_events(days: int = 7):
     """Returns upcoming calendar events from Google Calendar (or mock schedule)."""
-    events = calendar_service.get_events(days=days)
+    events = await calendar_service.get_events(days=days)
     return {"events": events}
 
 @app.post("/settings/api-keys")
@@ -99,7 +109,7 @@ async def save_api_keys(payload: dict):
     env_path = os.path.join(os.path.dirname(__file__), ".env")
     for key, value in payload.items():
         if key.endswith("_API_KEY") or key in ("WORKSPACE_ROOT", "DAEMON_PORT"):
-            set_key(env_path, key, value)
+            await asyncio.to_thread(set_key, env_path, key, value)
             os.environ[key] = value
     return {"status": "ok"}
 
@@ -115,6 +125,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 mode = message.get("mode")
                 msg_type = message.get("type")
                 payload = message.get("payload") or {} or {}
+                # Compatibility bridge: populate missing content/text/topic keys
+                task_text = payload.get("content") or payload.get("text") or payload.get("topic") or ""
+                if task_text:
+                    if "content" not in payload:
+                        payload["content"] = task_text
+                    if "text" not in payload:
+                        payload["text"] = task_text
+                    if "topic" not in payload:
+                        payload["topic"] = task_text
 
                 if not req_id:
                     await manager.send_event(websocket, "unknown", "error", {"error": "Missing 'id' in request."})

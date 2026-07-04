@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import type { AppMode } from "@/context/AppContext";
-import { useWebSocketContext } from "@/context/WebSocketContext";
+
 import { PanelLeftClose, PanelRightOpen } from "lucide-react";
 import NavRail from "@/components/NavRail";
 import ContextSidebar from "@/components/ContextSidebar";
@@ -20,7 +20,7 @@ const LEFT_CAPABLE_MODES = new Set<AppMode>(["chat", "council", "research", "age
 
 export default function Home() {
   const { mode, settingsOpen, setSettingsOpen, contextSidebarOpen, setContextSidebarOpen, rightSidebarOpen, setRightSidebarOpen } = useAppContext();
-  const { connected, connecting } = useWebSocketContext();
+
   // Right sidebar width — draggable
   const [rightWidth, setRightWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
@@ -29,15 +29,27 @@ export default function Home() {
     setIsResizing(true);
   }, []);
 
-  const handleResizeMove = useCallback((e: React.MouseEvent) => {
+  // Listen to mouse events globally when resizing is active
+  useEffect(() => {
     if (!isResizing) return;
-    const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX));
-    setRightWidth(newWidth);
-  }, [isResizing]);
 
-  const handleResizeEnd = useCallback(() => {
-    setIsResizing(false);
-  }, []);
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX));
+      setRightWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   const canShowLeft = LEFT_CAPABLE_MODES.has(mode);
   const showLeft = canShowLeft && contextSidebarOpen;
@@ -45,9 +57,6 @@ export default function Home() {
   return (
     <div
       className="relative flex h-screen w-full bg-[#08090f] text-slate-300 font-sans overflow-hidden select-none"
-      onMouseMove={handleResizeMove}
-      onMouseUp={handleResizeEnd}
-      onMouseLeave={handleResizeEnd}
       style={{ cursor: isResizing ? "ew-resize" : "default" }}
     >
       {/* Nav Rail */}
@@ -96,7 +105,7 @@ export default function Home() {
       {rightSidebarOpen ? (
         <div
           className="flex-shrink-0 border-l border-slate-800/60 overflow-hidden relative animate-in slide-in-from-right duration-200"
-          style={{ width: rightWidth }}
+          style={{ width: `${rightWidth}px` }}
         >
           {/* Resize handle */}
           <div

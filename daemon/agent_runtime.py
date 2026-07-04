@@ -53,7 +53,7 @@ class AgentRuntime(BaseAgent):
         self.callback = send_token_callback
         self.supervisor.reset()
         
-        task_text = payload.get("content", "")
+        task_text = payload.get("content", "") or payload.get("text", "") or payload.get("topic", "")
         if not task_text:
             raise ValueError("Task description cannot be empty.")
 

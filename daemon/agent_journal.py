@@ -11,7 +11,9 @@ class AgentJournal:
         self._init_db()
 
     def _get_conn(self):
-        return sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        conn.execute("PRAGMA foreign_keys = ON;")
+        return conn
 
     def _init_db(self):
         conn = self._get_conn()

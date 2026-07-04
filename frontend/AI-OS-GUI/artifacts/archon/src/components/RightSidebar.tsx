@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useProjectsContext } from "@/context/ProjectsContext";
@@ -204,8 +204,34 @@ function CouncilPanel({ activeProjectId, telemetry }: { activeProjectId: string 
 
 // ── Universal File Viewer ────────────────────────────────────────────────────
 function FileViewerPanel() {
-  const [activeTab, setActiveTab] = useState("config");
-  const [openTabs, setOpenTabs] = useState<string[]>(["config", "readme"]);
+  const [openTabs, setOpenTabs] = useState<string[]>(() => {
+    try {
+      const saved = sessionStorage.getItem("archon_open_tabs");
+      return saved ? JSON.parse(saved) : ["config", "readme"];
+    } catch {
+      return ["config", "readme"];
+    }
+  });
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem("archon_active_tab");
+      return saved !== null ? saved : "config";
+    } catch {
+      return "config";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("archon_open_tabs", JSON.stringify(openTabs));
+    } catch (e) {}
+  }, [openTabs]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("archon_active_tab", activeTab);
+    } catch (e) {}
+  }, [activeTab]);
 
   const closeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -458,7 +484,7 @@ export default function RightSidebar() {
                       Live Stream
                       {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />}
                     </h4>
-                    <div className="bg-slate-900/50 border border-slate-800 rounded p-3 max-h-40 overflow-hidden relative">
+                    <div className="bg-slate-900/50 border border-slate-800 rounded p-3 max-h-40 overflow-y-auto relative">
                       <pre className="text-xs font-mono text-slate-400 leading-relaxed whitespace-pre-wrap break-words">
                         {researchText || "Awaiting research directive..."}
                       </pre>

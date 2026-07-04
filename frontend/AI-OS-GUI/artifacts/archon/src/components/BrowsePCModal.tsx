@@ -12,19 +12,30 @@ const QUICK_LOCATIONS = ["Home", "Desktop", "Documents", "Downloads"];
 
 export default function BrowsePCModal({ open, onClose, onSelect }: BrowsePCModalProps) {
   const [manualPath, setManualPath] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleQuickLocation = (loc: string) => {
+    setManualPath(`~/${loc}`);
+    setError(null);
+  };
 
   if (!open) return null;
 
   const handleSelect = () => {
     const trimmed = manualPath.trim();
     if (!trimmed) return;
+    if (/[|<>"?*;&$'\n\r`]/.test(trimmed)) {
+      setError("Invalid characters in path");
+      return;
+    }
+    setError(null);
     onSelect(trimmed);
     setManualPath("");
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-      <div className="w-[720px] h-[480px] bg-[#0d1117] border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-2xl">
+      <div className="w-[95vw] max-w-[720px] h-[90vh] max-h-[480px] bg-[#0d1117] border border-slate-800 rounded-xl flex flex-col overflow-hidden shadow-2xl">
         {/* Title bar */}
         <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <span className="text-sm font-mono text-slate-300">Select Project Folder</span>
@@ -46,6 +57,7 @@ export default function BrowsePCModal({ open, onClose, onSelect }: BrowsePCModal
             {QUICK_LOCATIONS.map((loc) => (
               <button
                 key={loc}
+                onClick={() => handleQuickLocation(loc)}
                 className="w-full text-left px-2 py-1.5 text-xs font-mono text-slate-500 hover:text-slate-300 hover:bg-slate-900/60 rounded transition-colors"
               >
                 {loc}
@@ -74,18 +86,28 @@ export default function BrowsePCModal({ open, onClose, onSelect }: BrowsePCModal
 
         {/* Footer — manual path entry */}
         <div className="p-3 border-t border-slate-800 flex gap-2 flex-shrink-0">
-          <input
-            value={manualPath}
-            onChange={(e) => setManualPath(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSelect(); if (e.key === "Escape") onClose(); }}
-            placeholder='e.g. D:\Projects\my-app  or  /home/user/projects/my-app'
-            autoFocus
-            className="flex-1 bg-black border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-green-500/50"
-          />
+          <div className="flex-1">
+            <input
+              value={manualPath}
+              onChange={(e) => {
+                setManualPath(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSelect(); if (e.key === "Escape") onClose(); }}
+              placeholder='e.g. D:\Projects\my-app  or  /home/user/projects/my-app'
+              autoFocus
+              className="w-full bg-black border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-green-500/50"
+            />
+            {error && (
+              <div className="text-red-500 text-[10px] mt-1 font-mono">
+                {error}
+              </div>
+            )}
+          </div>
           <Button
             onClick={handleSelect}
             disabled={!manualPath.trim()}
-            className="bg-green-600 hover:bg-green-500 text-white font-mono text-xs disabled:opacity-40 px-4"
+            className="bg-green-600 hover:bg-green-500 text-white font-mono text-xs disabled:opacity-40 px-4 h-9"
           >
             Select
           </Button>
