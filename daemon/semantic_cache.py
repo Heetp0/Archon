@@ -57,14 +57,14 @@ class SemanticCache:
                     if time.time() - timestamp > self.ttl:
                         # Expired, evict and return None
                         with self.lock:
-                            escaped_q = match['query'].replace('"', '\\"')
-                            self.table.delete(f'query = "{escaped_q}"')
+                            escaped_q = match['query'].replace("'", "''")
+                            self.table.delete(f"query = '{escaped_q}'")
                         return None
                     
                     # LRU: Update timestamp on cache hit
                     with self.lock:
-                        escaped_q = match['query'].replace('"', '\\"')
-                        self.table.delete(f'query = "{escaped_q}"')
+                        escaped_q = match['query'].replace("'", "''")
+                        self.table.delete(f"query = '{escaped_q}'")
                         new_record = {
                             'vector': match['vector'],
                             'query': match['query'],
@@ -97,8 +97,8 @@ class SemanticCache:
                     all_records.sort(key=lambda x: x.get('timestamp', 0.0))
                     to_evict_count = len(all_records) - self.max_size + 1
                     for i in range(to_evict_count):
-                        escaped_q = all_records[i]['query'].replace('"', '\\"')
-                        self.table.delete(f'query = "{escaped_q}"')
+                        escaped_q = all_records[i]['query'].replace("'", "''")
+                        self.table.delete(f"query = '{escaped_q}'")
                 
                 self.table.add([new_record])
         except Exception as e:
