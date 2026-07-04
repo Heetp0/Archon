@@ -21,19 +21,19 @@ const STATUS_ICON = {
 } as const;
 
 const STATUS_COLOR = {
-  complete: "text-emerald-500",
-  running:  "text-green-400",
-  queued:   "text-slate-500",
-  failed:   "text-red-400",
+  complete: "text-accent-emerald",
+  running:  "text-accent-emerald",
+  queued:   "text-text-secondary",
+  failed:   "text-accent-rose",
 } as const;
 
 const LINE_COLOR: Record<TerminalLine["kind"], string> = {
-  system:  "text-slate-500",
-  input:   "text-green-300",
-  output:  "text-green-400",
-  warning: "text-yellow-400",
-  error:   "text-red-400",
-  success: "text-emerald-400",
+  system:  "text-text-secondary",
+  input:   "text-accent-emerald",
+  output:  "text-accent-emerald",
+  warning: "text-accent-rose",
+  error:   "text-accent-rose",
+  success: "text-accent-emerald",
 };
 
 const LINE_PREFIX: Record<TerminalLine["kind"], string> = {
@@ -66,10 +66,10 @@ function NewAgentProjectBlocker() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-8">
-      <Cpu className="w-10 h-10 text-slate-700" />
+      <Cpu className="w-10 h-10 text-text-secondary" />
       <div>
-        <h3 className="text-sm font-mono text-slate-300 mb-1">No active Agent Project</h3>
-        <p className="text-xs font-mono text-slate-600 max-w-sm leading-relaxed">
+        <h3 className="text-sm font-mono text-text-primary mb-1">No active Agent Project</h3>
+        <p className="text-xs font-mono text-text-secondary max-w-sm leading-relaxed">
           Agent Runtime requires a project linked to a folder on your PC before it can read or modify files.
           Create one below or select an existing Agent Project from the sidebar.
         </p>
@@ -83,19 +83,19 @@ function NewAgentProjectBlocker() {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") goToFolder(); if (e.key === "Escape") setShowForm(false); }}
             placeholder="Project name..."
-            className="w-full bg-[#0b0c13] border border-white/[0.08] rounded-xl px-3 py-2 text-sm font-mono text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-green-500/40"
+            className="w-full bg-panel-bg border border-border-core/30 rounded-xl px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-accent-emerald/40"
           />
           <div className="flex gap-2">
             <button
               onClick={goToFolder}
               disabled={!name.trim()}
-              className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-mono disabled:opacity-30 transition-colors"
+              className="flex-1 py-2 rounded-xl bg-accent-emerald hover:bg-accent-emerald text-text-primary text-xs font-mono disabled:opacity-30 transition-colors"
             >
               Next: Select Folder →
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-xl border border-white/[0.06] text-slate-600 hover:text-slate-300 text-xs font-mono transition-colors"
+              className="px-4 py-2 rounded-xl border border-border-core/25 text-text-secondary hover:text-text-primary text-xs font-mono transition-colors"
             >
               Cancel
             </button>
@@ -104,7 +104,7 @@ function NewAgentProjectBlocker() {
       ) : (
         <Button
           onClick={() => setShowForm(true)}
-          className="bg-green-600 hover:bg-green-500 text-white font-mono text-sm"
+          className="bg-accent-emerald hover:bg-accent-emerald text-text-primary font-mono text-sm"
         >
           <Plus className="w-4 h-4 mr-1.5" /> New Agent Project
         </Button>
@@ -190,40 +190,40 @@ export default function AgentMode() {
       {/* ── Header bar ── */}
       <div className="p-4 border-b border-green-900/30 flex items-center justify-between bg-gradient-to-r from-green-950/20 to-transparent flex-shrink-0">
         <div>
-          <h1 className="text-lg font-mono text-slate-100 font-bold tracking-tight">AGENT RUNTIME</h1>
-          <p className="text-xs font-mono text-slate-500 mt-0.5">
+          <h1 className="text-lg font-mono text-text-primary font-bold tracking-tight">AGENT RUNTIME</h1>
+          <p className="text-xs font-mono text-text-secondary mt-0.5">
             <span className="text-green-700">{activeProject.name}</span>
             {activeProject.folderPath && (
-              <span className="text-slate-700"> · {activeProject.folderPath}</span>
+              <span className="text-text-secondary"> · {activeProject.folderPath}</span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
-            <div className="text-[10px] text-slate-500 font-mono uppercase">CPU</div>
-            <div className="text-sm text-green-400 font-mono">—</div>
+          <div className="px-3 py-1.5 rounded bg-app-bg border border-border-core flex items-center gap-2">
+            <div className="text-[10px] text-text-secondary font-mono uppercase">CPU</div>
+            <div className="text-sm text-accent-emerald font-mono">—</div>
           </div>
-          <div className="px-3 py-1.5 rounded bg-black border border-slate-800 flex items-center gap-2">
-            <div className="text-[10px] text-slate-500 font-mono uppercase">RAM</div>
-            <div className="text-sm text-green-400 font-mono">—</div>
+          <div className="px-3 py-1.5 rounded bg-app-bg border border-border-core flex items-center gap-2">
+            <div className="text-[10px] text-text-secondary font-mono uppercase">RAM</div>
+            <div className="text-sm text-accent-emerald font-mono">—</div>
           </div>
 
           {/* Attach */}
           <button
             onClick={openPicker}
             title="Attach files to project"
-            className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 border border-slate-800 rounded bg-black transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary border border-border-core rounded bg-app-bg transition-colors"
           >
             <Paperclip className="w-4 h-4" />
           </button>
 
           {/* View toggle */}
-          <div className="flex rounded border border-slate-800 overflow-hidden">
+          <div className="flex rounded border border-border-core overflow-hidden">
             <button
               onClick={() => setTerminalOpen(false)}
               data-testid="button-show-dashboard"
               className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs transition-colors ${
-                !terminalOpen ? "bg-slate-800 text-slate-200" : "bg-black text-slate-600 hover:text-slate-400"
+                !terminalOpen ? "bg-panel-bg text-text-primary" : "bg-app-bg text-text-secondary hover:text-text-secondary"
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -232,10 +232,10 @@ export default function AgentMode() {
             <button
               onClick={() => setTerminalOpen(true)}
               data-testid="button-show-terminal"
-              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs border-l border-slate-800 transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs border-l border-border-core transition-colors ${
                 terminalOpen
-                  ? "bg-green-900/30 text-green-400 shadow-[inset_0_0_12px_rgba(34,197,94,0.08)]"
-                  : "bg-black text-slate-600 hover:text-green-500"
+                  ? "bg-green-900/30 text-accent-emerald "
+                  : "bg-app-bg text-text-secondary hover:text-accent-emerald"
               }`}
             >
               <Terminal className="w-3.5 h-3.5" />
@@ -262,53 +262,53 @@ export default function AgentMode() {
               <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
                 {/* Active Daemons */}
                 <div className="flex flex-col space-y-4 overflow-hidden">
-                  <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                    <Cpu className="w-4 h-4 text-green-500" /> Active Daemons
+                  <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                    <Cpu className="w-4 h-4 text-accent-emerald" /> Active Daemons
                   </h2>
                   <div className="space-y-4 overflow-y-auto flex-1">
                     {agentStatuses.length === 0 ? (
-                      <div className="text-xs font-mono text-slate-700 text-center py-8">
+                      <div className="text-xs font-mono text-text-secondary text-center py-8">
                         No agents running. Send a command to start.
                       </div>
                     ) : agentStatuses.map((agent) => (
                       <div
                         key={agent.id}
                         className={`glass-panel border rounded-lg p-5 relative overflow-hidden flex-shrink-0 ${
-                          agent.status === "running" ? "border-green-500/30" : "border-slate-800"
+                          agent.status === "running" ? "border-green-500/30" : "border-border-core"
                         } ${agent.status === "idle" ? "opacity-60" : ""}`}
                       >
                         <div className={`absolute top-0 left-0 w-1 h-full ${
                           agent.status === "running"
-                            ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+                            ? "bg-accent-emerald "
                             : "bg-slate-600"
                         }`} />
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="font-mono text-slate-200 text-sm font-bold">{agent.name}</h3>
-                            <div className="text-xs font-mono text-green-400 mt-1">PID: {agent.pid}</div>
+                            <h3 className="font-mono text-text-primary text-sm font-bold">{agent.name}</h3>
+                            <div className="text-xs font-mono text-accent-emerald mt-1">PID: {agent.pid}</div>
                           </div>
                           <div className={`px-2 py-1 rounded text-[10px] font-mono border ${
                             agent.status === "running"
-                              ? "bg-green-500/10 text-green-400 border-green-500/20 animate-pulse"
+                              ? "bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20 animate-pulse"
                               : agent.status === "complete"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              ? "bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20"
                               : agent.status === "failed"
-                              ? "bg-red-500/10 text-red-400 border-red-500/20"
-                              : "bg-slate-800 text-slate-400 border-slate-700"
+                              ? "bg-accent-rose/10 text-accent-rose border-accent-rose/20"
+                              : "bg-panel-bg text-text-secondary border-border-core/60"
                           }`}>
                             {agent.status.toUpperCase()}
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs font-mono">
-                            <span className="text-slate-500">Current Action</span>
-                            <span className="text-slate-300">{agent.action}</span>
+                            <span className="text-text-secondary">Current Action</span>
+                            <span className="text-text-primary">{agent.action}</span>
                           </div>
-                          <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                          <div className="h-1.5 w-full bg-panel-bg rounded-full overflow-hidden border border-border-core">
                             <div
                               className={`h-full transition-all duration-500 ${
                                 agent.status === "running"
-                                  ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                                  ? "bg-accent-emerald "
                                   : "bg-slate-600"
                               }`}
                               style={{ width: `${agent.progress}%` }}
@@ -322,23 +322,23 @@ export default function AgentMode() {
 
                 {/* Task Queue */}
                 <div className="flex flex-col space-y-4 overflow-hidden">
-                  <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                    <Terminal className="w-4 h-4 text-green-500" /> Task Queue
+                  <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
+                    <Terminal className="w-4 h-4 text-accent-emerald" /> Task Queue
                   </h2>
-                  <div className="flex-1 glass-panel border border-slate-800 rounded-lg overflow-hidden flex flex-col min-h-0">
+                  <div className="flex-1 glass-panel border border-border-core rounded-lg overflow-hidden flex flex-col min-h-0">
                     <ScrollArea className="flex-1 p-4">
                       <div className="space-y-2">
                         {taskQueue.length === 0 ? (
-                          <div className="text-xs font-mono text-slate-700 text-center py-8">
+                          <div className="text-xs font-mono text-text-secondary text-center py-8">
                             No tasks queued.
                           </div>
                         ) : taskQueue.map((task) => {
                           const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
                           return (
-                            <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-slate-900/50 border border-slate-800/50">
-                              <div className="font-mono text-[10px] text-slate-500 w-12">{task.id}</div>
+                            <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-panel-bg/50 border border-border-core/50">
+                              <div className="font-mono text-[10px] text-text-secondary w-12">{task.id}</div>
                               <div className={`font-sans text-sm flex-1 ${
-                                task.status === "complete" ? "text-slate-400 line-through" : "text-slate-200"
+                                task.status === "complete" ? "text-text-secondary line-through" : "text-text-primary"
                               }`}>
                                 {task.name}
                               </div>
@@ -359,8 +359,8 @@ export default function AgentMode() {
               </div>
 
               {/* Dispatch prompt */}
-              <div className="flex items-center gap-3 border border-slate-800 rounded-lg bg-black px-4 py-3 flex-shrink-0">
-                <span className="text-green-600 font-mono text-sm select-none flex-shrink-0">$</span>
+              <div className="flex items-center gap-3 border border-border-core rounded-lg bg-app-bg px-4 py-3 flex-shrink-0">
+                <span className="text-accent-emerald font-mono text-sm select-none flex-shrink-0">$</span>
                 <input
                   type="text"
                   value={cmdInput}
@@ -369,7 +369,7 @@ export default function AgentMode() {
                   placeholder={connected ? "Dispatch command or directive to agent runtime..." : "Daemon offline"}
                   disabled={!connected}
                   data-testid="input-dashboard-command"
-                  className="flex-1 bg-transparent text-green-300 placeholder:text-slate-700 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+                  className="flex-1 bg-transparent text-accent-emerald placeholder:text-text-secondary font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -377,7 +377,7 @@ export default function AgentMode() {
                   onClick={handleSendCmd}
                   disabled={!connected || !cmdInput.trim()}
                   data-testid="button-send-dashboard-command"
-                  className="text-green-700 hover:text-green-400 disabled:opacity-30 transition-colors flex-shrink-0"
+                  className="text-green-700 hover:text-accent-emerald disabled:opacity-30 transition-colors flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -395,20 +395,20 @@ export default function AgentMode() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="absolute inset-0 flex flex-col bg-black"
+              className="absolute inset-0 flex flex-col bg-app-bg"
             >
               <div className="flex items-center justify-between px-4 py-2 bg-[#050E05] border-b border-green-900/30 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/70" />
+                    <div className="w-3 h-3 rounded-full bg-accent-rose/70" />
+                    <div className="w-3 h-3 rounded-full bg-accent-rose/70" />
+                    <div className="w-3 h-3 rounded-full bg-accent-emerald/70" />
                   </div>
-                  <span className="text-[11px] font-mono text-green-600 uppercase tracking-widest">archon — agent shell</span>
+                  <span className="text-[11px] font-mono text-accent-emerald uppercase tracking-widest">archon — agent shell</span>
                 </div>
                 <button
                   onClick={() => setTerminalOpen(false)}
-                  className="text-slate-600 hover:text-slate-400 transition-colors"
+                  className="text-text-secondary hover:text-text-secondary transition-colors"
                   data-testid="button-close-terminal"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ export default function AgentMode() {
                     <span className="break-all">{line.text}</span>
                   </div>
                 ))}
-                <div className="flex gap-3 text-green-400 mt-1">
+                <div className="flex gap-3 text-accent-emerald mt-1">
                   <span className="text-green-900 select-none">
                     {new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                   </span>
@@ -436,7 +436,7 @@ export default function AgentMode() {
               </div>
 
               <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-[#020A02] flex-shrink-0">
-                <span className="text-green-500 font-mono text-sm select-none">$</span>
+                <span className="text-accent-emerald font-mono text-sm select-none">$</span>
                 <input
                   ref={inputRef}
                   type="text"
@@ -446,7 +446,7 @@ export default function AgentMode() {
                   placeholder={connected ? "Enter command or directive..." : "Daemon offline"}
                   disabled={!connected}
                   data-testid="input-terminal-command"
-                  className="flex-1 bg-transparent text-green-300 placeholder:text-green-900 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+                  className="flex-1 bg-transparent text-accent-emerald placeholder:text-green-900 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -454,7 +454,7 @@ export default function AgentMode() {
                   onClick={handleSendCmd}
                   disabled={!connected || !cmdInput.trim()}
                   data-testid="button-send-command"
-                  className="text-green-600 hover:text-green-400 disabled:opacity-30 transition-colors"
+                  className="text-accent-emerald hover:text-accent-emerald disabled:opacity-30 transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -472,33 +472,33 @@ export default function AgentMode() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-app-bg/80"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="relative max-w-lg w-full mx-6 bg-[#0A0000] border-2 border-red-500/60 rounded-xl overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.3)]"
+              className="relative max-w-lg w-full mx-6 bg-[#0A0000] border-2 border-red-500/60 rounded-xl overflow-hidden "
             >
               <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
               <div className="p-8">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-accent-rose/10 border border-red-500/30 flex items-center justify-center">
                     <AlertTriangle className="w-6 h-6 text-red-500" />
                   </div>
                   <div>
-                    <h2 className="text-red-400 font-mono font-bold text-lg tracking-tight uppercase mb-1">
+                    <h2 className="text-accent-rose font-mono font-bold text-lg tracking-tight uppercase mb-1">
                       Dangerous Command Intercepted
                     </h2>
-                    <p className="text-slate-400 text-sm font-mono">{dangerousCommand.reason}</p>
+                    <p className="text-text-secondary text-sm font-mono">{dangerousCommand.reason}</p>
                   </div>
                 </div>
-                <div className="bg-black border border-red-900/50 rounded-lg p-4 mb-6 font-mono">
+                <div className="bg-app-bg border border-red-900/50 rounded-lg p-4 mb-6 font-mono">
                   <div className="text-[10px] text-red-600 uppercase tracking-widest mb-2">Command to Execute</div>
                   <div className="text-red-300 text-sm break-all">$ {dangerousCommand.command}</div>
                 </div>
-                <p className="text-slate-500 text-xs font-mono mb-6">
+                <p className="text-text-secondary text-xs font-mono mb-6">
                   This action may modify system files, delete data, or execute privileged operations.
                   Approve only if you understand the consequences.
                 </p>
@@ -506,14 +506,14 @@ export default function AgentMode() {
                   <button
                     onClick={denyCommand}
                     data-testid="button-deny-command"
-                    className="flex-1 py-3 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 font-mono text-sm font-bold hover:border-slate-500 hover:text-white transition-all"
+                    className="flex-1 py-3 rounded-lg border border-border-core/60 bg-panel-bg text-text-primary font-mono text-sm font-bold hover:border-slate-500 hover:text-text-primary transition-all"
                   >
                     DENY
                   </button>
                   <button
                     onClick={approveCommand}
                     data-testid="button-approve-command"
-                    className="flex-1 py-3 rounded-lg border border-red-500/50 bg-red-500/10 text-red-400 font-mono text-sm font-bold hover:bg-red-500/20 hover:border-red-400 transition-all shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                    className="flex-1 py-3 rounded-lg border border-red-500/50 bg-accent-rose/10 text-accent-rose font-mono text-sm font-bold hover:bg-accent-rose/20 hover:border-red-400 transition-all "
                   >
                     APPROVE
                   </button>

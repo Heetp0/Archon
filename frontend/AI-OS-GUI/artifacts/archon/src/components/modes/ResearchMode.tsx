@@ -32,6 +32,7 @@ const EDGES: GraphEdge[] = [
 
 const NODE_MAP = Object.fromEntries(NODES.map((n) => [n.id, n]));
 
+
 function getDynamicGraph(text: string) {
   if (!text) {
     return { nodes: NODES, edges: EDGES, nodeMap: NODE_MAP };
@@ -124,13 +125,13 @@ export default function ResearchMode() {
       />
 
       {/* Header */}
-      <div className="px-5 py-3 border-b border-slate-800/60 flex items-center gap-3 flex-shrink-0">
-        <span className="text-xs font-mono text-slate-400">Knowledge Graph</span>
-        <span className="text-slate-700">·</span>
-        <span className="text-xs font-mono text-slate-600">Quantum Error Correction</span>
+      <div className="px-5 py-3 border-b border-border-core/60 flex items-center gap-3 flex-shrink-0">
+        <span className="text-xs font-mono text-text-secondary">Knowledge Graph</span>
+        <span className="text-text-secondary">·</span>
+        <span className="text-xs font-mono text-text-secondary">Quantum Error Correction</span>
         <div className="ml-auto flex items-center gap-3">
-          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-600">
-            {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />}
+          <div className="flex items-center gap-2 text-[10px] font-mono text-text-secondary">
+            {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo animate-pulse" />}
             {isStreaming ? "Traversing..." : `${nodes.length} nodes • ${edges.length} edges`}
           </div>
           {/* Attach */}
@@ -139,7 +140,7 @@ export default function ResearchMode() {
             onClick={openPicker}
             disabled={!activeProjectId}
             title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
-            className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <Paperclip className="w-3.5 h-3.5" />
           </button>
@@ -169,7 +170,6 @@ export default function ResearchMode() {
             const b = nodeMap[edge.to];
             const active = hoveredNode === edge.from || hoveredNode === edge.to
                         || selectedNode === edge.from || selectedNode === edge.to;
-            if (!a || !b) return null;
             return (
               <line
                 key={i}
@@ -224,10 +224,10 @@ export default function ResearchMode() {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded font-mono text-xs text-slate-300"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-panel-bg border border-border-core/60 rounded font-mono text-xs text-text-primary"
           >
             {nodeMap[selectedNode]?.label.replace("\n", " ")}
-            <span className="text-slate-600 ml-2">· click to deselect</span>
+            <span className="text-text-secondary ml-2">· click to deselect</span>
           </motion.div>
         )}
       </div>

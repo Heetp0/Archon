@@ -63,7 +63,7 @@ export default function ChatMode() {
       <ScrollArea className="flex-1 p-4 md:p-8">
         <div ref={scrollRef} className="max-w-4xl mx-auto space-y-6 pb-32">
           {chatMessages.length === 0 && !isStreaming && (
-            <div className="flex items-center justify-center h-64 text-slate-600 text-sm font-mono">
+            <div className="flex items-center justify-center h-64 text-text-secondary text-sm font-mono">
               No messages yet. Start a conversation below.
             </div>
           )}
@@ -74,20 +74,20 @@ export default function ChatMode() {
             >
               <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center border ${
                 msg.role === "user"
-                  ? "bg-slate-800 border-slate-700 text-slate-300"
-                  : "bg-blue-900/30 border-blue-500/50 text-blue-400 glow-chat"
+                  ? "bg-panel-bg border-border-core/60 text-text-primary"
+                  : "bg-blue-900/30 border-blue-500/50 text-accent-indigo "
               }`}>
                 {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
 
               <div className={`flex flex-col max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 {msg.role === "assistant" && (
-                  <span className="text-[10px] font-mono text-slate-500 mb-1 px-1">{msg.model}</span>
+                  <span className="text-[10px] font-mono text-text-secondary mb-1 px-1">{msg.model}</span>
                 )}
                 <div className={`p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap font-sans ${
                   msg.role === "user"
-                    ? "bg-slate-800 border border-slate-700 text-slate-200 rounded-tr-none"
-                    : "bg-blue-950/20 border border-blue-900/50 text-slate-300 rounded-tl-none font-light"
+                    ? "bg-panel-bg border border-border-core/60 text-text-primary rounded-tr-none"
+                    : "bg-blue-950/20 border border-blue-900/50 text-text-primary rounded-tl-none font-light"
                 }`}>
                   {msg.content}
                 </div>
@@ -96,13 +96,13 @@ export default function ChatMode() {
           ))}
           {isStreaming && (
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center border bg-blue-900/30 border-blue-500/50 text-blue-400 glow-chat">
+              <div className="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center border bg-blue-900/30 border-blue-500/50 text-accent-indigo ">
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
               <div className="flex items-center gap-1.5 px-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo animate-bounce" />
               </div>
             </div>
           )}
@@ -111,16 +111,16 @@ export default function ChatMode() {
 
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#020817] via-[#020817] to-transparent pt-12">
         <div className="max-w-4xl mx-auto">
-          <div className="glass-panel border border-slate-800 rounded-xl p-2 focus-within:border-blue-500/50 focus-within:shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-all">
+          <div className="glass-panel border border-border-core rounded-xl p-2 focus-within:border-blue-500/50 focus-within:transition-all">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={connected ? "Command the OS..." : "Waiting for daemon connection..."}
               disabled={!connected || isStreaming}
-              className="min-h-[60px] max-h-[200px] bg-transparent border-0 focus-visible:ring-0 resize-none text-slate-200 placeholder:text-slate-600 font-sans"
+              className="min-h-[60px] max-h-[200px] bg-transparent border-0 focus-visible:ring-0 resize-none text-text-primary placeholder:text-text-secondary font-sans"
             />
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/50">
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-core/50">
               <div className="flex items-center gap-2">
                 {/* Real native file attach */}
                 <button
@@ -128,16 +128,16 @@ export default function ChatMode() {
                   onClick={openPicker}
                   disabled={!activeProjectId}
                   title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
-                  className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <Paperclip className="w-4 h-4" />
                 </button>
 
                 <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger className="w-[200px] h-8 bg-slate-900/50 border-slate-800 text-xs font-mono text-slate-400">
+                  <SelectTrigger className="w-[200px] h-8 bg-panel-bg/50 border-border-core text-xs font-mono text-text-secondary">
                     <SelectValue placeholder="Select Model" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800">
+                  <SelectContent className="bg-panel-bg border-border-core">
                     {availableModels && availableModels.length > 0 ? (
                       availableModels.map((m: any) => (
                         <SelectItem key={m.model_id} value={m.model_id}>{m.label}</SelectItem>
@@ -152,7 +152,7 @@ export default function ChatMode() {
                 size="sm"
                 onClick={handleSend}
                 disabled={!connected || isStreaming || !input.trim()}
-                className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] disabled:opacity-40 disabled:shadow-none"
+                className="bg-accent-indigo hover:bg-accent-indigo text-text-primary disabled:opacity-40 "
               >
                 <Send className="w-4 h-4 mr-2" />
                 Execute

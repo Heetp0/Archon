@@ -8,18 +8,18 @@ import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 
 const ROLES = ["Proposer", "Critic", "Domain Expert", "Synthesizer"];
-const COLORS = ["text-blue-400", "text-orange-400", "text-purple-400", "text-emerald-400"];
+const COLORS = ["text-accent-indigo", "text-accent-rose", "text-accent-indigo", "text-accent-emerald"];
 const BORDERS = ["border-blue-500/30", "border-orange-500/30", "border-purple-500/30", "border-emerald-500/30"];
 const BGS = ["bg-blue-950/10", "bg-orange-950/10", "bg-purple-950/10", "bg-emerald-950/10"];
 const HEADERS = ["bg-blue-900/30", "bg-orange-900/30", "bg-purple-900/30", "bg-emerald-900/30"];
-const GLOWS = ["shadow-[0_0_20px_rgba(59,130,246,0.08)]", "shadow-[0_0_20px_rgba(249,115,22,0.08)]", "shadow-[0_0_20px_rgba(168,85,247,0.08)]", "shadow-[0_0_20px_rgba(16,185,129,0.08)]"];
-const DOTS = ["bg-blue-500", "bg-orange-500", "bg-purple-500", "bg-emerald-500"];
+const GLOWS = ["", "", "", ""];
+const DOTS = ["bg-accent-indigo", "bg-accent-rose", "bg-accent-indigo", "bg-accent-emerald"];
 
 const VERDICT_ITEMS = [
-  { icon: CheckCircle2, color: "text-emerald-400", label: "Architecture", value: "Modular Monolith (Phase 1 → extract services at 6mo)" },
-  { icon: CheckCircle2, color: "text-emerald-400", label: "Database",     value: "PostgreSQL 16 + JSONB + read replica at scale" },
-  { icon: MinusCircle,  color: "text-yellow-400",  label: "Deployment",   value: "PaaS initially; Kubernetes migration deferred" },
-  { icon: XCircle,      color: "text-red-400",      label: "Rejected",     value: "Greenfield microservices — insufficient team maturity" },
+  { icon: CheckCircle2, color: "text-accent-emerald", label: "Architecture", value: "Modular Monolith (Phase 1 → extract services at 6mo)" },
+  { icon: CheckCircle2, color: "text-accent-emerald", label: "Database",     value: "PostgreSQL 16 + JSONB + read replica at scale" },
+  { icon: MinusCircle,  color: "text-accent-rose",  label: "Deployment",   value: "PaaS initially; Kubernetes migration deferred" },
+  { icon: XCircle,      color: "text-accent-rose",      label: "Rejected",     value: "Greenfield microservices — insufficient team maturity" },
 ];
 
 const FALLBACK_MODELS = [
@@ -79,14 +79,14 @@ export default function CouncilMode() {
       />
 
       {/* Top bar */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-slate-800/50 flex-shrink-0">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-border-core/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className={`px-3 py-1 rounded border font-mono text-xs flex items-center gap-2 ${
             isStreaming
-              ? "bg-orange-500/10 border-orange-500/30 text-orange-400"
-              : "bg-slate-900 border-slate-700 text-slate-500"
+              ? "bg-accent-rose/10 border-orange-500/30 text-accent-rose"
+              : "bg-panel-bg border-border-core/60 text-text-secondary"
           }`}>
-            <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-orange-500 animate-pulse" : "bg-slate-700"}`} />
+            <span className={`w-2 h-2 rounded-full ${isStreaming ? "bg-accent-rose animate-pulse" : "bg-panel-bg"}`} />
             {isStreaming ? "DEBATE ACTIVE" : "AWAITING DEBATE"}
           </div>
           <div className="flex gap-1">
@@ -97,29 +97,29 @@ export default function CouncilMode() {
             ))}
           </div>
         </div>
-        <Button variant="outline" size="sm" className="border-slate-700 text-slate-400 hover:text-white bg-slate-900/50 text-xs">
+        <Button variant="outline" size="sm" className="border-border-core/60 text-text-secondary hover:text-text-primary bg-panel-bg/50 text-xs">
           <Download className="w-3.5 h-3.5 mr-2" />
           Export
         </Button>
       </div>
 
       {/* Debate area */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {activeModels.map((col: any) => {
           const msgs = getMessages(col.key);
           return (
-            <div key={col.key} className={`flex flex-col border-b md:border-b-0 md:border-r border-slate-800/50 last:border-b-0 last:border-r-0 min-h-[300px] lg:min-h-0 ${col.bg} ${col.glow}`}>
+            <div key={col.key} className={`flex-1 flex flex-col border-r border-border-core/50 last:border-r-0 ${col.bg} ${col.glow}`}>
               <div className={`px-4 py-2.5 ${col.header} border-b ${col.border} flex items-center justify-between flex-shrink-0`}>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${col.dot} ${isStreaming ? "animate-pulse" : ""}`} />
                   <span className={`font-mono font-bold text-sm ${col.color}`}>{col.name}</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">{col.role}</span>
+                <span className="text-[10px] text-text-secondary font-mono uppercase tracking-widest">{col.role}</span>
               </div>
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                   {msgs.length === 0 && !isStreaming && (
-                    <div className="text-xs font-mono text-slate-700 text-center py-8">
+                    <div className="text-xs font-mono text-text-secondary text-center py-8">
                       No response yet. Broadcast a directive below.
                     </div>
                   )}
@@ -129,7 +129,7 @@ export default function CouncilMode() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: j * 0.08 }}
                       key={msg.id}
-                      className={`p-3 rounded border ${col.border} bg-[#020611]/60 text-xs text-slate-300 leading-relaxed`}
+                      className={`p-3 rounded border ${col.border} bg-[#020611]/60 text-xs text-text-primary leading-relaxed`}
                     >
                       <div className={`text-[9px] font-mono uppercase tracking-widest ${col.color} mb-1.5`}>
                         Round {j + 1}
@@ -138,7 +138,7 @@ export default function CouncilMode() {
                     </motion.div>
                   ))}
                   {isStreaming && (
-                    <div className="flex items-center gap-2 text-xs font-mono text-slate-600 p-2">
+                    <div className="flex items-center gap-2 text-xs font-mono text-text-secondary p-2">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       Awaiting response...
                     </div>
@@ -153,19 +153,19 @@ export default function CouncilMode() {
       {/* Council Verdict */}
       <div className="flex-shrink-0 border-t border-amber-900/40 bg-gradient-to-r from-amber-950/20 via-[#020611] to-amber-950/20">
         <div className="px-4 py-2.5 border-b border-amber-900/30 flex items-center gap-3">
-          <Gavel className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400">Council Verdict</span>
+          <Gavel className="w-4 h-4 text-accent-rose" />
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-accent-rose">Council Verdict</span>
           <div className="ml-auto flex items-center gap-4">
-            <div className="text-[10px] font-mono text-slate-600">Consensus pending</div>
+            <div className="text-[10px] font-mono text-text-secondary">Consensus pending</div>
           </div>
         </div>
-        <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="px-4 py-3 grid grid-cols-4 gap-3">
           {VERDICT_ITEMS.map(({ icon: Icon, color, label, value }) => (
-            <div key={label} className="flex items-start gap-2 p-2.5 rounded bg-slate-900/50 border border-slate-800">
+            <div key={label} className="flex items-start gap-2 p-2.5 rounded bg-panel-bg/50 border border-border-core">
               <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${color}`} />
               <div className="min-w-0">
-                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-0.5">{label}</div>
-                <div className="text-[11px] font-mono text-slate-300 leading-snug">{value}</div>
+                <div className="text-[10px] font-mono text-text-secondary uppercase tracking-widest mb-0.5">{label}</div>
+                <div className="text-[11px] font-mono text-text-primary leading-snug">{value}</div>
               </div>
             </div>
           ))}
@@ -173,33 +173,33 @@ export default function CouncilMode() {
       </div>
 
       {/* Broadcast bar */}
-      <div className="px-4 py-3 bg-slate-950/80 border-t border-slate-800 flex gap-3 items-center flex-shrink-0">
+      <div className="px-4 py-3 bg-slate-950/80 border-t border-border-core flex gap-3 items-center flex-shrink-0">
         {/* Attach button */}
         <button
           type="button"
           onClick={openPicker}
           disabled={!activeProjectId}
           title={activeProjectId ? "Attach files to project" : "Select or create a project first"}
-          className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+          className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
         >
           <Paperclip className="w-4 h-4" />
         </button>
 
-        <div className="flex-1 flex items-center px-4 py-2 bg-slate-950 border border-slate-700 rounded font-mono text-sm focus-within:border-orange-500/50 transition-colors">
-          <span className="text-orange-500 mr-3 select-none">&gt;</span>
+        <div className="flex-1 flex items-center px-4 py-2 bg-slate-950 border border-border-core/60 rounded font-mono text-sm focus-within:border-orange-500/50 transition-colors">
+          <span className="text-accent-rose mr-3 select-none">&gt;</span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={connected ? "Broadcast directive to all council members..." : "Daemon offline"}
             disabled={!connected || isStreaming}
-            className="flex-1 bg-transparent text-slate-200 placeholder:text-slate-600 outline-none text-sm"
+            className="flex-1 bg-transparent text-text-primary placeholder:text-text-secondary outline-none text-sm"
           />
         </div>
         <Button
           onClick={handleBroadcast}
           disabled={!connected || isStreaming || !input.trim()}
-          className="bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)] disabled:opacity-40 disabled:shadow-none"
+          className="bg-orange-600 hover:bg-accent-rose text-text-primary disabled:opacity-40 "
         >
           {isStreaming && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           Inject Context
