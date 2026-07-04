@@ -165,7 +165,7 @@ class ModelRouter:
         cerebras_key = self._get_api_key("CEREBRAS_API_KEY")
         if cerebras_key:
             m = CEREBRAS_MODEL
-            label = f"{m['provider']} â€¢ {m['display_name']}"
+            label = f"{m['provider']} \u2022 {m['display_name']}"
             if m['model'] not in seen:
                 result.append({"model_id": m["model"], "label": label, "tier": "fast"})
                 seen.add(m['model'])
@@ -174,7 +174,7 @@ class ModelRouter:
             for m in models:
                 key = self._get_api_key(m["api_key_name"])
                 if key and m["model"] not in seen:
-                    label = f"{m['provider']} â€¢ {m['display_name']}"
+                    label = f"{m['provider']} \u2022 {m['display_name']}"
                     result.append({"model_id": m["model"], "label": label, "tier": tier})
                     seen.add(m["model"])
 

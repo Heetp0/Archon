@@ -590,13 +590,13 @@ export default function SettingsModal() {
       const protocol = window.location.protocol === "https:" ? "https" : "http";
       
       const keys = {
-        OPENAI_API_KEY: localStorage.getItem("archon_api_key_openai") || "",
-        ANTHROPIC_API_KEY: localStorage.getItem("archon_api_key_anthropic") || "",
-        GEMINI_API_KEY: localStorage.getItem("archon_api_key_gemini") || "",
-        GROQ_API_KEY: localStorage.getItem("archon_api_key_groq") || "",
-        MISTRAL_API_KEY: localStorage.getItem("archon_api_key_mistral") || "",
-        OPENROUTER_API_KEY: localStorage.getItem("archon_api_key_openrouter") || "",
-        CEREBRAS_API_KEY: localStorage.getItem("archon_api_key_cerebras") || "",
+        OPENAI_API_KEY: localStorage.getItem("archon_apikey_openai") || "",
+        ANTHROPIC_API_KEY: localStorage.getItem("archon_apikey_anthropic") || "",
+        GEMINI_API_KEY: localStorage.getItem("archon_apikey_gemini") || "",
+        GROQ_API_KEY: localStorage.getItem("archon_apikey_groq") || "",
+        MISTRAL_API_KEY: localStorage.getItem("archon_apikey_mistral") || "",
+        OPENROUTER_API_KEY: localStorage.getItem("archon_apikey_openrouter") || "",
+        CEREBRAS_API_KEY: localStorage.getItem("archon_apikey_cerebras") || "",
       };
 
       const response = await fetch(`${protocol}://${host}:${port}/settings/api-keys`, {
