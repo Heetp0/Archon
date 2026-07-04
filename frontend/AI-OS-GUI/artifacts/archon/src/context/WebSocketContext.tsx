@@ -204,8 +204,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     wsMessages.forEach((data) => {
       if (data.event === "token") {
         setIsStreaming(true);
-        const { content, model } = data.payload as { content: string; model?: string };
-        const targetModel = model || "assistant";
+        const payload = data.payload as { content?: string; text?: string; model?: string };
+        const content = payload.content !== undefined ? payload.content : (payload.text || "");
+        const targetModel = payload.model || "assistant";
 
         tokenBuffer.current.push({ content, targetModel });
         if (!batchTimeout.current) {
