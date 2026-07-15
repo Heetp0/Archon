@@ -63,3 +63,44 @@ def test_websocket_missing_fields():
         data = websocket.receive_json()
         assert data["event"] == "error"
         assert "Missing" in data["payload"]["error"]
+
+
+@patch('chat_agent.ChatAgent.run')
+def test_websocket_attachments(mock_chat_run):
+    # SGVsbG8gV29ybGQ= is base64 for "Hello World"
+    attachments_payload = [
+        {"name": "test.txt", "content": "SGVsbG8gV29ybGQ="}
+    ]
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "id": "req-999",
+            "mode": "chat",
+            "type": "chat",
+            "payload": {
+                "text": "hello",
+                "context": {
+                    "attachments": attachments_payload
+                }
+            }
+        })
+        
+        # Expect the 'done' event since the mock runs successfully
+        data = websocket.receive_json()
+        assert data["id"] == "req-999"
+        
+        # Verify chat_agent.run was called
+        mock_chat_run.assert_called_once()
+        called_payload = mock_chat_run.call_args[0][0]
+        
+        # Check that context.attachments has been converted to local file paths
+        assert "context" in called_payload
+        assert "attachments" in called_payload["context"]
+        local_paths = called_payload["context"]["attachments"]
+        assert len(local_paths) == 1
+        
+        file_path = local_paths[0]
+        assert os.path.exists(file_path)
+        assert os.path.basename(file_path) == "test.txt"
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        assert content == "Hello World"

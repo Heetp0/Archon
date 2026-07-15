@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
+import ReactMarkdown from "react-markdown";
 
 const ROLES = ["Proposer", "Critic", "Domain Expert", "Synthesizer"];
 const COLORS = ["text-accent-indigo", "text-accent-rose", "text-accent-indigo", "text-accent-emerald"];
@@ -26,7 +27,7 @@ const FALLBACK_MODELS = [
   { model_id: "groq/llama-3.3-70b-versatile",        label: "Groq · Llama 3.3 70B" },
   { model_id: "gemini/gemini-2.5-flash",              label: "Gemini · 2.5 Flash" },
   { model_id: "openrouter/deepseek/deepseek-r1:free", label: "OpenRouter · DeepSeek R1" },
-  { model_id: "cerebras/llama-3.3-70b",               label: "Cerebras · Llama 3.3 70B" },
+  { model_id: "openai/llama3.3-70b",               label: "Cerebras · Llama 3.3 70B" },
 ];
 
 export default function CouncilMode() {
@@ -46,6 +47,53 @@ export default function CouncilMode() {
     glow: GLOWS[i % GLOWS.length],
     dot: DOTS[i % DOTS.length],
   }));
+
+
+  const consensusText = councilMessages["Council Consensus"]?.[0]?.content || "";
+
+  const handleExport = () => {
+    let markdown = `# AI Council Debate Transcript\n\n`;
+    
+    // Find original directive from any model's messages
+    let originalDirective = "";
+    for (const modelKey of Object.keys(councilMessages)) {
+      const msgs = councilMessages[modelKey];
+      const userMsg = msgs.find(m => m.role === "user");
+      if (userMsg) {
+        originalDirective = userMsg.content;
+        break;
+      }
+    }
+    
+    if (originalDirective) {
+      markdown += `## Original Directive\n> ${originalDirective}\n\n`;
+    }
+    
+    activeModels.forEach((m: any) => {
+      const msgs = councilMessages[m.key] || [];
+      const assistantMsgs = msgs.filter(msg => msg.role === "assistant");
+      if (assistantMsgs.length > 0) {
+        markdown += `## Council Member: ${m.name} (${m.role})\n\n`;
+        assistantMsgs.forEach((msg, idx) => {
+          markdown += `### Round ${idx + 1}\n${msg.content}\n\n`;
+        });
+        markdown += `---\n\n`;
+      }
+    });
+    
+    if (consensusText) {
+      markdown += `## Council Consensus Verdict\n\n${consensusText}\n\n`;
+    }
+    
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `council-debate-${Date.now()}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const [input, setInput] = useState("");
 
@@ -97,7 +145,7 @@ export default function CouncilMode() {
             ))}
           </div>
         </div>
-        <Button variant="outline" size="sm" className="border-border-core/60 text-text-secondary hover:text-text-primary bg-panel-bg/50 text-xs">
+        <Button variant="outline" size="sm" onClick={handleExport} className="border-border-core/60 text-text-secondary hover:text-text-primary bg-panel-bg/50 text-xs">
           <Download className="w-3.5 h-3.5 mr-2" />
           Export
         </Button>
@@ -156,20 +204,32 @@ export default function CouncilMode() {
           <Gavel className="w-4 h-4 text-accent-rose" />
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-accent-rose">Council Verdict</span>
           <div className="ml-auto flex items-center gap-4">
-            <div className="text-[10px] font-mono text-text-secondary">Consensus pending</div>
+            <div className="text-[10px] font-mono text-text-secondary">
+              {consensusText
+                ? (isStreaming ? "Synthesizing consensus..." : "Consensus synthesized")
+                : "Consensus pending"}
+            </div>
           </div>
         </div>
-        <div className="px-4 py-3 grid grid-cols-4 gap-3">
-          {VERDICT_ITEMS.map(({ icon: Icon, color, label, value }) => (
-            <div key={label} className="flex items-start gap-2 p-2.5 rounded bg-panel-bg/50 border border-border-core">
-              <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${color}`} />
-              <div className="min-w-0">
-                <div className="text-[10px] font-mono text-text-secondary uppercase tracking-widest mb-0.5">{label}</div>
-                <div className="text-[11px] font-mono text-text-primary leading-snug">{value}</div>
-              </div>
+        {consensusText ? (
+          <ScrollArea className="h-32 px-4 py-3">
+            <div className="prose prose-invert max-w-none text-xs font-mono text-text-primary leading-relaxed">
+              <ReactMarkdown>{consensusText}</ReactMarkdown>
             </div>
-          ))}
-        </div>
+          </ScrollArea>
+        ) : (
+          <div className="px-4 py-3 grid grid-cols-4 gap-3">
+            {VERDICT_ITEMS.map(({ icon: Icon, color, label, value }) => (
+              <div key={label} className="flex items-start gap-2 p-2.5 rounded bg-panel-bg/50 border border-border-core">
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${color}`} />
+                <div className="min-w-0">
+                  <div className="text-[10px] font-mono text-text-secondary uppercase tracking-widest mb-0.5">{label}</div>
+                  <div className="text-[11px] font-mono text-text-primary leading-snug">{value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Broadcast bar */}

@@ -135,6 +135,7 @@ export default function AgentMode() {
   const [cmdInput, setCmdInput] = useState("");
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastSentCmdRef = useRef<string>("");
 
   useEffect(() => {
     if (terminalOpen && terminalEndRef.current) {
@@ -148,12 +149,17 @@ export default function AgentMode() {
 
   const handleSendCmd = useCallback(() => {
     if (!cmdInput.trim()) return;
+    lastSentCmdRef.current = cmdInput.trim();
     sendAgentCommand(cmdInput.trim());
     setCmdInput("");
   }, [cmdInput, sendAgentCommand]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSendCmd();
+    if (e.key === "ArrowUp" && !cmdInput && lastSentCmdRef.current) {
+      e.preventDefault();
+      setCmdInput(lastSentCmdRef.current);
+    }
   };
 
   // Blocking state — no active agent project

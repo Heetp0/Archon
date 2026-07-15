@@ -16,6 +16,7 @@ from model_router import ModelRouter
 from vault_search import VaultSearch
 from markit_down import MarkitDownNormalizer
 from calendar_service import CalendarService
+from ingestion_queue import IngestionQueue
 import config as config_module
 WORKSPACE_ROOT = config_module.WORKSPACE_ROOT
 DAEMON_PORT = config_module.DAEMON_PORT
@@ -54,13 +55,38 @@ class ConnectionManager:
             # allowing the next receive_text to properly throw WebSocketDisconnect
             pass
 
+    async def broadcast(self, event_type: str, payload: Any):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json({
+                    "id": "broadcast",
+                    "event": event_type,
+                    "payload": payload
+                })
+            except Exception:
+                pass
+
 manager = ConnectionManager()
+
+async def unified_broadcast(event_type: str, payload: Any):
+    await manager.broadcast(event_type, payload)
+    try:
+        import notebook_routes
+        await notebook_routes.job_websocket_manager.broadcast_job_update(event_type, payload)
+        await notebook_routes.notebook_job_websocket_manager.broadcast_job_update(event_type, payload)
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Error in unified broadcast: {e}")
 
 # Initialize core services
 router = ModelRouter()
+from retriever import Retriever
+retriever = Retriever(db_path=os.path.join(WORKSPACE_ROOT, ".lancedb"), model_router=router)
+
+ingestion_queue = IngestionQueue(broadcast_callback=unified_broadcast, retriever=retriever)
 vault_search = VaultSearch(db_path=os.path.join(WORKSPACE_ROOT, ".lancedb"), vault_path=WORKSPACE_ROOT)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    ingestion_queue.start_workers()
     # Index vault on startup in background to avoid blocking
     try:
         logger.info("Starting background vault index...")
@@ -68,6 +94,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Error starting background vault index: {e}")
     yield
+    await ingestion_queue.stop_workers()
 
 app = FastAPI(title="Archon Daemon", lifespan=lifespan)
 
@@ -102,6 +129,22 @@ async def get_calendar_events(days: int = 7):
     events = await calendar_service.get_events(days=days)
     return {"events": events}
 
+@app.post("/settings/api-keys/test")
+async def test_api_key(payload: dict):
+    """Validates API key formats for major providers before saving."""
+    provider = payload.get("provider", "").lower()
+    api_key = payload.get("api_key", "").strip()
+    if not api_key:
+        return {"success": False, "error": "API key cannot be empty"}
+    if provider == "openai" and not api_key.startswith("sk-"):
+        return {"success": False, "error": "Invalid OpenAI key format (must start with sk-)"}
+    if provider == "anthropic" and not api_key.startswith("sk-ant-"):
+        return {"success": False, "error": "Invalid Anthropic key format (must start with sk-ant-)"}
+    if provider == "groq" and not api_key.startswith("gsk_"):
+        return {"success": False, "error": "Invalid Groq key format (must start with gsk_)"}
+    return {"success": True}
+
+
 @app.post("/settings/api-keys")
 async def save_api_keys(payload: dict):
     """Writes API keys to .env and sets them in os.environ immediately."""
@@ -134,6 +177,31 @@ async def websocket_endpoint(websocket: WebSocket):
                         payload["text"] = task_text
                     if "topic" not in payload:
                         payload["topic"] = task_text
+
+                # Intercept context attachments and decode base64
+                if isinstance(payload, dict):
+                    context = payload.get("context")
+                    if isinstance(context, dict):
+                        attachments = context.get("attachments")
+                        if attachments:
+                            import tempfile
+                            import base64
+                            temp_dir = tempfile.mkdtemp(prefix="archon_attach_")
+                            local_paths = []
+                            for att in attachments:
+                                name = att.get("name", "unnamed")
+                                content_b64 = att.get("content", "")
+                                file_path = os.path.join(temp_dir, name)
+                                try:
+                                    file_data = base64.b64decode(content_b64)
+                                except Exception as decode_err:
+                                    logger.error(f"Failed to decode base64 for file {name}: {decode_err}")
+                                    file_data = b""
+                                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                                with open(file_path, "wb") as f_out:
+                                    f_out.write(file_data)
+                                local_paths.append(file_path)
+                            context["attachments"] = local_paths
 
                 if not req_id:
                     await manager.send_event(websocket, "unknown", "error", {"error": "Missing 'id' in request."})
@@ -197,8 +265,49 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-# Serve built React frontend as static files
+from pydantic import BaseModel, Field
+
+class SourceIngestionRequest(BaseModel):
+    source_type: str = Field(..., description="One of 'pdf', 'codebase', 'audio'")
+    file_path: str = Field(..., description="Local path or GitHub URL to ingest")
+    metadata: dict = Field(default_factory=dict, description="Optional metadata")
+
+@app.post("/notebooks/{notebook_id}/sources", status_code=202)
+async def queue_source_ingestion(notebook_id: str, request: SourceIngestionRequest):
+    source_type = request.source_type.lower()
+    if source_type not in ("pdf", "codebase", "audio"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Invalid source_type. Must be 'pdf', 'codebase', or 'audio'")
+    
+    job_id = await ingestion_queue.add_job(
+        notebook_id=notebook_id,
+        source_type=source_type,
+        file_path=request.file_path,
+        metadata=request.metadata
+    )
+    return {"job_id": job_id, "status": "pending"}
+
+@app.get("/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    status = ingestion_queue.get_status(job_id)
+    if not status:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Job not found")
+    return status
+
+# Initialize and register notebook routes
+import notebook_routes
+notebook_routes.init_notebook_services(router, retriever)
+app.include_router(notebook_routes.router)
+
 from fastapi.staticfiles import StaticFiles
+
+# Serve generated audio files from WORKSPACE_ROOT dynamically mounted at /static/audio
+if WORKSPACE_ROOT:
+    os.makedirs(WORKSPACE_ROOT, exist_ok=True)
+    app.mount("/static/audio", StaticFiles(directory=WORKSPACE_ROOT), name="audio_static")
+
+# Serve built React frontend as static files
 static_path = os.path.join(os.path.dirname(__file__), "static")
 if os.path.isdir(static_path):
     class NoCacheStaticFiles(StaticFiles):

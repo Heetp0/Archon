@@ -13,6 +13,7 @@ export interface ContextFile {
   name: string;
   kind: "image" | "pdf" | "text" | "other";
   localBlobUrl?: string;
+  content?: string;
 }
 
 export interface AgentSettings {
@@ -47,6 +48,8 @@ interface ProjectsState {
   updateAgentSettings: (projectId: string, settings: Partial<AgentSettings>) => void;
   ungroupedChats: Record<Exclude<ProjectMode, "agents">, ChatSession[]>;
   getProjectsForMode: (mode: ProjectMode) => Project[];
+  deleteProject: (projectId: string) => void;
+  deleteChat: (chatId: string) => void;
 }
 
 const ProjectsContext = createContext<ProjectsState | undefined>(undefined);
@@ -63,15 +66,104 @@ export function subscribeActiveChat(cb: (id: string | null) => void) {
   };
 }
 
+export let globalActiveProjectFiles: ContextFile[] = [];
+const activeProjectFilesListeners = new Set<(files: ContextFile[]) => void>();
+
+export function subscribeActiveProjectFiles(cb: (files: ContextFile[]) => void) {
+  activeProjectFilesListeners.add(cb);
+  cb(globalActiveProjectFiles);
+  return () => {
+    activeProjectFilesListeners.delete(cb);
+  };
+}
+
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    try {
+      const saved = localStorage.getItem("archon_projects");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("archon_activeProjectId") || null;
+    } catch {
+      return null;
+    }
+  });
+  const [activeChatId, setActiveChatId] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem("archon_activeChatId");
+      if (saved) {
+        globalActiveChatId = saved;
+        return saved;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
   const [ungroupedChats, setUngroupedChats] = useState<
     Record<Exclude<ProjectMode, "agents">, ChatSession[]>
-  >({ chat: [], council: [], research: [] });
+  >(() => {
+    try {
+      const saved = localStorage.getItem("archon_ungroupedChats");
+      return saved ? JSON.parse(saved) : { chat: [], council: [], research: [] };
+    } catch {
+      return { chat: [], council: [], research: [] };
+    }
+  });
 
   const revokedUrls = useRef<string[]>([]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("archon_projects", JSON.stringify(projects));
+    } catch (e) {
+      console.error("Failed to save projects to localStorage:", e);
+    }
+  }, [projects]);
+
+  useEffect(() => {
+    try {
+      if (activeProjectId) {
+        localStorage.setItem("archon_activeProjectId", activeProjectId);
+      } else {
+        localStorage.removeItem("archon_activeProjectId");
+      }
+    } catch (e) {
+      console.error("Failed to save activeProjectId to localStorage:", e);
+    }
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    try {
+      if (activeChatId) {
+        localStorage.setItem("archon_activeChatId", activeChatId);
+      } else {
+        localStorage.removeItem("archon_activeChatId");
+      }
+    } catch (e) {
+      console.error("Failed to save activeChatId to localStorage:", e);
+    }
+  }, [activeChatId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("archon_ungroupedChats", JSON.stringify(ungroupedChats));
+    } catch (e) {
+      console.error("Failed to save ungroupedChats to localStorage:", e);
+    }
+  }, [ungroupedChats]);
+
+  useEffect(() => {
+    const activeProject = projects.find((p) => p.id === activeProjectId);
+    const files = activeProject ? activeProject.contextFiles : [];
+    globalActiveProjectFiles = files;
+    activeProjectFilesListeners.forEach((l) => l(files));
+  }, [projects, activeProjectId]);
 
   const handleSetActiveChat = useCallback((chatId: string | null) => {
     globalActiveChatId = chatId;
@@ -192,6 +284,44 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const deleteProject = useCallback((projectId: string) => {
+    setProjects((prev) => {
+      const projectToDelete = prev.find((p) => p.id === projectId);
+      if (projectToDelete) {
+        projectToDelete.contextFiles.forEach((file) => {
+          if (file.localBlobUrl) {
+            try { URL.revokeObjectURL(file.localBlobUrl); } catch {}
+          }
+        });
+        const hasActiveChat = projectToDelete.chats.some((c) => c.id === activeChatId);
+        if (hasActiveChat) {
+          handleSetActiveChat(null);
+        }
+      }
+      return prev.filter((p) => p.id !== projectId);
+    });
+    setActiveProjectId((prev) => (prev === projectId ? null : prev));
+  }, [activeChatId, handleSetActiveChat]);
+
+  const deleteChat = useCallback((chatId: string) => {
+    setProjects((prev) =>
+      prev.map((p) => ({
+        ...p,
+        chats: p.chats.filter((c) => c.id !== chatId),
+      }))
+    );
+    setUngroupedChats((prev) => {
+      const next = { ...prev };
+      (Object.keys(next) as Array<keyof typeof next>).forEach((m) => {
+        next[m] = next[m].filter((c) => c.id !== chatId);
+      });
+      return next;
+    });
+    if (activeChatId === chatId) {
+      handleSetActiveChat(null);
+    }
+  }, [activeChatId, handleSetActiveChat]);
+
   const getProjectsForMode = useCallback((mode: ProjectMode) => {
     return projects.filter((p) => p.mode === mode);
   }, [projects]);
@@ -213,6 +343,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         updateAgentSettings,
         ungroupedChats,
         getProjectsForMode,
+        deleteProject,
+        deleteChat,
       }}
     >
       {children}

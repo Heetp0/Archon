@@ -1,0 +1,443 @@
+<!DOCTYPE html><html lang="en" class="dark"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archon | AI Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.cdnfonts.com/css/satoshi');
+
+        :root {
+            --vercel-black: #000000;
+            --vercel-gray: #050505;
+            --vercel-border: #1a1a1a;
+            --vercel-text-secondary: #888888;
+            --accent-blue: #0070f3;
+        }
+
+        body {
+            font-family: 'Satoshi', 'Inter', sans-serif;
+            background-color: var(--vercel-black);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .border-charcoal {
+            border-color: var(--vercel-border);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            background-color: #111;
+        }
+        .nav-active {
+            background-color: #111;
+            border: 1px solid var(--vercel-border);
+            color: #fff;
+        }
+        .card-glass {
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--vercel-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen w-full bg-vercel-black">
+        
+        <!-- Left Sidebar Rail -->
+        <aside class="w-16 lg:w-20 border-r border-charcoal flex flex-col items-center py-6 space-y-8 z-50 bg-vercel-black">
+            <div class="mb-4">
+                <div class="w-10 h-10 border border-white rounded-lg flex items-center justify-center">
+                    <div class="w-5 h-5 bg-white rounded-sm rotate-45"></div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 flex flex-col space-y-4">
+                <a href="#" id="nav-dashboard" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:layout-dashboard" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-chat" class="nav-active p-3 rounded-xl flex items-center justify-center text-white group relative">
+                    <iconify-icon icon="lucide:message-square" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-research" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:microscope" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-council" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:users" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-notebook" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:book-open" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-obsidian" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:box" class="text-2xl"></iconify-icon>
+                </a>
+                <a href="#" id="nav-agents" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative">
+                    <iconify-icon icon="lucide:cpu" class="text-2xl"></iconify-icon>
+                </a>
+            </nav>
+
+            <div class="mt-auto pb-4">
+                <button id="user-profile-btn" class="w-10 h-10 rounded-full border border-charcoal overflow-hidden flex items-center justify-center bg-zinc-900">
+                    <iconify-icon icon="lucide:user" class="text-lg text-gray-300"></iconify-icon>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col relative bg-vercel-black overflow-hidden">
+            
+            <!-- Header -->
+            <header class="h-14 border-b border-charcoal flex items-center px-6 justify-between bg-vercel-black">
+                <div class="flex items-center space-x-4 text-sm">
+                    <span class="text-gray-500">Archon System</span>
+                    <span class="text-gray-800">/</span>
+                    <span class="text-white font-medium">Global Overview</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-1 px-3 py-1 bg-zinc-900 border border-charcoal rounded-md text-[10px] text-green-400 uppercase tracking-tighter">
+                        <span class="w-1 h-1 rounded-full bg-green-500 animate-pulse"></span>
+                        <span>Quantum Core Active</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Multi-Mode View (Scrollable Container) -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-12 pb-80">
+                
+                <!-- 1. DASHBOARD MODE -->
+                <section id="section-dashboard" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:layout-dashboard" class="text-gray-400"></iconify-icon> Dashboard</h2>
+                        <span class="text-xs text-gray-500 font-mono">v4.2.0-stable</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="card-glass p-4 rounded-xl">
+                            <div class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Throughput</div>
+                            <div class="text-2xl font-medium">1.2M <span class="text-xs text-green-500">+12%</span></div>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl">
+                            <div class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Active Agents</div>
+                            <div class="text-2xl font-medium">24</div>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl">
+                            <div class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Latency</div>
+                            <div class="text-2xl font-medium">42ms <span class="text-xs text-orange-500">-2ms</span></div>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl">
+                            <div class="text-xs text-gray-500 mb-1 uppercase tracking-wider">System Health</div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="h-1.5 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500 w-[94%]"></div>
+                                </div>
+                                <span class="text-xs">94%</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CHAT MODE PREVIEW -->
+                <section id="section-chat" class="space-y-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:message-square" class="text-gray-400"></iconify-icon> Chat Engine</h2>
+                    <div class="card-glass rounded-xl overflow-hidden border-charcoal bg-zinc-950">
+                        <div class="p-6 space-y-6">
+                            <div class="flex gap-4 group">
+                                <div class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs">JD</div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-medium text-gray-400">User</span>
+                                        <div class="flex gap-2 opacity-0 group-hover:opacity-100">
+                                            <button class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:pencil-line"></iconify-icon></button>
+                                            <button class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:copy"></iconify-icon></button>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-200">Refactor the authentication middleware to use JWT with Redis caching.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 bg-zinc-900/20 p-4 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center"><iconify-icon icon="lucide:sparkles"></iconify-icon></div>
+                                <div class="flex-1 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-medium text-white">Archon</span>
+                                            <span class="text-[10px] text-gray-600">v1/3</span>
+                                            <nav class="flex gap-1">
+                                                <button class="text-[10px] px-1 hover:text-white text-gray-600"><iconify-icon icon="lucide:chevron-left"></iconify-icon></button>
+                                                <button class="text-[10px] px-1 hover:text-white text-gray-600"><iconify-icon icon="lucide:chevron-right"></iconify-icon></button>
+                                            </nav>
+                                        </div>
+                                        <div class="flex gap-3 text-xs text-gray-500">
+                                            <button class="hover:text-white flex items-center gap-1"><iconify-icon icon="lucide:thumbs-up"></iconify-icon></button>
+                                            <button class="hover:text-white flex items-center gap-1"><iconify-icon icon="lucide:refresh-cw"></iconify-icon></button>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-300">Here is the refactored middleware implementation. I've integrated `ioredis` for performance...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. COUNCIL MODE -->
+                <section id="section-council" class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:users" class="text-gray-400"></iconify-icon> The Council</h2>
+                        <button class="text-[10px] border border-red-500/50 text-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase font-bold tracking-widest">Stop All Agents</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="card-glass p-4 rounded-xl border-l-2 border-l-orange-500">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-orange-500 uppercase">Skeptic</span>
+                                <iconify-icon icon="lucide:alert-circle" class="text-orange-500"></iconify-icon>
+                            </div>
+                            <p class="text-sm text-gray-400 italic">"The Redis layer adds a single point of failure. Have we considered fallbacks?"</p>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl border-l-2 border-l-green-500">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-green-500 uppercase">Optimist</span>
+                                <iconify-icon icon="lucide:trending-up" class="text-green-500"></iconify-icon>
+                            </div>
+                            <p class="text-sm text-gray-400 italic">"Performance gains will be 3x. We can implement a simple cluster for redundancy."</p>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl border-l-2 border-l-blue-500">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-blue-500 uppercase">Domain Expert</span>
+                                <iconify-icon icon="lucide:database" class="text-blue-500"></iconify-icon>
+                            </div>
+                            <p class="text-sm text-gray-400 italic">"Redis 7.0 features will simplify the atomic set operations we need here."</p>
+                        </div>
+                        <div class="card-glass p-4 rounded-xl border-l-2 border-l-purple-500">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs font-bold text-purple-500 uppercase">Synthesizer</span>
+                                <iconify-icon icon="lucide:git-merge" class="text-purple-500"></iconify-icon>
+                            </div>
+                            <p class="text-sm text-gray-400 italic">"Proceed with Redis + Local Memory Cache fallback. I'll generate the config."</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. NOTEBOOK MODE -->
+                <section id="section-notebook" class="space-y-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:book-open" class="text-gray-400"></iconify-icon> Notebook Studio</h2>
+                    <div class="flex h-96 border border-charcoal rounded-xl overflow-hidden bg-[#050505]">
+                        <div class="w-64 border-r border-charcoal p-4 space-y-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-widest">Sources</div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2 p-2 rounded bg-zinc-900 text-xs text-blue-400"><iconify-icon icon="lucide:file-text"></iconify-icon> project_specs.pdf</div>
+                                <div class="flex items-center gap-2 p-2 rounded hover:bg-zinc-900 text-xs text-gray-500"><iconify-icon icon="lucide:file-text"></iconify-icon> market_research.docx</div>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                            <div class="prose prose-invert prose-sm">
+                                <h3 class="text-white">Executive Summary</h3>
+                                <p class="text-gray-400">The implementation of neural-enhanced caching has shown significant improvements in synthetic benchmarks...</p>
+                            </div>
+                        </div>
+                        <div class="w-72 border-l border-charcoal p-4 bg-black/50">
+                            <div class="text-xs font-bold text-gray-600 mb-4 uppercase">Studio Controls</div>
+                            <button class="w-full py-2 bg-white text-black text-xs font-bold rounded mb-2">Run Analysis</button>
+                            <button class="w-full py-2 border border-charcoal text-white text-xs font-bold rounded">Export PDF</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. OBSIDIAN MODE -->
+                <section id="section-obsidian" class="space-y-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:box" class="text-gray-400"></iconify-icon> Obsidian Graph</h2>
+                    <div class="flex h-80 border border-charcoal rounded-xl overflow-hidden">
+                        <div class="w-48 border-r border-charcoal p-2 bg-[#080808]">
+                            <div class="flex items-center gap-2 p-1 text-xs text-gray-400"><iconify-icon icon="lucide:folder"></iconify-icon> Research</div>
+                            <div class="ml-4 flex items-center gap-2 p-1 text-xs text-gray-200"><iconify-icon icon="lucide:file-text"></iconify-icon> Node_Graph.md</div>
+                            <div class="ml-4 flex items-center gap-2 p-1 text-xs text-gray-400"><iconify-icon icon="lucide:file-text"></iconify-icon> Taxonomy.md</div>
+                        </div>
+                        <div class="flex-1 p-8 bg-zinc-950 font-mono text-sm text-gray-500">
+                            # Node_Graph.md
+                            
+                            - [[Architecture]]
+                            - [[Latency_Optimization]]
+                            - [[Caching_Strategies]]
+                            
+                            This map defines the relationship between various core components...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. AGENTS MODE -->
+                <section id="section-agents" class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:cpu" class="text-gray-400"></iconify-icon> Agent Runtime</h2>
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1 bg-zinc-800 text-[10px] font-bold uppercase rounded border border-charcoal hover:bg-zinc-700">Force Stop</button>
+                            <button class="px-3 py-1 bg-red-600 text-[10px] font-bold uppercase rounded hover:bg-red-500">Stop Instance</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 h-96">
+                        <div class="flex-1 card-glass p-4 font-mono text-[10px] text-gray-400 overflow-y-auto custom-scrollbar">
+                            <div class="text-green-500">[SYSTEM] Initializing Agent v2.4...</div>
+                            <div class="text-blue-400 mt-2">[ACTION] Fetching remote dependencies</div>
+                            <div class="ml-4">- core-lib: resolved</div>
+                            <div class="ml-4">- auth-provider: resolved</div>
+                            <div class="text-white mt-2">[LOG] Found deprecated call in index.ts:42</div>
+                            <div class="text-yellow-500">[WARNING] Shadow-root access detected</div>
+                            <div class="text-green-500 mt-2">[STEP] Re-indexing workspace... 84%</div>
+                        </div>
+                        <div class="w-80 card-glass flex flex-col">
+                            <div class="p-3 border-b border-charcoal text-xs font-bold text-gray-500">Workspace Diff</div>
+                            <div class="flex-1 p-3 font-mono text-[10px] space-y-1">
+                                <div class="bg-red-500/10 text-red-500">- return cache.get(key)</div>
+                                <div class="bg-green-500/10 text-green-500">+ return await this.provider.fetch(key)</div>
+                                <div class="text-gray-600">... 12 unchanged lines</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. RESEARCH MODE -->
+                <section id="section-research" class="space-y-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2"><iconify-icon icon="lucide:microscope" class="text-gray-400"></iconify-icon> Research & Citations</h2>
+                    <div class="grid grid-cols-12 gap-4 h-[500px]">
+                        <div class="col-span-4 border border-charcoal rounded-xl p-4 overflow-y-auto custom-scrollbar">
+                            <div class="space-y-3">
+                                <div class="p-3 bg-zinc-900 rounded-lg border border-charcoal">
+                                    <div class="text-xs font-bold text-white mb-1">Attention is All You Need</div>
+                                    <div class="text-[10px] text-gray-500">Vaswani et al. (2017)</div>
+                                </div>
+                                <div class="p-3 hover:bg-zinc-900 rounded-lg border border-transparent transition-all">
+                                    <div class="text-xs font-bold text-white mb-1">FlashAttention-2</div>
+                                    <div class="text-[10px] text-gray-500">Dao (2023)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-8 border border-charcoal rounded-xl bg-zinc-950 flex flex-col overflow-hidden">
+                            <div class="p-3 border-b border-charcoal flex justify-between bg-zinc-900">
+                                <span class="text-xs font-mono">PAPER_VIEWER.pdf</span>
+                                <iconify-icon icon="lucide:maximize-2" class="text-gray-500"></iconify-icon>
+                            </div>
+                            <div class="flex-1 p-8 text-center text-gray-700">
+                                <iconify-icon icon="lucide:file-text" class="text-6xl mb-4"></iconify-icon>
+                                <p class="text-sm uppercase tracking-widest">PDF Render Engine Active</p>
+                                <div class="mt-8 flex justify-center">
+                                    <div class="w-32 h-32 rounded-full border border-dashed border-gray-800 flex items-center justify-center text-[8px] text-gray-800">
+                                        CITATION GRAPH
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Bottom Chat Input System -->
+            <div class="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-center pointer-events-none z-40">
+                <div class="w-full max-w-3xl pointer-events-auto space-y-3">
+                    
+                    <!-- Attachment Preview Cards -->
+                    <div class="flex space-x-3 mb-2 overflow-x-auto">
+                        <div class="flex-shrink-0 w-44 p-2 bg-zinc-900 border border-charcoal rounded-lg flex items-center space-x-3 shadow-xl">
+                            <div class="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center">
+                                <iconify-icon icon="lucide:file-code" class="text-blue-400"></iconify-icon>
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="text-[10px] font-medium text-white truncate">auth.ts</div>
+                                <div class="text-[8px] text-gray-500">2.1KB</div>
+                            </div>
+                            <button class="ml-auto text-gray-600 hover:text-white">
+                                <iconify-icon icon="lucide:x" class="text-xs"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Input Bar -->
+                    <div class="bg-zinc-900 border border-charcoal rounded-2xl shadow-2xl relative">
+                        <div class="flex items-center px-4 pt-3 gap-2">
+                            <div class="relative group">
+                                <button id="model-selector-btn" class="flex items-center space-x-2 text-[10px] text-gray-400 hover:text-white transition-colors bg-black/40 px-2 py-1 rounded-md border border-charcoal">
+                                    <iconify-icon icon="lucide:zap" class="text-amber-400"></iconify-icon>
+                                    <span>Archon-X 4.0</span>
+                                    <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+                                </button>
+                            </div>
+                            <div class="relative group">
+                                <button id="tools-selector-btn" class="flex items-center space-x-2 text-[10px] text-gray-400 hover:text-white transition-colors bg-black/40 px-2 py-1 rounded-md border border-charcoal">
+                                    <iconify-icon icon="lucide:wrench" class="text-blue-400"></iconify-icon>
+                                    <span>Active Tools</span>
+                                    <span class="bg-blue-600 text-[8px] text-white px-1 rounded-sm">4</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end px-3 py-2">
+                            <button id="cta-attachment-btn" class="p-3 text-gray-500 hover:text-white transition-colors">
+                                <iconify-icon icon="lucide:plus-circle" class="text-xl"></iconify-icon>
+                            </button>
+                            <textarea id="chat-input-textarea" class="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 resize-none max-h-48 text-sm py-3 px-2" placeholder="Ask Archon anything..." rows="1"></textarea>
+                            <button id="cta-send-btn" class="mb-1 w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center hover:bg-gray-200 transition-all">
+                                <iconify-icon icon="lucide:arrow-up" class="text-xl"></iconify-icon>
+                            </button>
+                        </div>
+                        
+                        <div class="flex justify-between px-6 pb-2">
+                           <div class="text-[9px] text-gray-600 uppercase tracking-widest font-bold">
+                               Archon Neural Net Interface
+                           </div>
+                           <div class="flex gap-4">
+                                <div class="flex items-center space-x-1 text-[9px] text-gray-500">
+                                    <span class="px-1 border border-charcoal rounded bg-black">⌘</span>
+                                    <span class="px-1 border border-charcoal rounded bg-black">K</span>
+                                    <span>Commands</span>
+                                </div>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right System Rail (Icons Only) -->
+        <aside class="w-12 border-l border-charcoal flex flex-col items-center py-6 space-y-6 bg-vercel-black z-50">
+            <button id="side-search-link" class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:search"></iconify-icon></button>
+            <button id="side-history-link" class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:history"></iconify-icon></button>
+            <button id="side-settings-link" class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:settings-2"></iconify-icon></button>
+            <div class="w-4 h-[1px] bg-charcoal"></div>
+            <button id="side-help-link" class="text-gray-500 hover:text-white"><iconify-icon icon="lucide:help-circle"></iconify-icon></button>
+        </aside>
+
+    </div>
+
+    <!-- Micro-interaction script -->
+    <script>
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 192) + 'px';
+        });
+
+        // Mock Smooth Scroll for navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = item.id.replace('nav-', 'section-');
+                const el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+
+</body></html>

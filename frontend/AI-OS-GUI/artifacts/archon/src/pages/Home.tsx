@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
 import type { AppMode } from "@/context/AppContext";
+import { useProjectsContext } from "@/context/ProjectsContext";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { CaretRight, CaretLeft } from "@phosphor-icons/react";
 import NavRail from "@/components/NavRail";
@@ -20,7 +21,8 @@ const LEFT_CAPABLE_MODES = new Set<AppMode>(["chat", "council", "research", "age
 
 export default function Home() {
   const { mode, settingsOpen, setSettingsOpen, contextSidebarOpen, setContextSidebarOpen, rightSidebarOpen, setRightSidebarOpen } = useAppContext();
-  const { connected, connecting } = useWebSocketContext();
+  const { activeProjectId, projects } = useProjectsContext();
+  const { connected, connecting, isStreaming } = useWebSocketContext();
   // Right sidebar width — draggable
   const [rightWidth, setRightWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
@@ -50,6 +52,15 @@ export default function Home() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isResizing]);
+
+  // Dynamically update document.title based on streaming state
+  useEffect(() => {
+    if (isStreaming) {
+      document.title = "[Streaming...] Archon";
+    } else {
+      document.title = "Archon";
+    }
+  }, [isStreaming]);
 
   const canShowLeft = LEFT_CAPABLE_MODES.has(mode);
   const showLeft = canShowLeft && contextSidebarOpen;
@@ -89,13 +100,22 @@ export default function Home() {
             )}
             {/* Mode title */}
             <span className="text-[10px] font-mono uppercase tracking-widest text-text-secondary ml-1">
-              {mode === "dashboard" && "Dashboard"}
-              {mode === "chat" && "Chat"}
-              {mode === "council" && "Council"}
-              {mode === "research" && "Research"}
-              {mode === "agents" && "Agent Runtime"}
-              {mode === "obsidian" && "Obsidian"}
-              {mode === "directory" && "Agents"}
+              {(() => {
+                const baseTitle = 
+                  mode === "dashboard" ? "Dashboard" :
+                  mode === "chat" ? "Chat" :
+                  mode === "council" ? "Council" :
+                  mode === "research" ? "Research" :
+                  mode === "agents" ? "Agent Runtime" :
+                  mode === "obsidian" ? "Obsidian" :
+                  mode === "directory" ? "Agents" : "";
+                
+                const activeProject = projects.find(p => p.id === activeProjectId);
+                if (activeProject && activeProject.mode === mode) {
+                  return `${baseTitle} - [${activeProject.name}]`;
+                }
+                return baseTitle;
+              })()}
             </span>
           </div>
           {/* Open right sidebar button (when hidden) — positioned on the right */}

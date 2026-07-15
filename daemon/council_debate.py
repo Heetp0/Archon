@@ -8,7 +8,6 @@ from base_agent import BaseAgent
 from model_router import ModelRouter
 from vault_search import VaultSearch
 from markit_down import MarkitDownNormalizer
-from litellm import acompletion
 
 class CouncilDebate(BaseAgent):
     def __init__(self, model_router: ModelRouter, vault_search: VaultSearch, markit_down: MarkitDownNormalizer):
@@ -56,13 +55,8 @@ class CouncilDebate(BaseAgent):
         
         # Get all configured/available models across fast and heavy tiers
         all_available_models = self.router.get_available_models("fast") + self.router.get_available_models("heavy")
-        # De-duplicate by model name to be clean
-        seen_models = set()
-        unique_available = []
-        for m in all_available_models:
-            if m["model"] not in seen_models:
-                unique_available.append(m)
-                seen_models.add(m["model"])
+        seen = set()
+        unique_available = [m for m in all_available_models if not (m["model"] in seen or seen.add(m["model"]))]
 
         if requested_models and isinstance(requested_models, list):
             council_models = [m for m in unique_available if m["model"] in requested_models]
@@ -84,30 +78,16 @@ class CouncilDebate(BaseAgent):
         await send_token_callback("status", {"status": f"Initiating Round 1 (Parallel Draft) with: {', '.join(model_names)}"})
 
         # Helper function to generate completion from a specific model
-        async def generate_completion(model_meta: dict, messages: list, agent_name: str) -> str:
-            model_name = model_meta["model"]
-            key_val = self.router._get_api_key(model_meta["api_key_name"])
-            api_base = model_meta.get("api_base", None)
-
+        async def generate_completion(model_meta: dict, messages: list, agent_name: str, tier: str = "fast") -> str:
             full_text = ""
             try:
-                response = await acompletion(
-                    model=model_name,
-                    messages=messages,
-                    stream=True,
-                    temperature=0.7,
-                    api_key=key_val,
-                    api_base=api_base
-                )
-                async for chunk in response:
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        full_text += content
-                        await send_token_callback("token", {"text": content})
+                async for content in self.router.generate(tier=tier, messages=messages, specific_model=model_meta["model"]):
+                    full_text += content
+                    await send_token_callback("token", {"text": content, "model": agent_name})
             except Exception as e:
-                err_msg = f"\n[Error from {model_name}: {str(e)}]\n"
+                err_msg = f"\n[Error from {model_meta['model']}: {str(e)}]\n"
                 full_text += err_msg
-                await send_token_callback("token", {"text": err_msg})
+                await send_token_callback("token", {"text": err_msg, "model": agent_name})
             return full_text
 
         # ROUND 1: Parallel Draft
@@ -170,9 +150,10 @@ class CouncilDebate(BaseAgent):
         )
 
         final_synthesis = await generate_completion(
-            synthesis_model, 
-            [{"role": "user", "content": synthesis_prompt}], 
-            "Council Consensus"
+            synthesis_model,
+            [{"role": "user", "content": synthesis_prompt}],
+            "Council Consensus",
+            tier="heavy"
         )
 
         return {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useAppContext } from "@/context/AppContext";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -68,12 +69,47 @@ function AvailableRow({ provider, onConnect }: { provider: Provider; onConnect: 
   const [expanded, setExpanded] = useState(false);
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState("");
+  const [testing, setTesting] = useState(false);
 
   const handleSave = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
     onConnect(trimmed);
     setDraft(""); setExpanded(false);
+  };
+
+  const handleTest = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    setTesting(true);
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      
+      const res = await fetch(`${protocol}://${host}:${port}/settings/api-keys/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: provider.value,
+          api_key: trimmed
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          toast.success(`${provider.label} connection validation succeeded!`);
+        } else {
+          toast.error(`Validation failed: ${data.error}`);
+        }
+      } else {
+        toast.error("Daemon responded with an error");
+      }
+    } catch (e) {
+      toast.error("Failed to connect to daemon settings server");
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -122,7 +158,15 @@ function AvailableRow({ provider, onConnect }: { provider: Provider; onConnect: 
                   {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              <Button size="sm" onClick={handleSave} disabled={!draft.trim()} className="bg-accent-indigo hover:bg-accent-indigo text-text-primary disabled:opacity-30 font-mono text-xs h-9 px-4 flex-shrink-0 rounded-xl">
+              <Button
+                size="sm"
+                onClick={handleTest}
+                disabled={!draft.trim() || testing}
+                className="bg-transparent hover:bg-panel-bg border border-border-core/25 text-text-secondary hover:text-text-primary font-mono text-xs h-9 px-3 flex-shrink-0 rounded-xl"
+              >
+                {testing ? "Testing..." : "Test Connection"}
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={!draft.trim() || testing} className="bg-accent-indigo hover:bg-accent-indigo text-text-primary disabled:opacity-30 font-mono text-xs h-9 px-4 flex-shrink-0 rounded-xl">
                 Save
               </Button>
             </div>
@@ -694,7 +738,7 @@ export default function SettingsModal() {
                           <SelectItem value="gemini/gemini-2.5-flash">Gemini · 2.5 Flash</SelectItem>
                           <SelectItem value="mistral/open-mistral-nemo">Mistral · Nemo</SelectItem>
                           <SelectItem value="openrouter/deepseek/deepseek-r1:free">OpenRouter · DeepSeek R1</SelectItem>
-                          <SelectItem value="cerebras/llama-3.3-70b">Cerebras · Llama 3.3 70B</SelectItem>
+                          <SelectItem value="openai/llama3.3-70b">Cerebras · Llama 3.3 70B</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

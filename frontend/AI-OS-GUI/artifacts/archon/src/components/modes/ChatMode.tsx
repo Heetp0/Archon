@@ -2,21 +2,24 @@ import React, { useState, useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Bot, User, Loader2 } from "lucide-react";
+import { Paperclip, Send, Bot, User, Loader2, Copy, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 export default function ChatMode() {
-  const { messages: chatMessages, isStreaming, sendChat, connected, availableModels } = useWebSocketContext();
-  const { activeProjectId } = useProjectsContext();
+  const { messages: chatMessages, isStreaming, sendChat, connected, availableModels, cancelStream } = useWebSocketContext();
+  const { activeProjectId, activeChatId, createChat } = useProjectsContext();
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
   const [input, setInput] = useState("");
   const [model, setModel] = useState("groq/llama-3.1-8b-instant");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastSentRef = useRef<string>("");
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -29,8 +32,17 @@ export default function ChatMode() {
     }
   }, [chatMessages, isStreaming]);
 
+  const handleCancel = () => {
+    cancelStream();
+  };
+
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
+    // Auto-create a chat session if none is active so messages are not silently dropped
+    if (!activeChatId) {
+      createChat(activeProjectId, "chat");
+    }
+    lastSentRef.current = input.trim();
     sendChat(input.trim(), model);
     setInput("");
   };
@@ -39,6 +51,10 @@ export default function ChatMode() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+    if (e.key === "ArrowUp" && !input && lastSentRef.current) {
+      e.preventDefault();
+      setInput(lastSentRef.current);
     }
   };
 
@@ -84,13 +100,37 @@ export default function ChatMode() {
                 {msg.role === "assistant" && (
                   <span className="text-[10px] font-mono text-text-secondary mb-1 px-1">{msg.model}</span>
                 )}
-                <div className={`p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap font-sans ${
-                  msg.role === "user"
-                    ? "bg-panel-bg border border-border-core/60 text-text-primary rounded-tr-none"
-                    : "bg-blue-950/20 border border-blue-900/50 text-text-primary rounded-tl-none font-light"
-                }`}>
-                  {msg.content}
-                </div>
+                {msg.role === "user" ? (
+                  <div className="p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap font-sans bg-panel-bg border border-border-core/60 text-text-primary rounded-tr-none relative group">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(msg.content);
+                        toast.success("Copied to clipboard");
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded bg-panel-bg/85 border border-border-core/30 text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    {msg.content}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-lg text-sm leading-relaxed font-sans bg-blue-950/20 border border-blue-900/50 text-text-primary rounded-tl-none font-light relative group">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(msg.content);
+                        toast.success("Copied to clipboard");
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded bg-panel-bg/85 border border-border-core/30 text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <ReactMarkdown className="prose prose-invert max-w-none text-sm break-words prose-p:first:mt-0 prose-p:last:mb-0 prose-p:leading-relaxed prose-pre:my-2 prose-ul:my-2 prose-li:my-0">
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -133,6 +173,8 @@ export default function ChatMode() {
                   <Paperclip className="w-4 h-4" />
                 </button>
 
+                <span className="text-xs font-mono text-text-secondary select-none">{input.length}</span>
+
                 <Select value={model} onValueChange={setModel}>
                   <SelectTrigger className="w-[200px] h-8 bg-panel-bg/50 border-border-core text-xs font-mono text-text-secondary">
                     <SelectValue placeholder="Select Model" />
@@ -148,15 +190,26 @@ export default function ChatMode() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                size="sm"
-                onClick={handleSend}
-                disabled={!connected || isStreaming || !input.trim()}
-                className="bg-accent-indigo hover:bg-accent-indigo text-text-primary disabled:opacity-40 "
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Execute
-              </Button>
+              {isStreaming ? (
+                <Button
+                  size="sm"
+                  onClick={handleCancel}
+                  className="bg-accent-rose hover:bg-accent-rose text-text-primary"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleSend}
+                  disabled={!connected || !input.trim()}
+                  className="bg-accent-indigo hover:bg-accent-indigo text-text-primary disabled:opacity-40 "
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Execute
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -26,3 +26,25 @@ __pycache__/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+
+# Node modules and build files
+node_modules/
+dist/
+build/
+.next/
+*.log
+
+# Agent & Planning files
+.agents/
+implementation_plan.md
+task.md
+walkthrough.md
+*.graphify*
+graphify-out/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

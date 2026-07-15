@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, Plus, Settings, MessageSquare, Pencil, Check, FolderOpen, Cpu } from "lucide-react";
+import { ChevronRight, Plus, Settings, MessageSquare, Pencil, Check, FolderOpen, Cpu, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProjectsContext, Project, ProjectMode } from "@/context/ProjectsContext";
 import { useAppContext } from "@/context/AppContext";
@@ -10,6 +10,7 @@ import type { AppMode } from "@/context/AppContext";
 function ChatRow({ chat, onRename }: { chat: { id: string; name: string }; onRename: (id: string, name: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(chat.name);
+  const { deleteChat } = useProjectsContext();
 
   const commit = () => {
     const trimmed = draft.trim();
@@ -33,12 +34,26 @@ function ChatRow({ chat, onRename }: { chat: { id: string; name: string }; onRen
         <span className="flex-1 text-xs font-mono text-text-secondary truncate min-w-0">{chat.name}</span>
       )}
       {!editing && (
-        <button
-          onClick={() => { setDraft(chat.name); setEditing(true); }}
-          className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-text-secondary transition-all flex-shrink-0"
-        >
-          <Pencil className="w-2.5 h-2.5" />
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <button
+            onClick={() => { setDraft(chat.name); setEditing(true); }}
+            className="text-text-secondary hover:text-text-primary transition-colors"
+            title="Rename chat"
+          >
+            <Pencil className="w-2.5 h-2.5" />
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm(`Are you sure you want to delete chat "${chat.name}"?`)) {
+                deleteChat(chat.id);
+              }
+            }}
+            className="text-text-secondary hover:text-red-500 transition-colors"
+            title="Delete chat"
+          >
+            <Trash2 className="w-2.5 h-2.5" />
+          </button>
+        </div>
       )}
       {editing && (
         <button onClick={commit} className="text-text-secondary hover:text-text-primary flex-shrink-0">
@@ -52,7 +67,7 @@ function ChatRow({ chat, onRename }: { chat: { id: string; name: string }; onRen
 // ── Project row (name + [+] + [⚙]) ────────────────────────────────────────────
 function ProjectRow({ project }: { project: Project }) {
   const [expanded, setExpanded] = useState(false);
-  const { createChat, renameChat } = useProjectsContext();
+  const { createChat, renameChat, deleteProject } = useProjectsContext();
   const { openProjectSettings } = useAppContext();
 
   return (
@@ -86,6 +101,17 @@ function ProjectRow({ project }: { project: Project }) {
             title="Project settings"
           >
             <Settings className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm(`Are you sure you want to delete project "${project.name}"?`)) {
+                deleteProject(project.id);
+              }
+            }}
+            className="w-5 h-5 flex items-center justify-center text-text-secondary hover:text-red-500 transition-colors"
+            title="Delete project"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

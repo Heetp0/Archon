@@ -76,6 +76,12 @@ class DeepResearch(BaseAgent):
         except Exception as e:
             return f"Failed to parse content from {url}: {str(e)}"
 
+    async def _check_supervisor(self, send_token_callback: Callable[[str, Any], Coroutine[Any, Any, None]]):
+        halted, reason = self.supervisor.is_halted()
+        if halted:
+            await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
+            raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+
     async def run(self, payload: dict, send_token_callback: Callable[[str, Any], Coroutine[Any, Any, None]]) -> dict:
         text = payload.get("content", "") or payload.get("text", "") or payload.get("topic", "")
         req_id = payload.get("req_id")
@@ -101,10 +107,7 @@ class DeepResearch(BaseAgent):
             queries_json += chunk
             self.supervisor.add_tokens(len(chunk) / 4.0)
 
-        halted, reason = self.supervisor.is_halted()
-        if halted:
-            await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
-            raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+        await self._check_supervisor(send_token_callback)
 
         try:
             import json
@@ -151,10 +154,8 @@ class DeepResearch(BaseAgent):
                 continue
             visited_urls.add(url)
             self.supervisor.ping("DeepResearch")
-            if not self.supervisor.log_action("DeepResearch", f"crawl_{url}"):
-                halted, reason = self.supervisor.is_halted()
-                await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
-                raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+            self.supervisor.log_action("DeepResearch", f"crawl_{url}")
+            await self._check_supervisor(send_token_callback)
                 
             await send_token_callback("status", {"status": f"Crawling: {url}..."})
             raw_text = await self._crawl_url(url)
@@ -173,10 +174,7 @@ class DeepResearch(BaseAgent):
             except Exception as e:
                 logger.error(f"Failed to summarize content from {url}: {e}")
 
-            halted, reason = self.supervisor.is_halted()
-            if halted:
-                await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
-                raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+            await self._check_supervisor(send_token_callback)
 
         # --- Phase 3: Synthesis ---
         self.supervisor.ping("DeepResearch")
@@ -196,17 +194,12 @@ class DeepResearch(BaseAgent):
             self.supervisor.add_tokens(len(chunk) / 4.0)
             await send_token_callback("token", {"text": chunk})
 
-        halted, reason = self.supervisor.is_halted()
-        if halted:
-            await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
-            raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+        await self._check_supervisor(send_token_callback)
 
         # Save report and track file write size
         report_bytes = len(final_report.encode('utf-8'))
-        if not self.supervisor.add_write_volume(report_bytes):
-            halted, reason = self.supervisor.is_halted()
-            await send_token_callback("error", {"error": f"Supervisor halted: {reason}"})
-            raise RuntimeError(f"Autopilot Supervisor halted: {reason}")
+        self.supervisor.add_write_volume(report_bytes)
+        await self._check_supervisor(send_token_callback)
 
         research_hub_dir = os.path.join(WORKSPACE_ROOT, "Workspace", "ResearchHub")
         os.makedirs(research_hub_dir, exist_ok=True)

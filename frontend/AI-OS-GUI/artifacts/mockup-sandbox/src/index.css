@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -8,38 +8,38 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
-  --color-sidebar: hsl(var(--sidebar));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --color-background: oklch(var(--background));
+  --color-foreground: oklch(var(--foreground));
+  --color-card: oklch(var(--card));
+  --color-card-foreground: oklch(var(--card-foreground));
+  --color-popover: oklch(var(--popover));
+  --color-popover-foreground: oklch(var(--popover-foreground));
+  --color-primary: oklch(var(--primary));
+  --color-primary-foreground: oklch(var(--primary-foreground));
+  --color-secondary: oklch(var(--secondary));
+  --color-secondary-foreground: oklch(var(--secondary-foreground));
+  --color-muted: oklch(var(--muted));
+  --color-muted-foreground: oklch(var(--muted-foreground));
+  --color-accent: oklch(var(--accent));
+  --color-accent-foreground: oklch(var(--accent-foreground));
+  --color-destructive: oklch(var(--destructive));
+  --color-destructive-foreground: oklch(var(--destructive-foreground));
+  --color-border: oklch(var(--border));
+  --color-input: oklch(var(--input));
+  --color-ring: oklch(var(--ring));
+  --color-chart-1: oklch(var(--chart-1));
+  --color-chart-2: oklch(var(--chart-2));
+  --color-chart-3: oklch(var(--chart-3));
+  --color-chart-4: oklch(var(--chart-4));
+  --color-chart-5: oklch(var(--chart-5));
+  --color-sidebar: oklch(var(--sidebar));
+  --color-sidebar-foreground: oklch(var(--sidebar-foreground));
+  --color-sidebar-primary: oklch(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: oklch(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: oklch(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: oklch(var(--sidebar-accent-foreground));
+  --color-sidebar-border: oklch(var(--sidebar-border));
+  --color-sidebar-ring: oklch(var(--sidebar-ring));
 
   --text-xs: 0.75rem;
   --text-xs--line-height: calc(1 / 0.75);
@@ -69,107 +69,205 @@
   --text-9xl--line-height: 1;
 }
 
-/* LIGHT MODE - Default theme with placeholder values */
+/* ============================================================
+   ARCHON DESIGN TOKENS
+   Brand: Focused violet-indigo (OKLCH seed 294.3 hue)
+   Strategy: Restrained — saturated primary + cool blue accent
+   on pure-white light / deep near-black dark surfaces.
+   ============================================================ */
+
+/* LIGHT MODE */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  /* --- Elevation overlays (rgba, unchanged) --- */
+  --button-outline: rgba(0, 0, 0, 0.10);
+  --badge-outline: rgba(0, 0, 0, 0.05);
   --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0, 0, 0, 0.03);
+  --elevate-2: rgba(0, 0, 0, 0.07);
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  /* --- Brand palette (OKLCH) --- */
+  /* Primary: focused violet — authority, precision, AI competence */
+  --primary:            0.533 0.125 294.3;        /* oklch(0.533 0.125 294.3) */
+  --primary-foreground: 1.000 0.000 0;            /* pure white on violet fill */
+  /* Border derived from primary at low opacity — applied via CSS variable */
+  --primary-border-color: oklch(0.533 0.125 294.3 / 0.25);
 
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
-  --sidebar: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 240 5.9% 10%;
+  /* Accent: electric cyan-blue — tool, clarity, data */
+  --accent:             0.620 0.140 255.0;        /* oklch(0.62 0.14 255) — cool blue */
+  --accent-foreground:  1.000 0.000 0;            /* white on filled accent */
 
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: .5rem;
+  /* Background: pure white — let the violet primary carry the brand */
+  --background:         1.000 0.000 0;            /* oklch(1 0 0) = #ffffff */
+  --foreground:         0.165 0.020 294.0;        /* very dark violet-tinted ink ≥7:1 */
+
+  /* Surface (cards, panels) — very subtle lift above white */
+  --card:               0.975 0.004 294.0;        /* near-white with faint violet tint */
+  --card-foreground:    0.165 0.020 294.0;
+
+  /* Popover */
+  --popover:            1.000 0.000 0;
+  --popover-foreground: 0.165 0.020 294.0;
+
+  /* Secondary: cool desaturated violet-grey — distinct from accent */
+  --secondary:          0.938 0.010 294.0;
+  --secondary-foreground: 0.280 0.030 294.0;
+  --secondary-border-color: oklch(0.280 0.030 294.0 / 0.15);
+
+  /* Muted: very light violet-grey surface */
+  --muted:              0.950 0.006 294.0;
+  /* Muted foreground: ≥4.5:1 vs white bg (≈ oklch 0.48 → #6b6b82 → 5.2:1) */
+  --muted-foreground:   0.480 0.025 294.0;
+
+  /* Destructive: strong red */
+  --destructive:        0.577 0.245 27.3;
+  --destructive-foreground: 1.000 0.000 0;
+
+  /* Border / Input */
+  --border:             0.900 0.012 294.0;
+  --input:              0.900 0.012 294.0;
+
+  /* Focus ring: primary hue */
+  --ring:               0.533 0.125 294.3;
+
+  /* Charts */
+  --chart-1:  0.646 0.196 310.0;   /* violet-magenta */
+  --chart-2:  0.620 0.140 255.0;   /* blue */
+  --chart-3:  0.715 0.143 191.0;   /* teal */
+  --chart-4:  0.760 0.150  85.0;   /* amber-gold */
+  --chart-5:  0.655 0.210  25.0;   /* red-orange */
+
+  /* Sidebar — slightly deeper than body */
+  --sidebar:            0.962 0.006 294.0;
+  --sidebar-foreground: 0.280 0.025 294.0;
+  --sidebar-primary:    0.533 0.125 294.3;        /* matches brand primary */
+  --sidebar-primary-foreground: 1.000 0.000 0;
+  --sidebar-accent:     0.938 0.010 294.0;
+  --sidebar-accent-foreground: 0.280 0.025 294.0;
+  --sidebar-border:     0.900 0.012 294.0;
+  --sidebar-ring:       0.533 0.125 294.3;
+
+  /* Typography */
+  --font-sans:  'Geist', 'Inter', sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-mono:  'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing & shape */
+  --radius: 0.5rem;
   --spacing: 0.25rem;
+
+  /* Semantic z-index scale */
+  --z-dropdown:       100;
+  --z-sticky:         200;
+  --z-modal-backdrop: 300;
+  --z-modal:          400;
+  --z-toast:          500;
+  --z-tooltip:        600;
 }
 
 /* DARK MODE */
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  /* --- Elevation overlays --- */
+  --button-outline: rgba(255, 255, 255, 0.10);
+  --badge-outline:  rgba(255, 255, 255, 0.05);
   --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  /* Background: deep near-black, no hue tint (pure) */
+  --background:         0.108 0.000 0;            /* oklch(0.108 0 0) ≈ #161616 */
+  --foreground:         0.940 0.008 294.0;        /* near-white, faint violet cast */
 
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-  --sidebar: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 240 4.9% 83.9%;
+  /* Surface: cards elevated above background */
+  --card:               0.148 0.010 294.0;        /* slightly lighter + violet tint */
+  --card-foreground:    0.940 0.008 294.0;
+
+  --popover:            0.148 0.010 294.0;
+  --popover-foreground: 0.940 0.008 294.0;
+
+  /* Primary: lighter violet for dark mode (same hue, higher L) */
+  --primary:            0.680 0.130 294.3;        /* readable violet on dark bg */
+  --primary-foreground: 0.108 0.000 0;            /* dark text on lighter violet */
+  --primary-border-color: oklch(0.680 0.130 294.3 / 0.30);
+
+  /* Secondary: dark panel surface */
+  --secondary:          0.200 0.015 294.0;
+  --secondary-foreground: 0.880 0.010 294.0;
+  --secondary-border-color: oklch(0.880 0.010 294.0 / 0.12);
+
+  /* Muted */
+  --muted:              0.200 0.015 294.0;
+  /* Muted foreground dark: ≥4.5:1 vs dark bg (0.108 L) → need ≥0.72 L */
+  --muted-foreground:   0.720 0.020 294.0;        /* ≈ #aaaabc → ~5.1:1 on #161616 */
+
+  /* Accent: brighter cyan-blue in dark for legibility */
+  --accent:             0.200 0.015 294.0;        /* muted surface for accent bg */
+  --accent-foreground:  0.880 0.010 294.0;
+
+  /* Destructive */
+  --destructive:        0.496 0.220 27.3;
+  --destructive-foreground: 0.940 0.008 294.0;
+
+  /* Border / Input */
+  --border:             0.240 0.020 294.0;
+  --input:              0.240 0.020 294.0;
+
+  /* Ring */
+  --ring:               0.680 0.130 294.3;
+
+  /* Charts */
+  --chart-1:  0.700 0.170 310.0;
+  --chart-2:  0.680 0.150 255.0;
+  --chart-3:  0.740 0.140 191.0;
+  --chart-4:  0.800 0.140  85.0;
+  --chart-5:  0.680 0.200  25.0;
+
+  /* Sidebar — aligned with primary brand, no rogue blue */
+  --sidebar:            0.138 0.012 294.0;
+  --sidebar-foreground: 0.820 0.012 294.0;
+  --sidebar-primary:    0.680 0.130 294.3;        /* same hue as global primary */
+  --sidebar-primary-foreground: 0.108 0.000 0;
+  --sidebar-accent:     0.200 0.015 294.0;
+  --sidebar-accent-foreground: 0.880 0.010 294.0;
+  --sidebar-border:     0.240 0.020 294.0;
+  --sidebar-ring:       0.680 0.130 294.3;
 }
 
+/* ============================================================
+   BASE LAYER
+   ============================================================ */
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Heading text-wrap for clean line-breaks */
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  /* Prose orphan prevention */
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Reduced motion: all transitions/animations collapse to instant */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
+/* ============================================================
+   UTILITIES
+   ============================================================ */
 @layer utilities {
   /* Hide ugly search cancel button in Chrome */
   input[type="search"]::-webkit-search-cancel-button {
@@ -179,7 +277,111 @@
   /* Placeholder styling for contentEditable div */
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
-    color: hsl(var(--muted-foreground));
+    color: oklch(var(--muted-foreground));
     pointer-events: none;
   }
+
+  /* Elevation micro-interactions
+     Used by Button (hover-elevate / active-elevate-2) and Badge (hover-elevate).
+     Lift is shadow + very subtle translateY. Ease-out-quart feels intentional.
+  */
+  .hover-elevate {
+    transition:
+      box-shadow 160ms cubic-bezier(0.25, 0, 0, 1),
+      transform   160ms cubic-bezier(0.25, 0, 0, 1),
+      background-color 160ms cubic-bezier(0.25, 0, 0, 1),
+      border-color 160ms cubic-bezier(0.25, 0, 0, 1);
+  }
+  .hover-elevate:hover:not(:disabled) {
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.14), 0 1px 3px -1px rgba(0, 0, 0, 0.10);
+    transform: translateY(-1px);
+  }
+  .hover-elevate:focus-visible:not(:disabled) {
+    box-shadow: 0 0 0 3px oklch(var(--ring) / 0.35);
+  }
+
+  .active-elevate-2:active:not(:disabled) {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+    transform: translateY(0px);
+    transition-duration: 60ms;
+  }
+
+  /* --- Dashboard custom utilities --- */
+  .dgrid {
+    background-image: radial-gradient(circle, oklch(var(--border)) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  .ge {
+    stroke: oklch(var(--border));
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .ge-v {
+    stroke: oklch(var(--primary) / 0.5);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 8 4;
+    animation: dash 2s linear infinite;
+  }
+  .ge-c {
+    stroke: oklch(0.790 0.160 198 / 0.55);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 6 3;
+    animation: dash 1.7s linear infinite;
+  }
+  .ge-g {
+    stroke: oklch(0.715 0.185 152 / 0.5);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 6 3;
+    animation: dash 2.3s linear infinite;
+  }
+
+  .cur::after {
+    content: '▋';
+    animation: bl 1s step-end infinite;
+    color: oklch(0.790 0.160 198);
+  }
+
+  .tr {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.78;
+  }
+  .tp { color: oklch(0.715 0.185 152); }
+  .tc { color: oklch(var(--foreground)); }
+  .to { color: oklch(var(--muted-foreground)); }
+  .ti { color: oklch(0.790 0.160 198); }
+  .tw { color: oklch(0.800 0.168 75); }
+  .te { color: oklch(0.615 0.245 27); }
+
+  .cod {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.78;
+  }
+  .ck { color: oklch(0.730 0.160 290); }
+  .cs { color: oklch(0.765 0.150 135); }
+  .cc { color: oklch(var(--muted-foreground)); font-style: italic; }
+  .cf { color: oklch(0.860 0.130 198); }
+  .cn { color: oklch(0.810 0.155 65); }
+  .ct { color: oklch(0.740 0.160 60); }
+  .cv { color: oklch(var(--foreground)); }
+}
+
+@keyframes dash {
+  from { stroke-dashoffset: 48; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes bl {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }

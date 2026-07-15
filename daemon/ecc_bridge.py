@@ -11,14 +11,9 @@ class ECCBridge:
 
     def list_skills(self) -> list[dict]:
         """Scan ecc/skills/ and return skill metadata list."""
-        skills = []
-        skills_dir = os.path.join(self.ecc_path, 'skills')
-        if os.path.isdir(skills_dir):
-            for name in os.listdir(skills_dir):
-                md_path = os.path.join(skills_dir, name, 'SKILL.md')
-                if os.path.exists(md_path):
-                    skills.append({'name': name, 'path': md_path})
-        return skills
+        if not hasattr(self, '_skills_cache'):
+            self._skills_cache = [{'name': name, 'path': os.path.join(self.ecc_path, 'skills', name, 'SKILL.md')} for name in (os.listdir(os.path.join(self.ecc_path, 'skills')) if os.path.isdir(os.path.join(self.ecc_path, 'skills')) else []) if os.path.exists(os.path.join(self.ecc_path, 'skills', name, 'SKILL.md'))]
+        return self._skills_cache
 
     def get_rules(self, language: str) -> str:
         """Load language-specific rules (e.g. 'python' -> ecc/rules/python/)."""

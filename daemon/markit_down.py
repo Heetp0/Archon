@@ -186,13 +186,9 @@ class MarkitDownNormalizer:
         try:
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 html_content = f.read()
-            try:
-                import markdownify
-                return markdownify.markdownify(html_content)
-            except ImportError:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(html_content, 'html.parser')
-                return soup.get_text()
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+            return soup.get_text()
         except Exception as e:
             return f'# HTML Read Error\n\n{str(e)}'
 

@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import time
 import logging
@@ -209,12 +209,9 @@ class ModelRouter:
         until = self.throttled_until.get(model_name, 0.0)
         return time.time() < until
 
-    async def generate(self, tier: str, messages: List[Dict[str, str]], temperature: float = 0.7, specific_model: str = None) -> AsyncGenerator[str, None]:
+    async def generate(self, tier: str, messages: List[Dict[str, str]], temperature: float = 0.7, specific_model: str = None, extra_kwargs: dict = None) -> AsyncGenerator[str, None]:
         # Extract query to check in semantic cache
-        query = ""
-        if messages and messages[-1].get("role") == "user":
-            # Use full conversation history for cache key to avoid cross-pollination
-            query = json.dumps(messages, sort_keys=True)
+        query = messages[-1].get("content", "") if messages and messages[-1].get("role") == "user" else ""
 
         # Check semantic cache first
         if self.cache and query:
@@ -248,25 +245,22 @@ class ModelRouter:
                 logger.info(f"Skipping throttled model: {model_name}")
                 continue
 
-            # Set correct environment variable dynamically for LiteLLM
             key_val = self._get_api_key(m["api_key_name"])
-            os.environ[m["env_name"]] = key_val
-            
-            api_base = m.get("api_base", None)
-            if api_base:
-                os.environ["OPENAI_API_BASE"] = api_base
-            else:
-                os.environ.pop("OPENAI_API_BASE", None)
+            api_base = m.get("api_base")
 
             logger.info(f"Attempting completion using model: {model_name}")
             
             try:
                 # Call LiteLLM async stream
+                _extra = extra_kwargs or {}
                 response = await acompletion(
                     model=model_name,
                     messages=messages,
                     stream=True,
-                    temperature=temperature
+                    temperature=temperature,
+                    api_key=key_val,
+                    api_base=api_base or None,
+                    **_extra
                 )
                 
                 async for chunk in response:

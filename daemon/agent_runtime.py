@@ -53,6 +53,11 @@ class AgentRuntime(BaseAgent):
         self.callback = send_token_callback
         self.supervisor.reset()
         
+        # Configure supervisor limits from frontend payload if provided
+        token_budget = payload.get("token_budget")
+        if token_budget:
+            self.supervisor.token_budget = int(token_budget)
+        
         task_text = payload.get("content", "") or payload.get("text", "") or payload.get("topic", "")
         if not task_text:
             raise ValueError("Task description cannot be empty.")
@@ -288,7 +293,9 @@ class AgentRuntime(BaseAgent):
         app_graph = workflow.compile()
 
         await self.callback("status", {"status": "Starting Multi-Agent System Graph..."})
-        result = await app_graph.ainvoke(initial_state)
+        max_steps = payload.get("max_steps")
+        recursion_limit = int(max_steps) if max_steps else 50
+        result = await app_graph.ainvoke(initial_state, {"recursion_limit": recursion_limit})
         return result
 
 

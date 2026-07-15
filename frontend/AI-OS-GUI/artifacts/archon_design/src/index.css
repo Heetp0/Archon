@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Vercel True Dark Theme semantic palette */
+  --color-app-bg: #000000; /* Pure black */
+  --color-panel-bg: #0a0a0a; /* Dark gray */
+  --color-border-core: #222222; /* Clean Vercel border #222222 */
+  --color-text-primary: #ffffff; /* Crisp primary text */
+  --color-text-secondary: #a0a0a0; /* Crisp secondary text */
+  --color-text-muted: #666666; /* Muted text */
+  
+  --color-accent-indigo: #ffffff;
+  --color-accent-emerald: #ffffff;
+  --color-accent-rose: #ffffff;
+  
+  --color-accent-primary-text: #ffffff;
+  --color-text-on-accent: #000000;
+  --color-text-on-accent-dark: #000000;
+  
+  --color-border-premium: #222222;
+  --color-border-accent: #222222;
+
+  --animate-fade-in-gpu: fadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  /* Legacy semantic tokens (kept for shadcn/ui compatibility) */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --font-sans: "Satoshi", "Inter", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+
+  --border: 0 0% 13%;
+  --input: 0 0% 13%;
+  --ring: 0 0% 100%;
+
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 100%;
+  --card-border: 0 0% 13%;
+
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 100%;
+  --popover-border: 0 0% 13%;
+
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 0 0% 6%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 0 0% 6%;
+  --muted-foreground: 0 0% 63%;
+
+  --accent: 0 0% 6%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 347 77% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --app-font-sans: "Satoshi", "Inter", sans-serif;
+  --app-font-mono: "Geist Mono", "JetBrains Mono", monospace;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+
+  --border: 0 0% 13%;
+  --input: 0 0% 13%;
+  --ring: 0 0% 100%;
+
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 100%;
+  --card-border: 0 0% 13%;
+
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 100%;
+  --popover-border: 0 0% 13%;
+
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 0 0% 6%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 0 0% 6%;
+  --muted-foreground: 0 0% 63%;
+
+  --accent: 0 0% 6%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 347 77% 50%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+@layer base {
+  * {
+    @apply border-border-core;
+  }
+
+  body {
+    @apply font-sans antialiased bg-app-bg text-text-primary overflow-hidden;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222222;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}
+
+/* Minimal glass panel - no blur, no glow */
+.glass-panel {
+  background: #0a0a0a;
+  border: 1px solid var(--color-border-premium);
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.7);
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Eased Dark Gradient to avoid banding */
+.dark-gradient-fade-bottom {
+  background: linear-gradient(
+    to top,
+    #000000 0%,
+    rgba(0, 0, 0, 0.95) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Vercel Card style with ultra-thin borders and subtle overlay tints */
+.vercel-card {
+  background: #0a0a0a;
+  border: 1px solid #222222;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.vercel-card:hover {
+  border-color: #444444;
+  background: #111111;
+}
+
+/* Vercel Panel / Rail styles for monochrome look */
+.vercel-rail {
+  background: #000000;
+  border-right: 1px solid #222222;
+}
+
+.vercel-panel {
+  background: #0a0a0a;
+  border: 1px solid #222222;
+}

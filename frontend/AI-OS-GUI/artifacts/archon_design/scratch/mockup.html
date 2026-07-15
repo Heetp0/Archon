@@ -1,0 +1,331 @@
+<!DOCTYPE html><html lang="en" class="dark"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archon | AI Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.cdnfonts.com/css/satoshi');
+
+        :root {
+            --vercel-black: #000000;
+            --vercel-gray: #111111;
+            --vercel-border: #222222;
+            --vercel-text-secondary: #888888;
+        }
+
+        body {
+            font-family: 'Satoshi', 'Inter', sans-serif;
+            background-color: var(--vercel-black);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .border-charcoal {
+            border-color: var(--vercel-border);
+        }
+
+        .bg-vercel-black {
+            background-color: var(--vercel-black);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+
+        /* Hover transitions */
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            background-color: #111;
+            color: #fff;
+        }
+
+        /* Active state for navigation */
+        .nav-active {
+            background-color: #111;
+            border: 1px solid var(--vercel-border);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen w-full bg-vercel-black" data-sd-id="1">
+        
+        <!-- Left Sidebar Rail -->
+        <aside class="w-16 lg:w-20 border-r border-charcoal flex flex-col items-center py-6 space-y-8 z-50 bg-vercel-black" data-sd-id="2">
+            <div class="mb-4" data-sd-id="3">
+                <div class="w-10 h-10 border border-white rounded-lg flex items-center justify-center" data-sd-id="4">
+                    <div class="w-5 h-5 bg-white rounded-sm rotate-45" data-sd-id="5"></div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 flex flex-col space-y-4" data-sd-id="6">
+                <a href="#" id="nav-dashboard" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="7">
+                    <iconify-icon icon="lucide:layout-dashboard" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="8">Dashboard</span>
+                </a>
+                <a href="#" id="nav-chat" class="nav-active p-3 rounded-xl flex items-center justify-center text-white group relative" data-sd-id="9">
+                    <iconify-icon icon="lucide:message-square" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="10">Chat</span>
+                </a>
+                <a href="#" id="nav-research" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="11">
+                    <iconify-icon icon="lucide:microscope" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="12">Research</span>
+                </a>
+                <a href="#" id="nav-council" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="13">
+                    <iconify-icon icon="lucide:users" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="14">Council</span>
+                </a>
+                <a href="#" id="nav-notebook" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="15">
+                    <iconify-icon icon="lucide:book-open" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="16">Notebook</span>
+                </a>
+                <a href="#" id="nav-obsidian" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="17">
+                    <iconify-icon icon="lucide:box" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="18">Obsidian</span>
+                </a>
+                <a href="#" id="nav-agents" class="nav-item p-3 rounded-xl flex items-center justify-center text-gray-400 group relative" data-sd-id="19">
+                    <iconify-icon icon="lucide:cpu" class="text-2xl"></iconify-icon>
+                    <span class="absolute left-full ml-4 px-2 py-1 bg-white text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50" data-sd-id="20">Agents</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pb-4" data-sd-id="21">
+                <button class="w-10 h-10 rounded-full border border-charcoal overflow-hidden flex items-center justify-center bg-zinc-900" data-sd-id="22">
+                    <iconify-icon icon="lucide:user" class="text-lg text-gray-300"></iconify-icon>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col relative" data-sd-id="23">
+            
+            <!-- Header/Breadcrumb -->
+            <header class="h-14 border-b border-charcoal flex items-center px-6 justify-between bg-vercel-black" data-sd-id="24">
+                <div class="flex items-center space-x-4 text-sm" data-sd-id="25">
+                    <span class="text-gray-500" data-sd-id="26">Archon</span>
+                    <span class="text-gray-700" data-sd-id="27">/</span>
+                    <span class="text-white font-medium" data-sd-id="28">Session #492 — Refactoring Core</span>
+                </div>
+                <div class="flex items-center space-x-3" data-sd-id="29">
+                    <div class="flex items-center space-x-1 px-3 py-1 bg-zinc-900 border border-charcoal rounded-md text-xs text-green-400" data-sd-id="30">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" data-sd-id="31"></span>
+                        <span data-sd-id="32">Archon-X Active</span>
+                    </div>
+                    <button class="text-gray-400 hover:text-white" data-sd-id="33">
+                        <iconify-icon icon="lucide:share-2" class="text-lg"></iconify-icon>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Multi-Pane Layout -->
+            <div class="flex-1 flex overflow-hidden" data-sd-id="34">
+                
+                <!-- Chat Window (Left Pane) -->
+                <section class="flex-1 border-r border-charcoal flex flex-col relative custom-scrollbar overflow-y-auto" data-sd-id="35">
+                    <div class="p-8 space-y-8 pb-32" data-sd-id="36">
+                        <!-- Message (AI) -->
+                        <div class="flex space-x-4 max-w-3xl" data-sd-id="37">
+                            <div class="w-8 h-8 rounded border border-charcoal flex-shrink-0 flex items-center justify-center bg-white text-black" data-sd-id="38">
+                                <iconify-icon icon="lucide:sparkles" class="text-sm"></iconify-icon>
+                            </div>
+                            <div class="space-y-4" data-sd-id="39">
+                                <p class="text-gray-200 leading-relaxed" data-sd-id="40">I've analyzed the codebase for the new architecture. The current dependency injection pattern is causing unnecessary overhead. Would you like me to propose a more streamlined implementation using the factory pattern?</p>
+                            </div>
+                        </div>
+
+                        <!-- Message (User) -->
+                        <div class="flex space-x-4 max-w-3xl ml-auto flex-row-reverse space-x-reverse" data-sd-id="41">
+                            <div class="w-8 h-8 rounded border border-charcoal flex-shrink-0 flex items-center justify-center bg-zinc-900 text-white" data-sd-id="42">
+                                <iconify-icon icon="lucide:user" class="text-sm"></iconify-icon>
+                            </div>
+                            <div class="bg-zinc-900/50 border border-charcoal p-4 rounded-xl text-gray-200" data-sd-id="43">
+                                <p data-sd-id="44">Yes, please focus on the `CoreEngine` module. I've attached the current implementation for context.</p>
+                            </div>
+                        </div>
+
+                        <!-- Message (AI) -->
+                        <div class="flex space-x-4 max-w-3xl" data-sd-id="45">
+                            <div class="w-8 h-8 rounded border border-charcoal flex-shrink-0 flex items-center justify-center bg-white text-black" data-sd-id="46">
+                                <iconify-icon icon="lucide:sparkles" class="text-sm"></iconify-icon>
+                            </div>
+                            <div class="space-y-4 w-full" data-sd-id="47">
+                                <p class="text-gray-200" data-sd-id="48">Understood. Here is the refactored `CoreEngine` following the factory pattern. This reduces initialization latency by approximately 14%.</p>
+                                <div class="rounded-lg border border-charcoal bg-zinc-950 p-4 font-mono text-xs text-gray-400" data-sd-id="49">
+                                    <div class="flex justify-between mb-2" data-sd-id="50">
+                                        <span class="text-gray-500" data-sd-id="51">core_engine.ts</span>
+                                        <iconify-icon icon="lucide:copy" class="cursor-pointer hover:text-white"></iconify-icon>
+                                    </div>
+                                    <pre class="overflow-x-auto text-green-400" data-sd-id="52">class CoreFactory {
+    static createInstance(config: EngineConfig) {
+        // Factory logic here
+        return new CoreEngine(config);
+    }
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Knowledge/Context Pane (Right Pane) -->
+                <section class="w-96 border-charcoal bg-[#050505] hidden xl:flex flex-col" data-sd-id="53">
+                    <div class="p-4 border-b border-charcoal flex justify-between items-center" data-sd-id="54">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-500" data-sd-id="55">Context</h3>
+                        <iconify-icon icon="lucide:plus" class="text-gray-500 cursor-pointer"></iconify-icon>
+                    </div>
+                    <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar" data-sd-id="56">
+                        <div class="p-3 border border-charcoal rounded-lg bg-zinc-900/20 hover:bg-zinc-900/40 cursor-pointer transition-colors" data-sd-id="57">
+                            <div class="flex items-center space-x-2 mb-2" data-sd-id="58">
+                                <iconify-icon icon="lucide:file-text" class="text-blue-400"></iconify-icon>
+                                <span class="text-xs font-medium" data-sd-id="59">Architecture_v2.pdf</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 line-clamp-2" data-sd-id="60">Detailed specification for the next-gen distributed system architecture...</p>
+                        </div>
+                        <div class="p-3 border border-charcoal rounded-lg bg-zinc-900/20 hover:bg-zinc-900/40 cursor-pointer transition-colors" data-sd-id="61">
+                            <div class="flex items-center space-x-2 mb-2" data-sd-id="62">
+                                <iconify-icon icon="lucide:code-2" class="text-orange-400"></iconify-icon>
+                                <span class="text-xs font-medium" data-sd-id="63">api_handler.ts</span>
+                            </div>
+                            <div class="h-1 w-full bg-zinc-800 rounded-full mt-1" data-sd-id="64">
+                                <div class="h-1 bg-orange-500 w-2/3 rounded-full" data-sd-id="65"></div>
+                            </div>
+                        </div>
+                        <div class="p-3 border border-charcoal rounded-lg bg-zinc-900/20 hover:bg-zinc-900/40 cursor-pointer transition-colors" data-sd-id="66">
+                            <div class="flex items-center space-x-2 mb-2" data-sd-id="67">
+                                <iconify-icon icon="lucide:link" class="text-green-400"></iconify-icon>
+                                <span class="text-xs font-medium" data-sd-id="68">Internal Documentation</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500" data-sd-id="69">Linked to Notion: Archon Specs</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Bottom Chat Input System -->
+            <div class="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-center pointer-events-none" data-sd-id="70">
+                <div class="w-full max-w-4xl pointer-events-auto space-y-4" data-sd-id="71">
+                    
+                    <!-- Attachment Preview Cards -->
+                    <div class="flex space-x-3 mb-2 px-2 overflow-x-auto custom-scrollbar" data-sd-id="72">
+                        <div class="flex-shrink-0 w-48 p-3 bg-zinc-900 border border-charcoal rounded-xl flex items-center space-x-3 shadow-2xl" data-sd-id="73">
+                            <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center" data-sd-id="74">
+                                <iconify-icon icon="lucide:file-code" class="text-blue-400"></iconify-icon>
+                            </div>
+                            <div class="overflow-hidden" data-sd-id="75">
+                                <div class="text-[11px] font-medium text-white truncate" data-sd-id="76">main_engine.py</div>
+                                <div class="text-[9px] text-gray-500" data-sd-id="77">Pasted 124 lines</div>
+                            </div>
+                            <button class="ml-auto text-gray-600 hover:text-white" data-sd-id="78">
+                                <iconify-icon icon="lucide:x" class="text-xs"></iconify-icon>
+                            </button>
+                        </div>
+                        <div class="flex-shrink-0 w-48 p-3 bg-zinc-900 border border-charcoal rounded-xl flex items-center space-x-3 shadow-2xl" data-sd-id="79">
+                            <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center" data-sd-id="80">
+                                <iconify-icon icon="lucide:image" class="text-purple-400"></iconify-icon>
+                            </div>
+                            <div class="overflow-hidden" data-sd-id="81">
+                                <div class="text-[11px] font-medium text-white truncate" data-sd-id="82">diagram_flow.png</div>
+                                <div class="text-[9px] text-gray-500" data-sd-id="83">Image • 2.4MB</div>
+                            </div>
+                            <button class="ml-auto text-gray-600 hover:text-white" data-sd-id="84">
+                                <iconify-icon icon="lucide:x" class="text-xs"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Input Bar -->
+                    <div class="bg-vercel-black border border-charcoal rounded-2xl p-1 shadow-2xl ring-1 ring-white/5" data-sd-id="85">
+                        <div class="flex items-center px-4 pt-2 justify-between" data-sd-id="86">
+                            <!-- Model Selector -->
+                            <div class="relative group" data-sd-id="87">
+                                <button class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors bg-zinc-900/50 px-2 py-1 rounded-md border border-charcoal" data-sd-id="88">
+                                    <iconify-icon icon="lucide:zap" class="text-amber-400"></iconify-icon>
+                                    <span data-sd-id="89">Archon-X 4.0</span>
+                                    <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+                                </button>
+                                <!-- Model Dropdown Mockup (Hidden by default) -->
+                                <div class="absolute bottom-full left-0 mb-2 w-48 bg-zinc-950 border border-charcoal rounded-lg shadow-xl p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto" data-sd-id="90">
+                                    <button class="w-full text-left px-3 py-2 text-xs hover:bg-zinc-900 rounded-md flex items-center justify-between" data-sd-id="91">
+                                        <span data-sd-id="92">Archon-X 4.0</span>
+                                        <iconify-icon icon="lucide:check" class="text-blue-500"></iconify-icon>
+                                    </button>
+                                    <button class="w-full text-left px-3 py-2 text-xs hover:bg-zinc-900 rounded-md" data-sd-id="93">Archon Lite</button>
+                                    <button class="w-full text-left px-3 py-2 text-xs hover:bg-zinc-900 rounded-md" data-sd-id="94">GPT-4o (Plugin)</button>
+                                </div>
+                            </div>
+
+                            <!-- Tools Button -->
+                            <button class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors bg-zinc-900/50 px-2 py-1 rounded-md border border-charcoal" data-sd-id="95">
+                                <iconify-icon icon="lucide:wrench" class="text-gray-400"></iconify-icon>
+                                <span data-sd-id="96">Tools</span>
+                                <span class="bg-blue-600 text-[8px] text-white px-1 rounded-sm" data-sd-id="97">4</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-end px-3 py-3" data-sd-id="98">
+                            <button id="cta-attachment-btn" class="p-2 text-gray-500 hover:text-white transition-colors" data-sd-id="99">
+                                <iconify-icon icon="lucide:paperclip" class="text-xl"></iconify-icon>
+                            </button>
+                            <textarea class="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 resize-none max-h-32 text-sm py-2 px-2" placeholder="Send a message to Archon..." rows="1" data-sd-id="100"></textarea>
+                            <button id="cta-send-btn" class="mb-1 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-200 transition-all" data-sd-id="101">
+                                <iconify-icon icon="lucide:arrow-up" class="text-lg"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center space-x-6" data-sd-id="102">
+                        <div class="flex items-center space-x-2 text-[10px] text-gray-600" data-sd-id="103">
+                            <span class="px-1.5 py-0.5 border border-charcoal rounded text-gray-500" data-sd-id="104">⌘</span>
+                            <span class="px-1.5 py-0.5 border border-charcoal rounded text-gray-500" data-sd-id="105">K</span>
+                            <span data-sd-id="106">to search sessions</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-[10px] text-gray-600" data-sd-id="107">
+                            <span class="px-1.5 py-0.5 border border-charcoal rounded text-gray-500" data-sd-id="108">Shift</span>
+                            <span class="px-1.5 py-0.5 border border-charcoal rounded text-gray-500" data-sd-id="109">↵</span>
+                            <span data-sd-id="110">for new line</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right System Rail (Icons Only) -->
+        <aside class="w-12 border-l border-charcoal flex flex-col items-center py-6 space-y-6 bg-vercel-black" data-sd-id="111">
+            <button id="side-search-link" class="text-gray-500 hover:text-white" data-sd-id="112"><iconify-icon icon="lucide:search"></iconify-icon></button>
+            <button id="side-history-link" class="text-gray-500 hover:text-white" data-sd-id="113"><iconify-icon icon="lucide:history"></iconify-icon></button>
+            <button id="side-settings-link" class="text-gray-500 hover:text-white" data-sd-id="114"><iconify-icon icon="lucide:settings-2"></iconify-icon></button>
+            <div class="w-4 h-[1px] bg-charcoal" data-sd-id="115"></div>
+            <button id="side-help-link" class="text-gray-500 hover:text-white" data-sd-id="116"><iconify-icon icon="lucide:help-circle"></iconify-icon></button>
+        </aside>
+
+    </div>
+
+    <!-- Micro-interaction script -->
+    <script>
+        // Auto-expand textarea
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Quick Escape to clear overlays if any
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Potential overlay close logic
+            }
+        });
+    </script>
+
+</body></html>

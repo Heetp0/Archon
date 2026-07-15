@@ -2,6 +2,10 @@
   "name": "@workspace/archon-root",
   "private": true,
   "scripts": {
-    "build": "pnpm -r run build"
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r --if-present run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }

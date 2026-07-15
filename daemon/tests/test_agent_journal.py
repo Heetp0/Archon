@@ -14,6 +14,7 @@ class TestAgentJournal(unittest.TestCase):
         self.journal = AgentJournal(self.db_dir)
 
     def tearDown(self):
+        self.journal.close()
         if os.path.exists(self.db_dir):
             shutil.rmtree(self.db_dir)
 

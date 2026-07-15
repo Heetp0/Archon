@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type AppMode = "dashboard" | "chat" | "council" | "research" | "agents" | "obsidian" | "directory";
 
@@ -30,9 +30,57 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<AppMode>("dashboard");
-  const [contextSidebarOpen, setContextSidebarOpen] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [mode, setMode] = useState<AppMode>(() => {
+    try {
+      const saved = localStorage.getItem("archon_appMode");
+      if (saved && ["dashboard", "chat", "council", "research", "agents", "obsidian", "directory"].includes(saved)) {
+        return saved as AppMode;
+      }
+      return "dashboard";
+    } catch {
+      return "dashboard";
+    }
+  });
+  const [contextSidebarOpen, setContextSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("archon_contextSidebarOpen");
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [rightSidebarOpen, setRightSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("archon_rightSidebarOpen");
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("archon_appMode", mode);
+    } catch (e) {
+      console.error("Failed to save appMode to localStorage:", e);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("archon_contextSidebarOpen", String(contextSidebarOpen));
+    } catch (e) {
+      console.error("Failed to save contextSidebarOpen to localStorage:", e);
+    }
+  }, [contextSidebarOpen]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("archon_rightSidebarOpen", String(rightSidebarOpen));
+    } catch (e) {
+      console.error("Failed to save rightSidebarOpen to localStorage:", e);
+    }
+  }, [rightSidebarOpen]);
   const [activeContextFiles, setActiveContextFiles] = useState<string[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsProjectId, setSettingsProjectId] = useState<string | null>(null);

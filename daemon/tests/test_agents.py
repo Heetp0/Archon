@@ -58,8 +58,7 @@ async def test_chat_agent(mock_services):
     assert ("token", {"text": "world"}) in events
 
 @pytest.mark.asyncio
-@patch("council_debate.acompletion")
-async def test_council_debate(mock_acompletion, mock_services):
+async def test_council_debate(mock_services):
     router, vault_search, markit_down = mock_services
     
     router.get_available_models.return_value = [
@@ -68,15 +67,9 @@ async def test_council_debate(mock_acompletion, mock_services):
     ]
     router._get_api_key.return_value = "mock_key"
     
-    mock_chunk = MagicMock()
-    mock_chunk.choices = [MagicMock()]
-    mock_chunk.choices[0].delta = MagicMock()
-    mock_chunk.choices[0].delta.content = "draft response"
-    
-    async def mock_stream(*args, **kwargs):
-        yield mock_chunk
-        
-    mock_acompletion.return_value = mock_stream()
+    async def mock_generate(*args, **kwargs):
+        yield "draft response"
+    router.generate.side_effect = mock_generate
     
     agent = CouncilDebate(router, vault_search, markit_down)
     
