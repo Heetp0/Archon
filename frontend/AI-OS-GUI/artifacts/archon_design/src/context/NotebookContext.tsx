@@ -48,6 +48,9 @@ interface NotebookState {
   selectedSourceIds: string[];
   toggleSourceId: (id: string) => void;
   setSelectedSourceIds: (ids: string[]) => void;
+  // Active view tab (Chat vs Analytics)
+  activeTab: "chat" | "analytics";
+  setActiveTab: (tab: "chat" | "analytics") => void;
   // Notes
   notes: Note[];
   createNote: (content: string, title?: string) => void;
@@ -82,6 +85,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const [isArtifactLoading, setIsArtifactLoading] = useState(false);
   const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [activeTab, setActiveTab] = useState<"chat" | "analytics">("chat");
   const msgIdCounter = useRef(0);
 
   const currentNotebook = notebooks.find((n) => n.notebook_id === currentNotebookId) ?? null;
@@ -301,6 +305,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
         selectedSourceIds, toggleSourceId, setSelectedSourceIds,
         notes, createNote, updateNote, deleteNote,
         loadNotebooks, createNotebook, deleteNotebook, switchNotebook,
+        activeTab, setActiveTab,
         sendChat, generateArtifact, closeArtifact,
         addIngestionJob, updateIngestionJob,
       }}

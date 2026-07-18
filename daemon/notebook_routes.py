@@ -4,10 +4,13 @@ import uuid
 import json
 import logging
 import asyncio
+import re
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
+import pyarrow as pa
 
 # Import core classes from existing modules
 from model_router import ModelRouter
@@ -16,9 +19,14 @@ from chat_grounded import GroundedChatAgent
 from studio import StudioAgent
 from audio_overview import AudioOverviewAgent
 
+# Multi-user imports
+from auth_middleware import get_current_user, UserContext
+from quota_enforcer import check_notebook_quota
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
 # Globals to hold service singletons (initialized from main.py)
 model_router: Optional[ModelRouter] = None
 retriever: Optional[Retriever] = None
@@ -26,16 +34,41 @@ grounded_chat_agent: Optional[GroundedChatAgent] = None
 studio_agent: Optional[StudioAgent] = None
 audio_overview_agent: Optional[AudioOverviewAgent] = None
 
-# Active notebooks dict
-active_notebooks = {}
+DAEMON_DIR = os.path.dirname(os.path.abspath(__file__))
+STROKES_DIR = os.path.join(DAEMON_DIR, 'data', 'strokes')
+
+ocr_job_manager = None
 
 def init_notebook_services(app_router: ModelRouter, app_retriever: Retriever):
-    global model_router, retriever, grounded_chat_agent, studio_agent, audio_overview_agent
+    global model_router, retriever, grounded_chat_agent, studio_agent, audio_overview_agent, ocr_job_manager
     model_router = app_router
     retriever = app_retriever
     grounded_chat_agent = GroundedChatAgent(model_router, retriever)
     studio_agent = StudioAgent(model_router, retriever)
     audio_overview_agent = AudioOverviewAgent(model_router, retriever)
+    
+    # Initialize notebooks table in LanceDB
+    notebook_schema = pa.schema([
+        pa.field("id", pa.string()),
+        pa.field("user_id", pa.string()),
+        pa.field("name", pa.string()),
+        pa.field("created_at", pa.float64())
+    ])
+    retriever.db.create_table("notebooks", schema=notebook_schema, exist_ok=True)
+    
+    from ocr_job_manager import OcrJobManager
+    from main import unified_broadcast
+    ocr_job_manager = OcrJobManager(broadcast_callback=unified_broadcast, retriever=retriever)
+
+# Helper to verify notebook ownership
+def verify_notebook_access(notebook_id: str, user_id: str):
+    if retriever is None:
+        raise HTTPException(status_code=500, detail="Retriever not initialized")
+    nb_table = retriever.db.open_table("notebooks")
+    nbs = nb_table.search().where(f"id = '{notebook_id}' AND user_id = '{user_id}'").to_list()
+    if not nbs:
+        raise HTTPException(status_code=404, detail="Notebook not found")
+    return nbs[0]
 
 # ----------------- Models -----------------
 
@@ -59,7 +92,7 @@ class ChatRequest(BaseModel):
     source_ids: Optional[List[str]] = Field(default=None, description='Filter context retrieval by specific source IDs')
 
 class StudioRequest(BaseModel):
-    query: Optional[str] = Field(None, description='Optional query for target context')
+    query: Optional[str] = None
     model: Optional[str] = None
     temperature: Optional[float] = Field(0.7, description='Generation temperature')
     top_k: Optional[int] = Field(10, description='Number of context chunks to retrieve')
@@ -108,7 +141,7 @@ class NotebookJobConnectionManager:
 
     async def broadcast_job_update(self, event_type: str, payload: Any):
         if event_type == 'job_progress':
-            notebook_id = payload.get('notebook_ad') or payload.get('notebook_id')
+            notebook_id = payload.get('notebook_id')
             if notebook_id and notebook_id in self.active_connections:
                 for connection in list(self.active_connections[notebook_id]):
                     try:
@@ -125,37 +158,45 @@ notebook_job_websocket_manager = NotebookJobConnectionManager()
 # ----------------- REST Endpoints -----------------
 
 @router.post('/notebooks')
-async def create_notebook(request: Optional[NotebookCreate] = None):
-    name = None
-    if request is not None:
-        if request.name is not None:
-            if not request.name.strip():
-                raise HTTPException(status_code=400, detail='Notebook name cannot be empty')
-            name = request.name
+async def create_notebook(request: Optional[NotebookCreate] = None, current_user: UserContext = Depends(get_current_user)):
+    if retriever is None:
+        raise HTTPException(status_code=500, detail="Retriever not initialized")
+        
+    name = "Untitled Notebook"
+    if request is not None and request.name is not None:
+        if not request.name.strip():
+            raise HTTPException(status_code=400, detail='Notebook name cannot be empty')
+        name = request.name
+
+    # Quota check
+    check_notebook_quota(retriever.db, current_user.user_id, current_user.role)
             
     notebook_id = str(uuid.uuid4())
-    active_notebooks[notebook_id] = {
-        "notebook_id": notebook_id,
+    nb_table = retriever.db.open_table("notebooks")
+    
+    new_nb = {
+        "id": notebook_id,
+        "user_id": current_user.user_id,
         "name": name,
-        "created_at": time.time(),
-        "sources": []
+        "created_at": time.time()
     }
-    return active_notebooks[notebook_id]
+    nb_table.add([new_nb])
+    return new_nb
 
 @router.get('/notebooks')
-async def list_notebooks():
-    return list(active_notebooks.values())
+async def list_notebooks(current_user: UserContext = Depends(get_current_user)):
+    if retriever is None:
+        raise HTTPException(status_code=500, detail="Retriever not initialized")
+    nb_table = retriever.db.open_table("notebooks")
+    return nb_table.search().where(f"user_id = '{current_user.user_id}'").to_list()
 
 @router.get('/notebooks/{id}')
-async def get_notebook(id: str):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
-    return active_notebooks[id]
+async def get_notebook(id: str, current_user: UserContext = Depends(get_current_user)):
+    return verify_notebook_access(id, current_user.user_id)
 
 @router.delete('/notebooks/{id}')
-async def delete_notebook(id: str):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
+async def delete_notebook(id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(id, current_user.user_id)
         
     if retriever is not None:
         escaped_id = id.replace(chr(39), chr(39)+chr(39))
@@ -168,13 +209,13 @@ async def delete_notebook(id: str):
         except Exception as e:
             logger.debug(f"Delete from topic_table failed or skipped: {e}")
             
-    del active_notebooks[id]
+    nb_table = retriever.db.open_table("notebooks")
+    nb_table.delete(f"id = '{id}'")
     return {"status": "deleted"}
 
 @router.post('/notebooks/{id}/sources', status_code=202)
-async def add_source(id: str, request: SourceIngestionRequest):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
+async def add_source(id: str, request: SourceIngestionRequest, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(id, current_user.user_id)
         
     source_type = request.source_type.lower()
     if source_type not in ('pdf', 'codebase', 'audio'):
@@ -191,7 +232,7 @@ async def add_source(id: str, request: SourceIngestionRequest):
     return {"job_id": job_id, "status": "pending"}
 
 @router.get('/jobs/{id}')
-async def get_job(id: str):
+async def get_job(id: str, current_user: UserContext = Depends(get_current_user)):
     from main import ingestion_queue
     status = ingestion_queue.get_status(id)
     if not status:
@@ -199,9 +240,8 @@ async def get_job(id: str):
     return status
 
 @router.get('/notebooks/{id}/sources')
-async def list_sources(id: str):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
+async def list_sources(id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(id, current_user.user_id)
         
     if retriever is None:
         raise HTTPException(status_code=500, detail='Retriever service not initialized')
@@ -216,17 +256,18 @@ async def list_sources(id: str):
         return {"notebook_id": id, "sources": []}
 
 @router.post('/notebooks/{id}/chat')
-async def grounded_chat(id: str, request: ChatRequest):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
+async def grounded_chat(id: str, request: ChatRequest, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(id, current_user.user_id)
     if grounded_chat_agent is None:
         raise HTTPException(status_code=500, detail='Grounded Chat Agent not initialized')
         
     content = request.query if request.query is not None else request.message
     if content is None or not content.strip():
         raise HTTPException(status_code=400, detail="Empty query not allowed")
+    
     payload = dict(
         notebook_id=id,
+        user_id=current_user.user_id,
         content=content,
         command=request.command,
         model=request.model,
@@ -235,10 +276,10 @@ async def grounded_chat(id: str, request: ChatRequest):
         history=request.history,
         source_ids=request.source_ids
     )
+    
     if request.stream:
         async def event_generator():
             queue = asyncio.Queue()
-            
             async def send_token_callback(event: str, data: Any):
                 await queue.put((event, data))
             task = asyncio.create_task(grounded_chat_agent.run(payload, send_token_callback))
@@ -275,9 +316,8 @@ async def grounded_chat(id: str, request: ChatRequest):
         return dict(response=response_text, citations=citations)
 
 @router.post('/notebooks/{id}/studio/{artifact_type}')
-async def generate_studio_artifact(id: str, artifact_type: str, request: StudioRequest):
-    if id not in active_notebooks:
-        raise HTTPException(status_code=404, detail='Notebook not found')
+async def generate_studio_artifact(id: str, artifact_type: str, request: StudioRequest, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(id, current_user.user_id)
         
     original_artifact_type = artifact_type
     if artifact_type == 'mindmap':
@@ -288,6 +328,7 @@ async def generate_studio_artifact(id: str, artifact_type: str, request: StudioR
         
     payload = dict(
         notebook_id=id,
+        user_id=current_user.user_id,
         artifact_type=artifact_type,
         query=request.query,
         model=request.model,
@@ -307,7 +348,6 @@ async def generate_studio_artifact(id: str, artifact_type: str, request: StudioR
     if request.stream:
         async def event_generator():
             queue = asyncio.Queue()
-            
             async def send_token_callback(event: str, data: Any):
                 await queue.put((event, data))
             task = asyncio.create_task(agent.run(payload, send_token_callback))
@@ -351,6 +391,144 @@ async def generate_studio_artifact(id: str, artifact_type: str, request: StudioR
                 content=artifact_content,
                 artifact_type=original_artifact_type
             )
+
+# ----------------- Strokes -----------------
+
+def get_stroke_file_path(user_id: str, notebook_id: str, page_id: str) -> str:
+    # Safe isolation nesting: data/strokes/<user_id>/<notebook_id>/<page_id>.bin
+    nb_id = notebook_id if notebook_id else "default"
+    path = os.path.join(STROKES_DIR, user_id, nb_id)
+    os.makedirs(path, exist_ok=True)
+    return os.path.join(path, f"{page_id}.bin")
+
+@router.post('/notebook/pages/{page_id:path}/strokes')
+async def save_page_strokes(page_id: str, request: Request, current_user: UserContext = Depends(get_current_user)):
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', page_id):
+        raise HTTPException(status_code=400, detail='Invalid page_id format')
+    
+    body = await request.body()
+    file_path = get_stroke_file_path(current_user.user_id, "default", page_id)
+    with open(file_path, 'wb') as f:
+        f.write(body)
+        
+    return {'status': 'success', 'page_id': page_id, 'bytes_written': len(body)}
+
+@router.get('/notebook/pages/{page_id:path}/strokes')
+async def get_page_strokes(page_id: str, current_user: UserContext = Depends(get_current_user)):
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', page_id):
+        raise HTTPException(status_code=400, detail='Invalid page_id format')
+        
+    file_path = get_stroke_file_path(current_user.user_id, "default", page_id)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail='Strokes not found')
+        
+    return FileResponse(file_path, media_type='application/octet-stream')
+
+# New page management and OCR endpoints
+@router.post('/notebooks/{notebook_id}/pages')
+async def create_notebook_page(notebook_id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    page_id = str(uuid.uuid4())
+    file_path = get_stroke_file_path(current_user.user_id, notebook_id, page_id)
+    with open(file_path, 'wb') as f:
+        pass
+    return {'page_id': page_id, 'status': 'created'}
+
+@router.get('/notebooks/{notebook_id}/pages')
+async def list_notebook_pages(notebook_id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    nb_dir = os.path.join(STROKES_DIR, current_user.user_id, notebook_id)
+    if not os.path.exists(nb_dir):
+        return []
+    pages = []
+    for fname in os.listdir(nb_dir):
+        if fname.endswith('.bin'):
+            page_id = fname[:-4]
+            file_path = os.path.join(nb_dir, fname)
+            stat = os.stat(file_path)
+            pages.append({
+                'page_id': page_id,
+                'notebook_id': notebook_id,
+                'last_modified': stat.st_mtime,
+                'size': stat.st_size
+            })
+    return pages
+
+@router.delete('/notebooks/{notebook_id}/pages/{page_id}')
+async def delete_notebook_page(notebook_id: str, page_id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    file_path = get_stroke_file_path(current_user.user_id, notebook_id, page_id)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    if retriever is not None:
+        try:
+            retriever.chunks_table.delete(f"source_id = 'page_{page_id}'")
+        except Exception:
+            pass
+    return {'status': 'deleted'}
+
+@router.post('/notebooks/{notebook_id}/pages/{page_id}/strokes')
+async def save_page_strokes_new(
+    notebook_id: str, 
+    page_id: str, 
+    request: Request, 
+    current_user: UserContext = Depends(get_current_user),
+    ocr_requested: bool = False, 
+    mode: str = "text"
+):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    body = await request.body()
+    file_path = get_stroke_file_path(current_user.user_id, notebook_id, page_id)
+    with open(file_path, 'wb') as f:
+        f.write(body)
+    
+    job_id = None
+    if ocr_requested and ocr_job_manager is not None:
+        # Inject user_id context into the background job if needed
+        job_id = await ocr_job_manager.add_job(notebook_id, page_id, mode)
+        
+    return {
+        'status': 'success',
+        'page_id': page_id,
+        'bytes_written': len(body),
+        'ocr_job_id': job_id
+    }
+
+@router.get('/notebooks/{notebook_id}/pages/{page_id}/strokes')
+async def get_page_strokes_new(notebook_id: str, page_id: str, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    file_path = get_stroke_file_path(current_user.user_id, notebook_id, page_id)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail='Strokes not found')
+    return FileResponse(file_path, media_type='application/octet-stream')
+
+@router.post('/notebooks/{notebook_id}/pages/{page_id}/ocr')
+async def enqueue_ocr_job(notebook_id: str, page_id: str, mode: str = "text", current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    if ocr_job_manager is None:
+        raise HTTPException(status_code=500, detail='OCR Job Manager not initialized')
+    
+    # Quota limit validation
+    from quota_enforcer import check_ocr_quota
+    check_ocr_quota(retriever.db, current_user.user_id, current_user.role)
+    
+    job_id = await ocr_job_manager.add_job(notebook_id, page_id, mode)
+    return {'job_id': job_id, 'status': 'queued'}
+
+class CorrectionRequest(BaseModel):
+    original_token: str
+    corrected_token: str
+    confidence: float
+
+@router.post('/notebooks/{notebook_id}/pages/{page_id}/corrections')
+async def log_ocr_correction(notebook_id: str, page_id: str, req: CorrectionRequest, current_user: UserContext = Depends(get_current_user)):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    if ocr_job_manager is None:
+        raise HTTPException(status_code=500, detail='OCR Job Manager not initialized')
+    
+    # log correction scoped by user_id
+    ocr_job_manager.log_correction(page_id, req.original_token, req.corrected_token, req.confidence)
+    return {'status': 'logged'}
 
 # ----------------- WebSockets -----------------
 

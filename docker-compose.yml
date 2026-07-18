@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./daemon
+      dockerfile: Dockerfile
+    container_name: archon-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - lancedb_data:/data/lancedb
+      - strokes_data:/data/strokes
+      - backups_data:/data/backups
+      - training_data:/data/training_data
+      - ./daemon/.env:/app/.env:ro
+    environment:
+      - WORKSPACE_ROOT=/data
+      - DAEMON_PORT=8000
+    networks:
+      - archon-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend/AI-OS-GUI/artifacts/archon_design
+      dockerfile: Dockerfile
+    container_name: archon-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - archon-net
+
+volumes:
+  lancedb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LANCEDB_HOST_PATH:-./.data/lancedb}
+  strokes_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${STROKES_HOST_PATH:-./.data/strokes}
+  backups_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKUPS_HOST_PATH:-./.data/backups}
+  training_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${TRAINING_HOST_PATH:-./.data/training}
+
+networks:
+  archon-net:
+    driver: bridge

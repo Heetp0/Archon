@@ -1,17 +1,21 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
+﻿import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, Cpu, Zap, Clock, MessageSquare, Users, Search,
   BookOpen, Bot, ArrowRight, Wifi, WifiOff, Database,
   Mail, CheckSquare, Square, X, ExternalLink,
-  RefreshCw, ChevronRight, CheckCircle2, InboxIcon, ListTodo
+  RefreshCw, ChevronRight, CheckCircle2, InboxIcon, ListTodo,
+  Play
 } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useAppContext } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
 import type { AppMode } from "@/context/AppContext";
 import CalendarWidget from "@/components/CalendarWidget";
+import OnboardingFlow from "@/components/dashboard/OnboardingFlow";
+import SettingsPanel from "@/components/dashboard/SettingsPanel";
+import HelpSystem from "@/components/dashboard/HelpSystem";
 
 interface MailItem {
   id: string;
@@ -153,6 +157,117 @@ function SystemHealthPanel() {
             <span className="text-white text-xs">Active</span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface FineTuneStatus {
+  current_model: string;
+  is_running: boolean;
+  history: Array<{
+    timestamp: string;
+    model_name: string;
+    dataset_size: number;
+    baseline_wer: number;
+    fine_tuned_wer: number;
+    wer_reduction_percent: number;
+  }>;
+}
+
+function TesseractModelWidget() {
+  const [status, setStatus] = useState<FineTuneStatus | null>(null);
+  const [triggering, setTriggering] = useState(false);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/tutor/finetune/status");
+      if (res.ok) {
+        const data = await res.json();
+        setStatus(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch Tesseract status:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const triggerFinetune = async () => {
+    setTriggering(true);
+    try {
+      const res = await fetch("http://localhost:8000/tutor/finetune/trigger", { method: "POST" });
+      if (res.ok) {
+        fetchStatus();
+      }
+    } catch (e) {
+      console.error("Failed to trigger finetune:", e);
+    } finally {
+      setTriggering(false);
+    }
+  };
+
+  if (!status) return null;
+
+  return (
+    <div className="rounded border border-[#222222] bg-[#0a0a0a] p-4 flex flex-col gap-3 font-mono text-[10px]">
+      <div className="flex items-center justify-between border-b border-[#222222] pb-2">
+        <span className="font-bold text-white uppercase tracking-wider">Tesseract OCR Tuning</span>
+        <span className="flex items-center gap-1.5 text-white">
+          <span className={cn(
+            "w-1.5 h-1.5 rounded-full",
+            status.is_running ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+          )} />
+          {status.is_running ? "RUNNING" : "IDLE"}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between">
+          <span className="text-[#a0a0a0]">Active Model:</span>
+          <span className="text-white font-bold">{status.current_model}</span>
+        </div>
+
+        {status.history && status.history.length > 0 && (
+          <div className="space-y-1">
+            <span className="text-[#666666] text-[8px] uppercase tracking-wider block mb-1">Checkpoints History</span>
+            <div className="max-h-[60px] overflow-y-auto space-y-1 pr-1" style={{ scrollbarWidth: "none" }}>
+              {status.history.map((h, idx) => (
+                <div key={idx} className="flex justify-between text-[9px] border-b border-[#111] pb-0.5">
+                  <span className="text-[#a0a0a0]">{new Date(h.timestamp).toLocaleDateString()}</span>
+                  <span className="text-emerald-400">-{h.wer_reduction_percent.toFixed(1)}% WER</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={triggerFinetune}
+          disabled={status.is_running || triggering}
+          className={cn(
+            "w-full py-2 px-3 rounded border text-[10px] font-mono font-bold flex items-center justify-center gap-1.5 transition-all",
+            status.is_running || triggering
+              ? "border-[#222] bg-[#111] text-[#666] cursor-not-allowed"
+              : "border-white bg-white text-black hover:bg-black hover:text-white"
+          )}
+        >
+          {status.is_running ? (
+            <>
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              Fine-tuning Model...
+            </>
+          ) : (
+            <>
+              <Play className="w-3 h-3" />
+              Trigger Custom Fine-tuning
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -314,6 +429,10 @@ export default function DashboardMode() {
   const [openMail, setOpenMail] = useState<MailItem | null>(null);
   const [chartView, setChartView] = useState<"commands" | "tokens">("commands");
 
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('archon_onboarded'));
+  const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
   const activityData = useDerivedActivity(terminalLines);
 
   const activeAgents  = agentStatuses.filter((a) => a.status === "running").length;
@@ -457,6 +576,9 @@ export default function DashboardMode() {
               
               {/* System Health Panel */}
               <SystemHealthPanel />
+              
+              {/* Tesseract Model Widget */}
+              <TesseractModelWidget />
             </div>
 
             {/* Activity Feed */}
@@ -584,7 +706,23 @@ export default function DashboardMode() {
 
           {/* Quick Actions grid */}
           <div className="pt-4 border-t border-[#222222]">
-            <h2 className="text-[10px] font-mono text-[#a0a0a0] uppercase tracking-widest mb-4">Quick Command Center</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] font-mono text-[#a0a0a0] uppercase tracking-widest">Quick Command Center</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="text-[10px] font-mono text-[#444444] hover:text-[#999999] transition-colors flex items-center gap-1"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" /> Help
+                </button>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="text-[10px] font-mono text-[#444444] hover:text-[#999999] transition-colors flex items-center gap-1"
+                >
+                  <Settings className="w-3.5 h-3.5" /> Settings
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-6 gap-3">
               {QUICK_ACTIONS.map((action) => (
                 <QuickAction
@@ -601,6 +739,15 @@ export default function DashboardMode() {
       </motion.div>
 
       <MailDetailModal mail={openMail} onClose={() => setOpenMail(null)} />
+      {showOnboarding && (
+        <OnboardingFlow
+          onComplete={() => { localStorage.setItem('archon_onboarded', '1'); setShowOnboarding(false); }}
+          onSkip={() => { localStorage.setItem('archon_onboarded', '1'); setShowOnboarding(false); }}
+        />
+      )}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {showHelp && <HelpSystem onClose={() => setShowHelp(false)} />}
     </>
   );
 }
+

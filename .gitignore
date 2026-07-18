@@ -1,4 +1,4 @@
-# Environments
+﻿# Environments
 .env
 .venv
 env/
@@ -48,3 +48,19 @@ graphify-out/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local runtime data, test logs, and assets
+daemon/data/
+.local/
+attached_assets/
+review_report/
+.gitignore_1
+test_brace.txt
+Testers/test_auth.py
+Testers/test_circuit_breaker.py
+Testers/test_quota.py
+Testers/test_rag.py
+Testers/legacy_gui/
+
+ORIGINAL_REQUEST.md
+

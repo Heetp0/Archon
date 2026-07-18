@@ -31,6 +31,7 @@ export default function NotebookSidebar() {
     setSourceDrawerOpen,
     selectedSourceIds, toggleSourceId, setSelectedSourceIds,
     notes, createNote, updateNote, deleteNote,
+    activeTab, setActiveTab,
   } = useNotebookContext();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -144,6 +145,32 @@ export default function NotebookSidebar() {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Tab Selector */}
+      <div className="flex px-3 py-2 border-b border-border-core bg-app-bg/30 gap-1.5">
+        <Button
+          variant={activeTab === "chat" ? "default" : "ghost"}
+          size="sm"
+          className={cn(
+            "flex-1 text-xs h-7 rounded font-mono uppercase tracking-wider",
+            activeTab === "chat" ? "bg-white text-black hover:bg-neutral-200" : "text-text-secondary hover:text-text-primary"
+          )}
+          onClick={() => setActiveTab("chat")}
+        >
+          Chat
+        </Button>
+        <Button
+          variant={activeTab === "analytics" ? "default" : "ghost"}
+          size="sm"
+          className={cn(
+            "flex-1 text-xs h-7 rounded font-mono uppercase tracking-wider",
+            activeTab === "analytics" ? "bg-white text-black hover:bg-neutral-200" : "text-text-secondary hover:text-text-primary"
+          )}
+          onClick={() => setActiveTab("analytics")}
+        >
+          Analytics
+        </Button>
       </div>
 
       {/* Sources list (Stacked top half) */}

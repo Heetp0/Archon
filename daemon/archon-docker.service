@@ -1,0 +1,27 @@
+[Unit]
+Description=Archon AI OS — Docker Compose Service
+Documentation=https://github.com/your-org/archon
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=forking
+RemainAfterExit=yes
+WorkingDirectory=/opt/archon
+
+# Export bind-mount paths before compose starts
+Environment="LANCEDB_HOST_PATH=/opt/archon/.data/lancedb"
+Environment="STROKES_HOST_PATH=/opt/archon/.data/strokes"
+Environment="BACKUPS_HOST_PATH=/opt/archon/.data/backups"
+Environment="TRAINING_HOST_PATH=/opt/archon/.data/training"
+
+ExecStartPre=/usr/bin/docker compose -f /opt/archon/docker-compose.yml pull --quiet
+ExecStart=/usr/bin/docker compose -f /opt/archon/docker-compose.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f /opt/archon/docker-compose.yml down
+ExecReload=/usr/bin/docker compose -f /opt/archon/docker-compose.yml restart
+
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

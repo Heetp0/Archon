@@ -95,6 +95,16 @@ export const notebookApi = {
   getJob: (jobId: string) => request<IngestionJob>(`/jobs/${jobId}`),
 
   // WebSocket URL for live job progress — same daemon host/port
+  // Analytics
+  getAnalyticsSummary: (notebookId: string) =>
+    request<any>(`/notebooks/${notebookId}/analytics/summary`),
+  getAnalyticsByTopic: (notebookId: string) =>
+    request<any>(`/notebooks/${notebookId}/analytics/by-topic`),
+  getAnalyticsLearningCurve: (notebookId: string) =>
+    request<any>(`/notebooks/${notebookId}/analytics/learning-curve`),
+  getAnalyticsSpacedRepetitionStatus: (notebookId: string) =>
+    request<any>(`/notebooks/${notebookId}/analytics/spaced-repetition-status`),
+
   getWsUrl: (notebookId?: string) => {
     const wsBase = getDaemonConnectionDetails().wsUrl;
     return notebookId

@@ -107,6 +107,19 @@ class Retriever:
             chunks = chunk_codebase(parsed_content)
         elif s_type == "audio":
             chunks = chunk_audio(parsed_content)
+        elif s_type == "ocr":
+            from embeddings import RecursiveTextSplitter
+            splitter = RecursiveTextSplitter()
+            text = parsed_content.get("text", "")
+            page_id = parsed_content.get("page_id", "1")
+            split_texts = splitter.split_text(text)
+            chunks = []
+            for t in split_texts:
+                if t.strip():
+                    chunks.append({
+                        "text": t,
+                        "location": {"page_id": page_id}
+                    })
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
 
