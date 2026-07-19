@@ -166,7 +166,10 @@ def collect_training_data() -> Dict[str, Any]:
             continue
 
         page_id = corr["page_id"]
-        strokes_file = os.path.join(DAEMON_DIR, 'data', 'strokes', f'{page_id}.bin')
+        import glob
+        strokes_dir = os.path.join(DAEMON_DIR, 'data', 'strokes')
+        matched_files = glob.glob(os.path.join(strokes_dir, "**", f"{page_id}.bin"), recursive=True)
+        strokes_file = matched_files[0] if matched_files else os.path.join(strokes_dir, f"{page_id}.bin")
         if os.path.exists(strokes_file):
             try:
                 with open(strokes_file, "rb") as f:

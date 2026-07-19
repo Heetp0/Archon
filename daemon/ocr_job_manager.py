@@ -212,8 +212,11 @@ class OcrJobManager:
         mode = job["mode"]
 
         # 1. Read binary strokes file
+        import glob
         DAEMON_DIR = os.path.dirname(os.path.abspath(__file__))
-        strokes_file = os.path.join(DAEMON_DIR, 'data', 'strokes', f'{page_id}.bin')
+        strokes_dir = os.path.join(DAEMON_DIR, 'data', 'strokes')
+        matched_files = glob.glob(os.path.join(strokes_dir, "**", f"{page_id}.bin"), recursive=True)
+        strokes_file = matched_files[0] if matched_files else os.path.join(strokes_dir, f"{page_id}.bin")
         
         if not os.path.exists(strokes_file):
             err_msg = f"Strokes file not found for page {page_id} at {strokes_file}"

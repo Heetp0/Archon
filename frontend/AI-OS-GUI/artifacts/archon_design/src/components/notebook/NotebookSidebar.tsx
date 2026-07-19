@@ -113,7 +113,7 @@ export default function NotebookSidebar() {
               <AlertDialogFooter>
                 <AlertDialogCancel className="text-xs">Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-accent-rose hover:bg-accent-rose/80 text-xs text-white"
+                  className="bg-accent-rose hover:bg-accent-rose/80 text-xs text-text-on-accent font-medium"
                   onClick={() => deleteNotebook(currentNotebookId)}
                 >
                   Delete

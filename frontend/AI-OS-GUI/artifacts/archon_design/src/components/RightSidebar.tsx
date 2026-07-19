@@ -505,7 +505,7 @@ export default function RightSidebar() {
                     size="sm"
                     onClick={handleResearchSend}
                     disabled={!connected || isStreaming || !researchQuery.trim()}
-                    className="bg-accent-indigo hover:bg-accent-indigo text-text-primary px-3 py-1 h-auto disabled:opacity-40"
+                    className="bg-accent-indigo hover:bg-accent-indigo/90 text-text-on-accent px-3 py-1 h-auto disabled:opacity-40"
                   >
                     {isStreaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   </Button>

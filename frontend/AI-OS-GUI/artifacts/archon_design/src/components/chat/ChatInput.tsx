@@ -188,7 +188,7 @@ export default function ChatInput({
       )}
 
       {/* Input container styled like a premium Vercel panel */}
-      <div className="vercel-panel rounded-lg p-2 focus-within:border-white/40 transition-colors">
+      <div className="bg-[#0a0a0a] border border-[#222222] rounded-lg p-2 focus-within:border-white/40 transition-colors">
         <Textarea
           ref={textareaRef}
           value={value}
@@ -257,17 +257,17 @@ export default function ChatInput({
             <button
               type="button"
               onClick={onStop}
-              className="w-8 h-8 flex items-center justify-center rounded bg-[#222222] hover:bg-[#333333] transition-colors border border-[#444444]"
+              className="w-8 h-8 flex items-center justify-center rounded bg-[#e00000] text-white hover:bg-[#c00000] transition-colors"
               title="Stop Generation"
             >
-              <div className="w-3 h-3 bg-white rounded-sm" />
+              <div className="w-2.5 h-2.5 bg-white rounded-sm" />
             </button>
           ) : (
             <button
               type="button"
               onClick={handleSendClick}
               disabled={disabled || !value.trim()}
-              className="w-8 h-8 flex items-center justify-center rounded bg-white text-black hover:bg-neutral-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded bg-[#0070f3] text-white hover:bg-[#0060df] disabled:bg-neutral-800 disabled:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Send Message"
             >
               <Send className="w-3.5 h-3.5" />

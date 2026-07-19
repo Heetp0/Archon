@@ -191,7 +191,7 @@ export default function SourceDrawer() {
               disabled={isUploading}
             />
             <Button
-              className="w-full bg-accent-emerald hover:bg-accent-emerald/80 text-xs h-9"
+              className="w-full bg-accent-emerald hover:bg-accent-emerald/80 text-text-on-accent text-xs h-9 font-medium"
               onClick={handleGitSubmit}
               disabled={isUploading || !gitUrl.trim()}
             >

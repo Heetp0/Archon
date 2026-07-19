@@ -6,7 +6,7 @@ import {
   BookOpen, Bot, ArrowRight, Wifi, WifiOff, Database,
   Mail, CheckSquare, Square, X, ExternalLink,
   RefreshCw, ChevronRight, CheckCircle2, InboxIcon, ListTodo,
-  Play
+  Play, HelpCircle, Settings
 } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useAppContext } from "@/context/AppContext";

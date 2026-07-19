@@ -218,7 +218,7 @@ function AddAgentModal({
               }
             }}
             disabled={!name || !description}
-            className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-sm font-mono text-text-primary transition-all"
+            className="flex-1 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:opacity-40 text-sm font-mono font-medium transition-all"
           >
             Register Agent
           </button>
@@ -267,7 +267,7 @@ function AgentCard({ agent }: { agent: AgentDef }) {
               </span>
             )}
             {agent.type === "custom" && (
-              <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-accent-indigo/10 text-indigo-500 border border-indigo-500/20">
+              <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5 text-white border border-white/10">
                 Custom
               </span>
             )}
@@ -377,7 +377,7 @@ export default function AgentsDirectoryMode() {
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 border border-accent-indigo/40 text-xs font-mono text-text-primary transition-all "
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 border border-border-core text-xs font-mono font-medium transition-all "
           >
             <Plus className="w-3.5 h-3.5" />
             Add Agent

@@ -94,7 +94,7 @@ export default function StudioPanel() {
                 size="sm"
                 onClick={() => generateArtifact("audio")}
                 disabled={isArtifactLoading}
-                className="w-full text-[10px] h-8 bg-accent-emerald hover:bg-accent-emerald/80 text-white font-medium"
+                className="w-full text-[10px] h-8 bg-accent-emerald hover:bg-accent-emerald/80 text-text-on-accent font-medium"
               >
                 Generate Audio Overview
               </Button>

@@ -82,7 +82,7 @@ export default function NavRail() {
       <div className="w-6 h-px bg-text-primary/5 mb-3" />
 
       {/* Mode buttons */}
-      <nav className="relative flex flex-col items-center gap-0.5 flex-1 w-10">
+      <nav className="relative flex flex-col items-center gap-0.5 flex-1 w-full overflow-y-auto scrollbar-none py-1">
         {/* Sliding active indicator */}
         {activeIndex !== -1 && (
           <div 
@@ -100,12 +100,12 @@ export default function NavRail() {
           const spotlightOpacity = active ? 1 : Math.max(0, 1 - distance * 0.6);
           
           return (
-            <div key={id} className="relative group">
+            <div key={id} className="relative group flex-shrink-0">
               <button
                 onClick={() => setMode(id)}
                 data-testid={`nav-${id}`}
                 className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 relative overflow-hidden",
+                  "w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 relative overflow-hidden flex-shrink-0",
                   active
                     ? "text-text-primary border-border-core bg-panel-bg"
                     : "text-text-secondary border-transparent hover:text-text-primary hover:bg-panel-bg/40 hover:border-border-core/25"

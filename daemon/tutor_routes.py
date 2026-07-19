@@ -317,7 +317,7 @@ async def submit_answer(attempt_id: str, req: SubmitAnswerRequest, current_user:
         "expected_simplified": val_res.expected_simplified,
         "feedback": {
             "type": "correct" if val_res.is_correct else "incorrect",
-            "message": val_res.suggestion or "Incorrect answer. Try again."
+            "message": val_res.suggestion or ("Correct! Well done." if val_res.is_correct else "Incorrect answer. Try again.")
         }
     }
 

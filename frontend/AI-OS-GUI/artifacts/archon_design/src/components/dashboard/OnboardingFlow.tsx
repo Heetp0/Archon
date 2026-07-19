@@ -36,8 +36,8 @@ const STEPS = [
     id: 4,
     icon: MessageSquare,
     title: "Ask Anything",
-    description: "Open a Notebook and start chatting. Archon grounds every answer in your actual sources — complete with page-level citations so you can verify everything.",
-    hint: "Try: "Derive the Euler–Lagrange equation from Hamilton's principle."",
+    description: "Open a Notebook and start chatting. Archon grounds every answer in your actual sources - complete with page-level citations so you can verify everything.",
+    hint: "Try: 'Derive the Euler-Lagrange equation from Hamilton\'s principle.'",
     color: "#ffffff",
   },
   {

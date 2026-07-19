@@ -123,7 +123,7 @@ export default function SlashCommandInput({ onSend, disabled }: SlashCommandInpu
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
           size="icon"
-          className="w-7 h-7 rounded-lg bg-accent-emerald hover:bg-accent-emerald/80 text-text-primary flex-shrink-0"
+          className="w-7 h-7 rounded-lg bg-accent-emerald hover:bg-accent-emerald/80 text-text-on-accent flex-shrink-0"
         >
           <PaperPlaneRight className="w-3.5 h-3.5" />
         </Button>

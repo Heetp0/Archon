@@ -26,6 +26,7 @@ class QuizManager:
         # 1. quiz_questions table schema
         questions_schema = pa.schema([
             pa.field("question_id", pa.string()),
+            pa.field("user_id", pa.string()),
             pa.field("notebook_id", pa.string()),
             pa.field("topic", pa.string()),
             pa.field("difficulty", pa.int32()),
@@ -48,6 +49,7 @@ class QuizManager:
         # 2. quiz_attempts table schema
         attempts_schema = pa.schema([
             pa.field("attempt_id", pa.string()),
+            pa.field("user_id", pa.string()),
             pa.field("notebook_id", pa.string()),
             pa.field("question_id", pa.string()),
             pa.field("student_id", pa.string()),
