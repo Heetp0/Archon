@@ -1,0 +1,22 @@
+<journey name="Multi-Page Canvas Navigation">
+  <description>
+    Verifies adding pages, drawing different strokes on each page,
+    switching between pages to verify retention, and syncing the multi-page notebook.
+  </description>
+  <actions>
+    <action>Launch the Archon Notes application</action>
+    <action>Inject stylus stroke on Page 1 from (100, 100) to (200, 200)</action>
+    <action>Verify that canvas active page is "Page 1" and stroke count is 1</action>
+    <action>Tap "Add Page" button in the page switcher toolbar</action>
+    <action>Verify that canvas active page is "Page 2" and stroke count is 0</action>
+    <action>Select "Highlighter" brush type and color "Yellow"</action>
+    <action>Inject stylus stroke on Page 2 from (150, 150) to (300, 300)</action>
+    <action>Verify that canvas active page is "Page 2" and stroke count is 1</action>
+    <action>Tap "Previous Page" button in the page switcher toolbar</action>
+    <action>Verify that canvas active page is "Page 1" and stroke count is 1</action>
+    <action>Tap "Next Page" button</action>
+    <action>Verify that canvas active page is "Page 2" and stroke count is 1</action>
+    <action>Tap "Sync Now" button</action>
+    <action>Verify that sync state changes to "Sync Successful" for both Page 1 and Page 2</action>
+  </actions>
+</journey>

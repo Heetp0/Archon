@@ -1,0 +1,16 @@
+<journey name="Draw and Sync Stroke">
+  <description>
+    Verifies that selecting a brush, drawing a stylus stroke on the canvas, 
+    and triggering sync uploads data to the backend.
+  </description>
+  <actions>
+    <action>Launch the Archon Notes application</action>
+    <action>Verify that the canvas is visible and active page is "Page 1"</action>
+    <action>Tap the "Brush Selector" button in the toolbar</action>
+    <action>Select "Marker" brush type</action>
+    <action>Inject stylus stroke from (100, 200) to (300, 400) with pressure 0.6, tilt 0.3</action>
+    <action>Verify that canvas stroke count is 1</action>
+    <action>Tap "Sync Now" button</action>
+    <action>Verify that sync state changes to "Syncing..." then "Sync Successful"</action>
+  </actions>
+</journey>

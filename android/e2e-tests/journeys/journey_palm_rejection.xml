@@ -1,0 +1,15 @@
+<journey name="Palm Rejection Verification">
+  <description>
+    Verifies that finger/palm touches do not draw lines while a stylus is in use,
+    and that canceled inputs are cleared.
+  </description>
+  <actions>
+    <action>Launch the Archon Notes application</action>
+    <action>Inject finger touch event at (400, 500) with TOOL_TYPE_FINGER</action>
+    <action>Verify that canvas stroke count remains 0</action>
+    <action>Inject stylus stroke at (100, 100) with TOOL_TYPE_STYLUS</action>
+    <action>Verify that canvas stroke count is 1</action>
+    <action>Inject palm touch event at (200, 200) with FLAG_CANCELED set</action>
+    <action>Verify that canvas stroke count is still 1 (palm stroke rejected/discarded)</action>
+  </actions>
+</journey>

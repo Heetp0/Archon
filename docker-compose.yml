@@ -3,7 +3,7 @@ version: "3.9"
 services:
   backend:
     build:
-      context: ./daemon
+      context: ./backend
       dockerfile: Dockerfile
     container_name: archon-backend
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
       - strokes_data:/data/strokes
       - backups_data:/data/backups
       - training_data:/data/training_data
-      - ./daemon/.env:/app/.env:ro
+      - ./backend/.env:/app/.env:ro
     environment:
       - WORKSPACE_ROOT=/data
       - DAEMON_PORT=8000
@@ -28,7 +28,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend/AI-OS-GUI/artifacts/archon_design
+      context: ./frontend/artifacts/archon_design
       dockerfile: Dockerfile
     container_name: archon-frontend
     restart: unless-stopped

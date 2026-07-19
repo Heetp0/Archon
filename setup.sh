@@ -45,7 +45,7 @@ echo "  Data dirs created at $DATA_DIR ✓"
 # ─────────────────────────────────────────
 # 3. Bootstrap .env if missing
 # ─────────────────────────────────────────
-ENV_FILE="$ARCHON_DIR/daemon/.env"
+ENV_FILE="$ARCHON_DIR/backend/.env"
 if [ ! -f "$ENV_FILE" ]; then
     echo ""
     echo "→ Creating .env from template..."
