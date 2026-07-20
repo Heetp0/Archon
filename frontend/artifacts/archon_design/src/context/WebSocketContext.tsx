@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from "react";
+﻿import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { subscribeActiveChat, subscribeActiveProjectFiles, ContextFile } from "@/context/ProjectsContext";
 import { clearOfflineTimer } from "@/lib/bootState";
@@ -101,7 +101,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const fetchCalendar = useCallback(async () => {
     try {
       const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
-      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const port = localStorage.getItem("archon_daemon_port") || "8000";
       const protocol = window.location.protocol === "https:" ? "https" : "http";
       const res = await fetch(`${protocol}://${host}:${port}/calendar/events?days=7`);
       if (res.ok) {
@@ -116,7 +116,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const fetchModels = useCallback(async () => {
     try {
       const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
-      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const port = localStorage.getItem("archon_daemon_port") || "8000";
       const protocol = window.location.protocol === "https:" ? "https" : "http";
       const res = await fetch(`${protocol}://${host}:${port}/models`);
       if (res.ok) {

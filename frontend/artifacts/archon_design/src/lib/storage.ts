@@ -56,7 +56,7 @@ export interface ConnectionDetails {
 
 export function getDaemonConnectionDetails(): ConnectionDetails {
   const host = safeStorage.local.getItem("archon_daemon_host") || window.location.hostname || "localhost";
-  const port = safeStorage.local.getItem("archon_daemon_port") || "8765";
+  const port = safeStorage.local.getItem("archon_daemon_port") || "8000";
   const isSecure = window.location.protocol === "https:";
   
   // Check if host ends with .replit.dev, .replit.app, or .replit.co
@@ -88,3 +88,4 @@ export function persist<T>(key: string, value: T): void {
     console.error(`Failed to persist "${key}":`, e);
   }
 }
+

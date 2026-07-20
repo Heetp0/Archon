@@ -1,10 +1,10 @@
-import os
+﻿import os
 import uuid
 import json
 import logging
 import asyncio
 from typing import Dict, Any, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status, Depends
+from fastapi import Request, FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
@@ -29,6 +29,7 @@ from auth_middleware import get_current_user, UserContext
 
 WORKSPACE_ROOT = config_module.WORKSPACE_ROOT
 DAEMON_PORT = config_module.DAEMON_PORT
+SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ async def unified_broadcast(event_type: str, payload: Any):
 # Initialize core services
 router = ModelRouter()
 from retriever import Retriever
-db_path = os.path.join(WORKSPACE_ROOT, ".lancedb")
+db_path = os.getenv("LANCEDB_PATH", os.path.join(WORKSPACE_ROOT, ".lancedb"))
 retriever = Retriever(db_path=db_path, model_router=router)
 
 ingestion_queue = IngestionQueue(broadcast_callback=unified_broadcast, retriever=retriever)
@@ -132,6 +133,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint — returns ok when backend is running."""
+    return {"status": "ok", "version": "1.0.0"}
 
 markit_down = MarkitDownNormalizer(cache_dir=os.path.join(WORKSPACE_ROOT, "MarkitCache"))
 calendar_service = CalendarService()
@@ -346,20 +352,57 @@ class SourceIngestionRequest(BaseModel):
     metadata: dict = Field(default_factory=dict, description="Optional metadata")
 
 @app.post("/notebooks/{notebook_id}/sources", status_code=202)
-async def queue_source_ingestion(notebook_id: str, request: SourceIngestionRequest, current_user: UserContext = Depends(get_current_user)):
+async def queue_source_ingestion(notebook_id: str, request: Request, current_user: UserContext = Depends(get_current_user)):
     # Validate access
     import notebook_routes
     notebook_routes.verify_notebook_access(notebook_id, current_user.user_id)
     
-    source_type = request.source_type.lower()
+    content_type = request.headers.get("content-type", "")
+    source_type = None
+    file_path = None
+    metadata = {}
+    
+    if "multipart/form-data" in content_type:
+        import uuid
+        import shutil
+        form = await request.form()
+        source_type_val = form.get("source_type")
+        file_val = form.get("file")
+        if not source_type_val or not file_val:
+            raise HTTPException(status_code=400, detail="Missing file or source_type in form data")
+        
+        source_type = str(source_type_val).lower()
+        
+        # Save file to uploads folder
+        from config import UPLOAD_DIR
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        filename = f"{uuid.uuid4()}_{file_val.filename}"
+        saved_path = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(saved_path, "wb") as buffer:
+            shutil.copyfileobj(file_val.file, buffer)
+            
+        file_path = saved_path
+        metadata = {"filename": file_val.filename}
+    else:
+        # Assume JSON payload
+        try:
+            body = await request.json()
+            req_obj = SourceIngestionRequest(**body)
+            source_type = req_obj.source_type.lower()
+            file_path = req_obj.file_path
+            metadata = req_obj.metadata
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Invalid payload format: {str(e)}")
+            
     if source_type not in ("pdf", "codebase", "audio"):
         raise HTTPException(status_code=400, detail="Invalid source_type. Must be 'pdf', 'codebase', or 'audio'")
     
     job_id = await ingestion_queue.add_job(
         notebook_id=notebook_id,
         source_type=source_type,
-        file_path=request.file_path,
-        metadata=request.metadata
+        file_path=file_path,
+        metadata=metadata
     )
     return {"job_id": job_id, "status": "pending"}
 
@@ -403,4 +446,7 @@ if os.path.isdir(static_path):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=DAEMON_PORT, reload=True)
+    uvicorn.run("main:app", host=SERVER_HOST, port=DAEMON_PORT, reload=True)
+
+
+

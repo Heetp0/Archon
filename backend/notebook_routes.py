@@ -214,10 +214,47 @@ async def delete_notebook(id: str, current_user: UserContext = Depends(get_curre
     return {"status": "deleted"}
 
 @router.post('/notebooks/{id}/sources', status_code=202)
-async def add_source(id: str, request: SourceIngestionRequest, current_user: UserContext = Depends(get_current_user)):
+async def add_source(id: str, request: Request, current_user: UserContext = Depends(get_current_user)):
     verify_notebook_access(id, current_user.user_id)
+    
+    content_type = request.headers.get("content-type", "")
+    source_type = None
+    file_path = None
+    metadata = {}
+    
+    if "multipart/form-data" in content_type:
+        import uuid
+        import shutil
+        form = await request.form()
+        source_type_val = form.get("source_type")
+        file_val = form.get("file")
+        if not source_type_val or not file_val:
+            raise HTTPException(status_code=400, detail="Missing file or source_type in form data")
         
-    source_type = request.source_type.lower()
+        source_type = str(source_type_val).lower()
+        
+        # Save file to uploads folder
+        from config import UPLOAD_DIR
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        filename = f"{uuid.uuid4()}_{file_val.filename}"
+        saved_path = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(saved_path, "wb") as buffer:
+            shutil.copyfileobj(file_val.file, buffer)
+            
+        file_path = saved_path
+        metadata = {"filename": file_val.filename}
+    else:
+        # Assume JSON payload
+        try:
+            body = await request.json()
+            req_obj = SourceIngestionRequest(**body)
+            source_type = req_obj.source_type.lower()
+            file_path = req_obj.file_path
+            metadata = req_obj.metadata
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Invalid payload format: {str(e)}")
+            
     if source_type not in ('pdf', 'codebase', 'audio'):
         raise HTTPException(status_code=400, detail='Invalid source_type. Must be pdf, codebase, or audio')
     
@@ -226,8 +263,8 @@ async def add_source(id: str, request: SourceIngestionRequest, current_user: Use
     job_id = await ingestion_queue.add_job(
         notebook_id=id,
         source_type=source_type,
-        file_path=request.file_path,
-        metadata=request.metadata
+        file_path=file_path,
+        metadata=metadata
     )
     return {"job_id": job_id, "status": "pending"}
 
