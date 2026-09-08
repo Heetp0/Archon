@@ -197,7 +197,19 @@ ChatMode (frontend/artifacts/archon/src/components/modes/ChatMode.tsx)
 
 ---
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+
+* **Perplexity AI (perplexity.ai):** The single most important visual reference for Chat Mode's source-visibility problem. Perplexity's key innovation is keeping sources **always visible alongside the streaming answer** — users never leave the conversation to check a citation.
+  - **Anchored right-side source drawer:** All cited URLs and vault documents appear in a fixed right panel (or below-fold on mobile) that persists across the full conversation scroll.
+  - **Inline citation superscripts:** `[1]` badges appear inside the streaming answer body in real time — clicking them highlights that source in the drawer without modal navigation.
+  - **Search / Vault toggle pills:** Visible toggle chips at the input bar label whether the response is `Web-grounded` or `Vault-grounded`. Maps directly to Archon's `use_vault` / `web_search` flags.
+  - **Follow-up question suggestions:** After each answer, 3–4 follow-up chips appear inline. Maps to Archon's potential `suggested_follow_ups` field in the `done` WS event.
+* **Google NotebookLM (notebooklm.google.com):** Reference for the `GroundedChatAgent` variant used in Notebook Mode's Chat Area. NotebookLM restricts answers strictly to uploaded source material and shows a "Sources used" summary panel after each response — the direct analog of Archon's `CitationVerifier` two-pass pipeline and the `citations` field returned in the `done` event.
+* **PC ↔ Android Parity:** Web exposes the source drawer as a resizable right panel. Android (`ChatScreen.kt`) collapses sources into a swipe-up bottom sheet triggered by tapping an inline citation badge. The WebSocket protocol and citation data model are identical on both surfaces.
+
+---
+
+## 8. Known Issues / Open TODOs
 
 | Issue | Severity | Notes |
 |-------|----------|-------|

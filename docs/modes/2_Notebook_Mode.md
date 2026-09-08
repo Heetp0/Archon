@@ -57,7 +57,17 @@ graph TD
 - Replaces standard Markdown components with mobile-optimized native text rendering to preserve battery and RAM.
 - Employs a local vector store proxy (if supported by device) or delegates purely to the remote LanceDB.
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+
+* **Google NotebookLM (notebooklm.google.com):** The closest working analog to Archon's Notebook Mode. NotebookLM's 3-pane layout is the direct visual reference:
+  - **Sources pane (left):** Uploaded PDFs, Google Docs, YouTube links listed with document thumbnails. Maps to Archon's `SourceDrawer`.
+  - **Chat pane (center):** Grounded answers with inline clickable citation badges (`[1]`, `[2]`) that highlight the source chunk. Maps to Archon's `ChatArea` + `CitationModal`.
+  - **Studio pane (right):** Generated summaries, podcast-style audio overviews, and study guides. Maps to Archon's `StudioPanel`.
+  - **Key behavior:** Clicking a citation badge does NOT navigate away — it highlights the source in the Sources pane inline. Archon's `CitationModal` should mirror this anchored pattern.
+* **Stanford STORM:** Reference for the synthesis pipeline. STORM generates multi-perspective research reports by pre-generating expert personas and having them interrogate source material before writing. Maps to Archon's `GroundedChatAgent` two-pass draft-then-verify pattern.
+* **PC ↔ Android Parity:** Both platforms expose Sources / Chat / Studio as the core three-panel mental model. Android compresses to a bottom-sheet `SourceDrawer` and a tab bar for Studio vs Chat, but the underlying RAG pipeline and citation model are identical.
+
+## 8. Known Issues / Open TODOs
 - **Semantic Cache Invalidations**: When documents are deleted, the cache sometimes serves stale RAG answers until it is explicitly flushed.
 - **Large PDF Processing**: Uploading PDFs > 50MB occasionally times out the FastAPI backend. Chunking processing needs to be moved to a background Celery/Redis worker.
 - **Studio Artifact Mobile View**: Complex D3/Mermaid diagrams in the StudioModal break on small Android screens. Needs responsive redesign or pinch-to-zoom support.

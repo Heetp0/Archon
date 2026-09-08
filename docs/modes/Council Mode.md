@@ -87,7 +87,16 @@ On Android, `CouncilScreen.kt` provides an adaptive UI for tablets/foldables, sc
 * Uses similar data structures and WebSocket events.
 * `ViewModel` handles parallel streams and state aggregation.
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+
+* **ChatHub (chathub.gg):** The primary UI/UX reference for Council Mode. ChatHub broadcasts a single prompt to multiple LLMs simultaneously and renders each response in an independent, live-streaming column — exactly the pattern Archon's Council Mode mirrors. Key patterns to copy:
+  - **Responsive grid layout:** 2, 3, or 4 model columns in a fluid flex grid (not fixed-size static boxes).
+  - **Independent streaming per column:** Each model card streams tokens without waiting for others to complete.
+  - **Model selector pills:** Inline pill toggles to add/remove models from the broadcast without leaving the view.
+  - **Consensus synthesis panel:** An auto-generated final card at the bottom that summarizes where models agreed and diverged — maps directly to Archon's Round 3 Synthesis card.
+* **PC ↔ Android Parity:** On tablet (`CouncilScreen.kt`), columns are shown side-by-side (2-up in landscape, carousel on compact). On web, the same flex-column layout scales from 2 to 4 panels. Both surfaces share the identical WebSocket multi-agent channel and parallel inference pipeline.
+
+## 8. Known Issues / Open TODOs
 * **Rate Limits**: Spawning 3 concurrent requests to the same provider (e.g. Groq) frequently triggers `HTTP 429 Too Many Requests`. (TODO: Implement robust jitter/backoff inside `generate_completion` or enforce diverse provider selection).
 * **Export feature limitation**: Markdown export does not capture inline media or attached files correctly.
 * **Context Window Overflows**: The Round 3 Synthesis prompt includes all previous drafts and critiques. This can easily exceed the context limits of smaller heavy models.

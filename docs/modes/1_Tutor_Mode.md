@@ -70,7 +70,12 @@ Data resides primarily in the LanceDB RAG cache and a local SQLite engine `quiz_
 - Mobile-specific drawing capabilities map touch events to the canvas for Tesseract OCR.
 - Caches SR questions via local SQLite equivalent to allow offline reviewing if synced.
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+* **Duolingo & Mimo:** Active accountability ("someone watching over you") and friction-free gamification. Floating top question island with instant in-place check, accordion feedback, and zero context switching.
+* **Khanmigo & Brilliant:** Tiered 4-level Socratic scaffolding (Nudge $\rightarrow$ Diagnostic Question $\rightarrow$ Methodological Hint $\rightarrow$ Worked Sub-step) with strict non-spoiler safeguards that never give away the final mathematical answer.
+* **MyScript Notes:** Real-world benchmark for on-device handwriting personalization and handwriting fine-tuning dashboard.
+
+## 8. Known Issues / Open TODOs
 - **OCR Accuracy**: The Tesseract bounding box model occasionally misinterprets complex integral limits. Needs a custom finetune (baseline accuracy is currently ~71.5%).
-- **Socratic Loop Limits**: Sometimes the AI gives the answer away after only 1 hint instead of continuing the Socratic method.
+- **Socratic Loop Limits**: Handled by the newly added 4-tier Socratic Scaffolding and AI spoiler validator in `socratic_agent.py`.
 - **LoRa Checkpoint Size**: Continual finetuning per notebook can bloat disk space; a pruning mechanism for outdated checkpoints is needed.

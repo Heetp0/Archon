@@ -54,7 +54,17 @@ graph TD
 - Users can review code diffs and approve/deny `dangerous_commands` via push notifications.
 - Local execution on Android is limited to a sandboxed app-specific directory.
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+
+* **Devin (cognition.ai):** Primary reference for the step-by-step visual execution model. Devin's UI shows a persistent left-side phase progression panel (`Plan → Explore → Execute → Verify`) with each phase expandable to show tool calls and sub-actions. Maps directly to Archon's terminal-line event stream tagged by phase (`system`, `input`, `output`, `warning`, `success`).
+  - **Phase progression bar:** Users always know which stage the agent is in and what the next step will be.
+  - **Collapsible tool logs:** Each tool call (file read, shell command, search) is shown as a collapsible row — readable without flooding the terminal.
+* **Cursor (cursor.sh):** Reference for the human-in-the-loop review layer. Cursor's inline diff viewer shows exactly what lines changed before any file is written, with explicit Accept / Reject buttons. Maps to Archon's `dangerous_command` approval modal — users review the proposed action before granting execution.
+  - **Inline file diffs:** Color-coded `+/-` diff blocks for any file mutation.
+  - **Approve / Reject gates:** Blocked execution until explicit user confirmation.
+* **PC ↔ Android Parity:** On Android, agents execute on the desktop instance; the tablet acts as a remote monitoring + approval terminal. Push notifications surface `dangerous_command` events so the user can approve/deny from the tablet without being seated at the PC.
+
+## 8. Known Issues / Open TODOs
 - **Terminal State Persistence**: Reloading the frontend clears the terminal UI, though the backend maintains the session. A mechanism to fetch terminal history on mount is needed.
 - **Context Windows**: Long-running agent tasks fill up the context window. Summarization or sliding-window memory needs to be improved in `base_agent.py`.
 - **Sandboxing Limits**: The current directory restrictions check paths loosely. Tighter chroot or Docker-based sandboxing is required for true security against malicious agent behavior.

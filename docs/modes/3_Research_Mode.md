@@ -55,7 +55,17 @@ graph TD
 - Knowledge graph is disabled by default to save memory; instead, an expandable list of extracted terms and relationships is provided.
 - Download capabilities integrated with Android's MediaStore to save `.md` and `.pdf` exported reports directly to the user's Downloads folder.
 
-## 7. Known Issues / Open TODOs
+## 7. Reference Products & Visual Benchmarks
+
+* **Perplexity AI (perplexity.ai):** Primary reference for the citation-grounded research output pattern. Perplexity's killer behavior — sources stay **anchored in a fixed right panel** while the answer streams in the center — is the core pattern Archon's Research Mode should replicate for its `Markdown Preview` + source list layout. Key specifics:
+  - **Numbered inline citations** (`[1]`, `[2]`) appear inside the streaming answer body, not appended at the end.
+  - **Hovering a citation shows a floating tooltip** with the source title and a snippet preview without navigating away.
+  - **Source list is always visible**, showing favicon, domain, and title for all cited pages.
+* **Google NotebookLM (notebooklm.google.com):** Reference for the Studio output panel — generated study guides, briefing docs, and multi-perspective analysis. Maps to the `Markdown Preview` report panel in Archon's Research Mode, which should offer a "save to Notebook" action to push the synthesized report directly to a Notebook Mode source.
+* **Stanford STORM / Wikipedia-style multi-perspective synthesis:** Reference for the autonomous outline-first → section-draft pipeline. STORM outlines the report structure using simulated expert perspectives before writing, reducing hallucination and improving coverage — the same principle behind Archon's multi-phase `deep_research.py` (Phase 1: query gen → Phase 2: crawl/summarize → Phase 3: final synthesis).
+* **PC ↔ Android Parity:** Web uses the full D3 knowledge graph alongside the markdown preview. Android replaces the graph with a flat expandable list of extracted concepts and relationships to protect memory, but exports the same `.md` report format.
+
+## 8. Known Issues / Open TODOs
 - **Playwright Overhead**: Launching a headless Chromium instance per URL is resource-heavy. Needs a shared browser context pool or a shift to pure httpx/BeautifulSoup for static sites.
 - **Paywall Blocking**: The crawler often fails on sites with strict anti-bot measures (e.g., Bloomberg, NYT) resulting in empty summaries. Integration with specialized proxy services is needed.
 - **Token Explosions**: Large sites with dense texts can blow past the `Autopilot Supervisor` limits quickly, halting the process prematurely.
