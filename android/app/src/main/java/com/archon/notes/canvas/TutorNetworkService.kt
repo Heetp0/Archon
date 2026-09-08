@@ -3,11 +3,19 @@ package com.archon.notes.canvas
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.client.call.body
+import com.example.archonnotesinkcanvas.BuildConfig
 
 @Serializable
 data class QuizQuestion(
@@ -79,71 +87,30 @@ data class FinalizeResponse(
 )
 
 object TutorNetworkService {
-    private const val BASE_URL = "http://10.0.2.2:8000"
-    private val json = Json { ignoreUnknownKeys = true }
+    private val BASE_URL = BuildConfig.BACKEND_URL
+    private val client = HttpClient(OkHttp) {
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true })
+        }
+    }
 
     suspend fun getQuestions(notebookId: String): List<QuizQuestion> = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/notebooks/$notebookId/quiz-questions"
-        val conn = URL(url).openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "GET"
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<List<QuizQuestion>>(respText)
-            } else {
-                throw IOException("Server returned HTTP error code: ${conn.responseCode}")
-            }
-        } finally {
-            conn.disconnect()
-        }
+        client.get(url).body()
     }
 
     suspend fun startAttempt(notebookId: String, questionId: String): QuizAttemptResponse = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/notebooks/$notebookId/quiz-attempts?question_id=$questionId"
-        val conn = URL(url).openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<QuizAttemptResponse>(respText)
-            } else {
-                throw IOException("Server returned HTTP error code: ${conn.responseCode}")
-            }
-        } finally {
-            conn.disconnect()
-        }
+        client.post(url).body()
     }
 
     suspend fun submitAnswer(attemptId: String, questionId: String, latex: String, timeSpent: Int): ValidationResponse = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/quiz-attempts/$attemptId/answers"
-        val conn = URL(url).openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            
-            val request = SubmitAnswerRequest(questionId, latex, timeSpent)
-            val jsonBody = json.encodeToString(request)
-            
-            conn.outputStream.use { out ->
-                out.write(jsonBody.toByteArray(Charsets.UTF_8))
-            }
-            
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<ValidationResponse>(respText)
-            } else {
-                throw IOException("Server returned HTTP error code: ${conn.responseCode}")
-            }
-        } finally {
-            conn.disconnect()
-        }
+        val request = SubmitAnswerRequest(questionId, latex, timeSpent)
+        client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
     }
 
     suspend fun getHint(
@@ -154,47 +121,15 @@ object TutorNetworkService {
         errorType: String?
     ): HintResponse = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/quiz-attempts/$attemptId/hints"
-        val conn = URL(url).openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            
-            val request = HintRequest(questionId, latex, level, errorType)
-            val jsonBody = json.encodeToString(request)
-            
-            conn.outputStream.use { out ->
-                out.write(jsonBody.toByteArray(Charsets.UTF_8))
-            }
-            
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<HintResponse>(respText)
-            } else {
-                throw IOException("Server returned HTTP error code: ${conn.responseCode}")
-            }
-        } finally {
-            conn.disconnect()
-        }
+        val request = HintRequest(questionId, latex, level, errorType)
+        client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
     }
 
     suspend fun finalizeAttempt(attemptId: String): FinalizeResponse = withContext(Dispatchers.IO) {
         val url = "$BASE_URL/quiz-attempts/$attemptId/finalize"
-        val conn = URL(url).openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.connectTimeout = 5000
-            conn.readTimeout = 5000
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
-                val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<FinalizeResponse>(respText)
-            } else {
-                throw IOException("Server returned HTTP error code: ${conn.responseCode}")
-            }
-        } finally {
-            conn.disconnect()
-        }
+        client.post(url).body()
     }
 }

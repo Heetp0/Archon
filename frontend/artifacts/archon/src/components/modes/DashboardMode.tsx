@@ -7,6 +7,7 @@ import {
   RefreshCw, ChevronRight, CheckCircle2, InboxIcon, ListTodo
 } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { useAppContext } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
 import type { AppMode } from "@/context/AppContext";
@@ -147,6 +148,7 @@ function MailModal({ mail, onClose }: { mail: MailItem; onClose: () => void }) {
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <button
+                aria-label="Close"
                 onClick={onClose}
                 className="p-1.5 rounded-lg border border-border-core/25 text-text-secondary hover:text-text-primary hover:border-white/[0.12] transition-colors"
               >
@@ -156,7 +158,7 @@ function MailModal({ mail, onClose }: { mail: MailItem; onClose: () => void }) {
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-1.5" style={{ scrollbarWidth: "thin", scrollbarColor: "#1e2030 transparent" }}>
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-1.5" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}>
             {lines.map((line, i) => {
               if (line.startsWith("## ")) return (
                 <h3 key={i} className="text-sm font-mono font-bold text-text-primary pt-2 pb-1">{line.replace("## ","")}</h3>
@@ -233,7 +235,7 @@ function SvgBarChart({
               <line x1={padL} y1={y} x2={totalW - 4} y2={y}
                 stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
               <text x={padL - 4} y={y + 3} textAnchor="end"
-                fontSize={9} fontFamily="monospace" fill="#475569">{val}</text>
+                fontSize={9} fontFamily="monospace" fill="var(--color-text-secondary)">{val}</text>
             </g>
           );
         })}
@@ -259,14 +261,14 @@ function SvgBarChart({
               {isHov && !isEmpty && (
                 <g>
                   <rect x={x - 10} y={y - 28} width={38} height={20}
-                    fill="#0f1017" rx={5}
+                    fill="var(--color-app-bg)" rx={5}
                     stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
                   <text x={x + barW / 2} y={y - 14} textAnchor="middle"
-                    fontSize={10} fontFamily="monospace" fill="#e2e8f0">{val}</text>
+                    fontSize={10} fontFamily="monospace" fill="var(--color-text-primary)">{val}</text>
                 </g>
               )}
               <text x={x + barW / 2} y={height - 4} textAnchor="middle"
-                fontSize={9} fontFamily="monospace" fill="#475569">{d.day}</text>
+                fontSize={9} fontFamily="monospace" fill="var(--color-text-secondary)">{d.day}</text>
             </g>
           );
         })}
@@ -292,7 +294,11 @@ function useDerivedActivity(terminalLines: any[]) {
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function DashboardMode() {
-  const { agentStatuses, connected, telemetry, terminalLines, calendarEvents } = useWebSocketContext();
+  const { connected } = useWebSocketContext();
+  const agentStatuses = useWebSocketStore(s => s.agentStatuses);
+  const telemetry = useWebSocketStore(s => s.telemetry);
+  const terminalLines = useWebSocketStore(s => s.terminalLines);
+  const calendarEvents = useWebSocketStore(s => s.calendarEvents);
   const { setMode } = useAppContext();
   const uptime = useUptime();
 
@@ -327,7 +333,7 @@ export default function DashboardMode() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className="flex flex-col h-full bg-app-bg overflow-y-auto"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#1a1b26 transparent" }}
+        style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}
       >
         {/* ── Header ── */}
         <div className="px-8 pt-8 pb-6 border-b border-border-core/15 flex-shrink-0">
@@ -465,7 +471,7 @@ export default function DashboardMode() {
               <div className="flex-1 rounded-2xl border border-border-core/20 bg-app-bg overflow-hidden">
                 <div
                   className="h-[220px] overflow-y-auto p-4 font-mono text-xs leading-relaxed space-y-1"
-                  style={{ scrollbarWidth: "thin", scrollbarColor: "#1e2030 transparent" }}
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}
                 >
                   {terminalLines.length === 0 ? (
                     <div className="text-text-secondary text-center py-8">No activity yet. Start a session to see logs.</div>
@@ -522,7 +528,7 @@ export default function DashboardMode() {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto divide-y divide-white/[0.03]" style={{ scrollbarWidth: "thin", scrollbarColor: "#1a1b26 transparent" }}>
+                <div className="flex-1 overflow-y-auto divide-y divide-white/[0.03]" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}>
                   {mails.map((mail) => (
                     <button
                       key={mail.id}
@@ -583,7 +589,7 @@ export default function DashboardMode() {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 overflow-y-auto divide-y divide-white/[0.03]" style={{ scrollbarWidth: "thin", scrollbarColor: "#1a1b26 transparent" }}>
+                  <div className="flex-1 overflow-y-auto divide-y divide-white/[0.03]" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}>
                     {[...todos.filter(t => !t.done), ...todos.filter(t => t.done)].map((todo) => (
                       <button
                         key={todo.id}

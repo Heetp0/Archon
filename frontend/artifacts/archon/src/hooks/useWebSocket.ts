@@ -12,8 +12,6 @@ export interface WSState {
   connecting: boolean;
   error: string | null;
   send: (msg: unknown) => boolean;
-  messages: DaemonEnvelope[];
-  flushMessages: () => void;
 }
 
 export function getDaemonUrl(): string {
@@ -24,19 +22,14 @@ export function getDaemonUrl(): string {
 const RECONNECT_BASE_MS = 2000;
 const RECONNECT_MAX_MS = 30000;
 
-export function useWebSocket(): WSState {
+export function useWebSocket(onMessage?: (msg: DaemonEnvelope) => void): WSState {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<DaemonEnvelope[]>([]);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
-
-  const flushMessages = useCallback(() => {
-    setMessages([]);
-  }, []);
 
   const scheduleReconnect = useCallback((attempt: number) => {
     const delay = Math.min(RECONNECT_BASE_MS * Math.pow(2, attempt), RECONNECT_MAX_MS);
@@ -92,7 +85,7 @@ export function useWebSocket(): WSState {
             event: (parsed.event as string) || (parsed.type as string) || "unknown",
             payload: (parsed.payload as Record<string, unknown>) || parsed,
           };
-          setMessages((prev) => [...prev, envelope]);
+          onMessage?.(envelope);
         } catch {
           // ignore
         }
@@ -150,5 +143,5 @@ export function useWebSocket(): WSState {
     };
   }, [connect]);
 
-  return { connected, connecting, error, send, messages, flushMessages };
+  return { connected, connecting, error, send };
 }

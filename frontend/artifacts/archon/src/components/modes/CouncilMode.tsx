@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, Gavel, CheckCircle2, XCircle, MinusCircle, Paperclip } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import ReactMarkdown from "react-markdown";
@@ -31,7 +32,10 @@ const FALLBACK_MODELS = [
 ];
 
 export default function CouncilMode() {
-  const { councilMessages, isStreaming, sendCouncil, connected, availableModels } = useWebSocketContext();
+  const { sendCouncil, connected } = useWebSocketContext();
+  const councilMessages = useWebSocketStore(s => s.councilMessages);
+  const isStreaming = useWebSocketStore(s => s.isStreaming);
+  const availableModels = useWebSocketStore(s => s.availableModels);
   const { activeProjectId } = useProjectsContext();
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
@@ -114,7 +118,7 @@ export default function CouncilMode() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col h-full bg-[#020611] relative"
+      className="flex flex-col h-full bg-app-bg relative"
     >
       {/* Hidden native file picker */}
       <input
@@ -177,7 +181,7 @@ export default function CouncilMode() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: j * 0.08 }}
                       key={msg.id}
-                      className={`p-3 rounded border ${col.border} bg-[#020611]/60 text-xs text-text-primary leading-relaxed`}
+                      className={`p-3 rounded border ${col.border} bg-panel-bg/60 text-xs text-text-primary leading-relaxed`}
                     >
                       <div className={`text-[9px] font-mono uppercase tracking-widest ${col.color} mb-1.5`}>
                         Round {j + 1}
@@ -199,7 +203,7 @@ export default function CouncilMode() {
       </div>
 
       {/* Council Verdict */}
-      <div className="flex-shrink-0 border-t border-amber-900/40 bg-gradient-to-r from-amber-950/20 via-[#020611] to-amber-950/20">
+      <div className="flex-shrink-0 border-t border-amber-900/40 bg-gradient-to-r from-amber-950/20 via-app-bg to-amber-950/20">
         <div className="px-4 py-2.5 border-b border-amber-900/30 flex items-center gap-3">
           <Gavel className="w-4 h-4 text-accent-rose" />
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-accent-rose">Council Verdict</span>

@@ -1,4 +1,4 @@
-﻿package com.example.archonnotesinkcanvas.data.local
+package com.example.archonnotesinkcanvas.data.local
 
 import android.content.Context
 import androidx.room.Database
@@ -8,14 +8,28 @@ import com.example.archonnotesinkcanvas.data.local.dao.*
 import com.example.archonnotesinkcanvas.data.local.entities.*
 
 @Database(
-    entities = [NotebookEntity::class, MessageEntity::class, QuizAttemptEntity::class],
-    version = 1,
+    entities = [
+        NotebookEntity::class,
+        MessageEntity::class,
+        QuizAttemptEntity::class,
+        NotebookPageEntity::class,
+        StrokeEntity::class,
+        QuizSessionEntity::class,
+        QuizResponseEntity::class,
+        OCRTrainingSampleEntity::class,
+        OCRTrainingCheckpointEntity::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class ArchonDatabase : RoomDatabase() {
     abstract fun notebookDao(): NotebookDao
     abstract fun messageDao(): MessageDao
     abstract fun quizAttemptDao(): QuizAttemptDao
+    abstract fun pageDao(): PageDao
+    abstract fun strokeDao(): StrokeDao
+    abstract fun quizSessionDao(): QuizSessionDao
+    abstract fun ocrDao(): OCRDao
 
     companion object {
         @Volatile private var INSTANCE: ArchonDatabase? = null
@@ -26,7 +40,8 @@ abstract class ArchonDatabase : RoomDatabase() {
                     context.applicationContext,
                     ArchonDatabase::class.java,
                     "archon.db"
-                ).build().also { INSTANCE = it }
+                )
+                .build().also { INSTANCE = it }
             }
     }
 }

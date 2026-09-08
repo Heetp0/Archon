@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.archonnotesinkcanvas.BuildConfig
 import kotlinx.coroutines.launch
 
 private data class OnboardPage(val emoji: String, val title: String, val body: String)
@@ -22,14 +23,14 @@ private val PAGES = listOf(
     OnboardPage("\u270F\uFE0F", "Notes Mode", "Write with your stylus. OCR converts to searchable text."),
     OnboardPage("\uD83C\uDF93", "Tutor Mode", "Solve problems step by step with AI guidance."),
     OnboardPage("\uD83D\uDCAC", "Chat & Council", "Multi-model AI conversations and debates."),
-    OnboardPage("\uD83D\uDCBB", "Backend Setup", "Enter the IP of the laptop running Archon\'s server.")
+    OnboardPage("\uD83D\uDCBB", "Backend Setup", "Enter the IP of the laptop running Archon's server.")
 )
 
 @Composable
 fun OnboardingScreen(onDone: () -> Unit) {
     val pagerState = rememberPagerState { PAGES.size }
     val scope = rememberCoroutineScope()
-    var backendUrl by remember { mutableStateOf("http://192.168.1.10:8000") }
+    var backendUrl by remember { mutableStateOf(BuildConfig.BACKEND_URL) }
     val isLastPage = pagerState.currentPage == PAGES.lastIndex
 
     Column(

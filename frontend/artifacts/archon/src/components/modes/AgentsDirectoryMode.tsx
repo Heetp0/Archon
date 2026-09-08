@@ -6,6 +6,7 @@ import {
   GitBranch, Activity, ChevronRight, Check
 } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -232,7 +233,7 @@ function AddAgentModal({
 function AgentCard({ agent }: { agent: AgentDef }) {
   const [expanded, setExpanded] = useState(false);
   const Icon = agent.icon;
-  const { agentStatuses } = useWebSocketContext();
+  const agentStatuses = useWebSocketStore(s => s.agentStatuses);
   const liveStatus = agentStatuses.find(
     (a) => a.name.toLowerCase() === agent.name.toLowerCase()
   );

@@ -104,6 +104,7 @@ export default function NavRail() {
           return (
             <div key={id} className="relative group">
               <button
+                aria-label={label}
                 onClick={() => setMode(id)}
                 data-testid={`nav-${id}`}
                 className={cn(
@@ -147,6 +148,7 @@ export default function NavRail() {
         {/* Settings */}
         <div className="relative group">
           <button
+            aria-label="Settings"
             onClick={() => setSettingsOpen(true)}
             data-testid="nav-settings"
             className="w-10 h-10 rounded-xl flex items-center justify-center border border-transparent text-text-secondary hover:text-text-secondary hover:bg-panel-bg/40 hover:border-border-core/25 transition-all duration-200"

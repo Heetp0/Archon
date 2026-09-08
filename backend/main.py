@@ -1,9 +1,12 @@
-﻿import os
+import time
+import threading
+import psutil
+import os
 import uuid
 import json
 import logging
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from fastapi import Request, FastAPI, WebSocket, WebSocketDisconnect, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -33,6 +36,40 @@ SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class ServerLoadTracker:
+    def __init__(self, cache_ttl: float = 10.0):
+        self.cache_ttl = cache_ttl
+        self.last_update = 0.0
+        self.cached_metrics = {
+            "cpu_percent": 0.0,
+            "ram_percent": 0.0,
+            "overall_load": 0.0,
+            "timestamp": ""
+        }
+        self.lock = threading.Lock()
+
+    def get_load(self) -> dict:
+        now = time.time()
+        with self.lock:
+            if now - self.last_update > self.cache_ttl:
+                try:
+                    cpu = psutil.cpu_percent(interval=None) 
+                    ram = psutil.virtual_memory().percent
+                    overall = (cpu * 0.6 + ram * 0.4) / 100.0
+                    self.cached_metrics = {
+                        "cpu_percent": float(cpu),
+                        "ram_percent": float(ram),
+                        "overall_load": round(float(overall), 3),
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                    self.last_update = now
+                except Exception as e:
+                    pass
+            return self.cached_metrics
+
+load_tracker = ServerLoadTracker()
+
 
 class ConnectionManager:
     def __init__(self):
@@ -134,10 +171,55 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_server_load_header(request: Request, call_next):
+    start_time = time.time()
+    
+    # Set request state defaults
+    request.state.cache_hit = False
+    request.state.tokens_used = 0
+    request.state.provider_used = ""
+    
+    metrics = load_tracker.get_load()
+    load_val = str(metrics["overall_load"])
+    
+    response = await call_next(request)
+    response.headers["X-Server-Load"] = load_val
+    cache_hit = getattr(request.state, "cache_hit", False)
+    response.headers["X-Cache-Hit"] = "true" if cache_hit else "false"
+
+    
+    latency_ms = (time.time() - start_time) * 1000.0
+    path = request.url.path
+    if not any(path.startswith(prefix) for prefix in ("/static", "/docs", "/openapi.json", "/health", "/metrics")):
+        try:
+            import monitoring_metrics
+            cache_hit = getattr(request.state, "cache_hit", False)
+            tokens_used = getattr(request.state, "tokens_used", 0)
+            provider_used = getattr(request.state, "provider_used", "")
+            
+            monitoring_metrics.record_metric(
+                endpoint=path,
+                latency_ms=latency_ms,
+                tokens_used=tokens_used,
+                cache_hit=cache_hit,
+                provider_used=provider_used,
+                status_code=response.status_code
+            )
+        except Exception:
+            pass
+            
+    return response
+
+@app.get("/health/load")
+async def get_health_load(current_user: UserContext = Depends(get_current_user)):
+    return load_tracker.get_load()
+
 @app.get("/health")
 async def health_check():
-    """Health check endpoint — returns ok when backend is running."""
-    return {"status": "ok", "version": "1.0.0"}
+    import health_check
+    return await health_check.health_monitor.get_health_status()
 
 markit_down = MarkitDownNormalizer(cache_dir=os.path.join(WORKSPACE_ROOT, "MarkitCache"))
 calendar_service = CalendarService()
@@ -404,6 +486,9 @@ async def queue_source_ingestion(notebook_id: str, request: Request, current_use
         file_path=file_path,
         metadata=metadata
     )
+    # Clear notebook cache when a new source is added
+    if router and router.cache:
+        await router.cache.clear_notebook_cache(notebook_id)
     return {"job_id": job_id, "status": "pending"}
 
 @app.get("/jobs/{job_id}")
@@ -413,15 +498,172 @@ async def get_job_status(job_id: str, current_user: UserContext = Depends(get_cu
         raise HTTPException(status_code=404, detail="Job not found")
     return status
 
+# --- News Aggregation Widget Route ---
+
+@app.get("/news")
+async def get_news(category: str = "all", limit: int = 10):
+    import news_service
+    articles = await news_service.aggregate_news()
+    
+    cat = category.lower()
+    if cat != "all":
+        # Match source
+        source_map = {
+            "hackernews": "HackerNews",
+            "arxiv": "ArXiv",
+            "producthunt": "ProductHunt"
+        }
+        target_source = source_map.get(cat)
+        if target_source:
+            articles = [a for a in articles if a["source"] == target_source]
+            
+    return articles[:limit]
+
+
+
+@app.get("/alerts/recent")
+async def get_recent_alerts(limit: int = 10, current_user: UserContext = Depends(get_current_user)):
+    import scaling_monitor
+    scaling_monitor.check_resources()
+    return scaling_monitor.get_recent_alerts(limit)
+
+@app.post("/alerts/acknowledge/{alert_id}")
+async def acknowledge_alert(alert_id: str, current_user: UserContext = Depends(get_current_user)):
+    import scaling_monitor
+    success = scaling_monitor.acknowledge_alert(alert_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"status": "success", "alert_id": alert_id}
+
+@app.get("/metrics")
+@app.get("/metrics/summary")
+async def get_metrics_summary(period: str = "1h", current_user: UserContext = Depends(get_current_user)):
+    import monitoring_metrics
+    return monitoring_metrics.get_metrics_summary(period)
+
+@app.post("/cache/clear")
+async def clear_cache(notebook_id: Optional[str] = None, current_user: UserContext = Depends(get_current_user)):
+    if router and router.cache:
+        if notebook_id:
+            await router.cache.clear_notebook_cache(notebook_id)
+            return {"status": "success", "detail": f"Cache cleared for notebook {notebook_id}"}
+        else:
+            await router.cache.clear_all()
+            return {"status": "success", "detail": "Entire semantic cache cleared"}
+    raise HTTPException(status_code=500, detail="Cache service not initialized")
+
+# --- Offline Mode & Request Queueing ---
+
+class QueuedRequestInput(BaseModel):
+    id: str
+    endpoint: str
+    method: str
+    payload: dict
+    user_id: Optional[str] = None
+
+class BatchSyncInput(BaseModel):
+    requests: list[QueuedRequestInput]
+
+@app.post("/offline/queue")
+async def queue_offline_request(input_data: QueuedRequestInput, current_user: UserContext = Depends(get_current_user)):
+    import offline_queue
+    target_user_id = input_data.user_id or current_user.user_id
+    res = offline_queue.add_to_queue(
+        req_id=input_data.id,
+        endpoint=input_data.endpoint,
+        method=input_data.method,
+        payload=input_data.payload,
+        user_id=target_user_id
+    )
+    return res
+
+@app.get("/offline/queue/{user_id}")
+async def get_offline_queue(user_id: str, current_user: UserContext = Depends(get_current_user)):
+    import offline_queue
+    if user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return offline_queue.get_user_queue(user_id)
+
+@app.delete("/offline/queue/{request_id}")
+async def delete_offline_request(request_id: str, current_user: UserContext = Depends(get_current_user)):
+    import offline_queue
+    offline_queue.delete_from_queue(request_id)
+    return {"status": "deleted"}
+
+@app.post("/offline/sync")
+async def batch_sync(request: Request, input_data: BatchSyncInput, current_user: UserContext = Depends(get_current_user)):
+    import offline_queue
+    import httpx
+    
+    auth_header = request.headers.get("Authorization")
+    results = []
+    
+    port = request.url.port or DAEMON_PORT
+    host = request.url.hostname or "127.0.0.1"
+    async with httpx.AsyncClient(base_url=f"http://{host}:{port}") as client:
+        if auth_header:
+            client.headers["Authorization"] = auth_header
+            
+        for req in input_data.requests:
+            target_user_id = req.user_id or current_user.user_id
+            # Add to local sqlite queue
+            offline_queue.add_to_queue(
+                req_id=req.id,
+                endpoint=req.endpoint,
+                method=req.method,
+                payload=req.payload,
+                user_id=target_user_id
+            )
+            # Sync
+            success = await offline_queue.process_sync(req.id, client)
+            results.append({
+                "id": req.id,
+                "endpoint": req.endpoint,
+                "status": "synced" if success else "failed"
+            })
+    return {"results": results}
+
+@app.post("/ocr")
+async def ocr_smoke_endpoint(request: Request, mode: str = "text"):
+    body = await request.body()
+    from ocr_fallback_manager import OcrFallbackManager
+    ocr_manager = OcrFallbackManager()
+    return ocr_manager.recognize(body, mode=mode)
+
+@app.get("/queue/status")
+async def get_queue_status_endpoint():
+    import offline_queue
+    count = offline_queue.get_queue_count() if hasattr(offline_queue, "get_queue_count") else 0
+    return {"status": "online", "pending_requests": count, "queue_length": count}
+
+@app.post("/queue/sync")
+@app.post("/batch_sync")
+async def batch_sync_alias(request: Request, input_data: Optional[BatchSyncInput] = None, current_user: UserContext = Depends(get_current_user)):
+    if input_data is None:
+        try:
+            body = await request.json()
+            input_data = BatchSyncInput(**body)
+        except Exception:
+            input_data = BatchSyncInput(requests=[])
+    return await batch_sync(request, input_data, current_user)
+
+
 # Initialize and register notebook routes
 import notebook_routes
 notebook_routes.init_notebook_services(router, retriever)
 app.include_router(notebook_routes.router)
 
-# Initialize and register tutor routes
+# Initialize and register lecture routes
+import lecture_routes
+lecture_routes.init_lecture_services(router, retriever)
+app.include_router(lecture_routes.router)
+
+# Initialize and register tutor and ocr routes
 import tutor_routes
+import ocr_routes
 tutor_routes.init_tutor_services(router, retriever)
 app.include_router(tutor_routes.router)
+app.include_router(ocr_routes.router)
 
 from fastapi.staticfiles import StaticFiles
 
@@ -443,6 +685,8 @@ if os.path.isdir(static_path):
             return resp
 
     app.mount("/", NoCacheStaticFiles(directory=static_path, html=True), name="frontend")
+
+
 
 if __name__ == "__main__":
     import uvicorn

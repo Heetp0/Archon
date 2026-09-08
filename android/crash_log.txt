@@ -1,0 +1,927 @@
+--------- beginning of main
+07-23 16:19:20.796  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:22.060  1131  1394 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:22.908 18228 30890 E AbstractLogEventBuilder: The provided ProductIdOrigin 3 is not one of the process-level expected values: 1 or 2
+07-23 16:19:23.031  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:23.034  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:23.034  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:23.051  1131  1131 E SurfaceFlinger: ZuiJankTracker::checkSFJankEvent call reportZuiJankEvent for mLongCompositeFrameCounter = 11  Composite Frame cost (15)ms target (11)ms Current FPS 90.000000 Report Jank Level = 8
+07-23 16:19:23.125 18228 18276 E AbstractLogEventBuilder: The provided ProductIdOrigin 3 is not one of the process-level expected values: 1 or 2
+07-23 16:19:23.783  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.035  1131  1394 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:25.155 18228 18228 E AbstractLogEventBuilder: The provided ProductIdOrigin 3 is not one of the process-level expected values: 1 or 2
+07-23 16:19:25.157 18228 30890 E AbstractLogEventBuilder: The provided ProductIdOrigin 3 is not one of the process-level expected values: 1 or 2
+--------- beginning of system
+07-23 16:19:25.376  1522  1522 E AppStateIntentReceiver: notifyChange failed
+07-23 16:19:25.384  1522  1624 E AtomicFile: Failed to rename /data/system/install_sessions.xml.new to /data/system/install_sessions.xml
+07-23 16:19:25.392 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4752
+07-23 16:19:25.393 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4753
+07-23 16:19:25.400 18228 18277 E Finsky  : [270] [Counters] attempted to use a non-positive increment for: 4752
+07-23 16:19:25.401 18228 18278 E Finsky  : [271] [Counters] attempted to use a non-positive increment for: 4753
+07-23 16:19:25.427  1522  1522 E AppStateIntentReceiver: notifyChange failed
+07-23 16:19:25.427 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4752
+07-23 16:19:25.427 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4752
+07-23 16:19:25.429 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4753
+07-23 16:19:25.429 18228 18279 E Finsky  : [272] [Counters] attempted to use a non-positive increment for: 4753
+07-23 16:19:25.475  1522  2426 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION, user: 0
+07-23 16:19:25.480  1522  2426 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING, user: 0
+07-23 16:19:25.504  1522  3024 E ZuiModeService: !mVsrVideoModeAccessibleWhiteList set persist.sys.vsr.fps=0
+07-23 16:19:25.510  1522  3024 E ZuiModeService: !mVsrVideoModeAccessibleWhiteList set persist.sys.vsr.fps=0
+07-23 16:19:25.519  1131  1131 E SurfaceFlinger: ZuiJankTracker::checkSFJankEvent call reportZuiJankEvent for mLongCompositeFrameCounter = 0  Composite Frame cost (7)ms target (11)ms Current FPS 90.000000 Report Jank Level = 16
+07-23 16:19:25.521  1522  2426 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_DEPENDENCY_INSTALLER, user: 0
+07-23 16:19:25.533  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.aed15355bcbaba53f_v2
+07-23 16:19:25.533  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.aa409b59646f42112_v2
+07-23 16:19:25.534  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.a9c51db51cf0aa286_v2
+07-23 16:19:25.534  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.a3854133280f8702d_v2
+07-23 16:19:25.540  2252  2312 E ZuiHandWritingManager: Constructor called
+07-23 16:19:25.544  1522  2209 E ActivityManager: setAppsFreezeState frozen = true isJank true
+07-23 16:19:25.556  1522  2426 E AppOpService: Blocked setUidMode call for runtime permission app op: uid = 10152, code = RECORD_AUDIO, mode = foreground, callingUid = 1000, oldMode = allow
+07-23 16:19:25.556  1522  2426 E AppOpService: java.lang.RuntimeException
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.server.permission.access.appop.AppOpService.setUidMode(AppOpService.kt:272)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsCheckingServiceTracingDecorator.setUidMode(AppOpsCheckingServiceTracingDecorator.java:120)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2233)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2174)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8669)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8700)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpModeAsUser(Permissions.java:908)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpUidModeAsUser(Permissions.java:885)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantPermissionAndAppOpAsUser(Permissions.java:373)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantSingleAsUser(Permissions.java:247)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantAsUser(Permissions.java:205)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.model.Role.grantAsUser(Role.java:947)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.addRoleHolderInternal(RoleControllerServiceImpl.java:380)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.onGrantDefaultRoles(RoleControllerServiceImpl.java:163)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.lambda$grantDefaultRoles$1(LocalRoleController.java:56)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.$r8$lambda$ye-flP7Mf14AbTzwSmiTgndT6Cg(LocalRoleController.java:0)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController$$ExternalSyntheticLambda1.run(R8$$SyntheticClass:0)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.os.Handler.handleCallback(Handler.java:1012)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.os.Handler.dispatchMessage(Handler.java:113)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.os.Looper.loopOnce(Looper.java:249)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.os.Looper.loop(Looper.java:339)
+07-23 16:19:25.556  1522  2426 E AppOpService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+07-23 16:19:25.588  1522  2426 E AppOpService: Blocked setUidMode call for runtime permission app op: uid = 10170, code = RECORD_AUDIO, mode = foreground, callingUid = 1000, oldMode = allow
+07-23 16:19:25.588  1522  2426 E AppOpService: java.lang.RuntimeException
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.server.permission.access.appop.AppOpService.setUidMode(AppOpService.kt:272)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsCheckingServiceTracingDecorator.setUidMode(AppOpsCheckingServiceTracingDecorator.java:120)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2233)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2174)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8669)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8700)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpModeAsUser(Permissions.java:908)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpUidModeAsUser(Permissions.java:885)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantPermissionAndAppOpAsUser(Permissions.java:373)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantSingleAsUser(Permissions.java:247)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantAsUser(Permissions.java:205)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.model.Role.grantAsUser(Role.java:947)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.addRoleHolderInternal(RoleControllerServiceImpl.java:380)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.onGrantDefaultRoles(RoleControllerServiceImpl.java:163)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.lambda$grantDefaultRoles$1(LocalRoleController.java:56)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.$r8$lambda$ye-flP7Mf14AbTzwSmiTgndT6Cg(LocalRoleController.java:0)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController$$ExternalSyntheticLambda1.run(R8$$SyntheticClass:0)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.os.Handler.handleCallback(Handler.java:1012)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.os.Handler.dispatchMessage(Handler.java:113)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.os.Looper.loopOnce(Looper.java:249)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.os.Looper.loop(Looper.java:339)
+07-23 16:19:25.588  1522  2426 E AppOpService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+07-23 16:19:25.597  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.598  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.602  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.603  1522  2426 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.android.devicelockcontroller, role: android.app.role.SYSTEM_FINANCED_DEVICE_CONTROLLER, user: 0
+07-23 16:19:25.604  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.605  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.605  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.610  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.613  1131  2664 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.613  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.614  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.614  1131  1392 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:25.631  1522  1522 E AppStateIntentReceiver: notifyChange failed
+07-23 16:19:25.636  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.636  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.643  1131  2664 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.643  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.651  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.653  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.653  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.655  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.664  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.664  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.667  1522  1547 E OvfBaseTask: onConfigurationChangedInner finishSync: Task{9dff04c #89 type=standard A=10377:com.example.archonnotesinkcanvas}
+07-23 16:19:25.668  1522  1547 E ZuiModeService: !mVsrVideoModeAccessibleWhiteList set persist.sys.vsr.fps=0
+07-23 16:19:25.682  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.682  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.684  1522  2426 E AppOpService: Blocked setUidMode call for runtime permission app op: uid = 10140, code = RECORD_AUDIO, mode = foreground, callingUid = 1000, oldMode = allow
+07-23 16:19:25.684  1522  2426 E AppOpService: java.lang.RuntimeException
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.server.permission.access.appop.AppOpService.setUidMode(AppOpService.kt:272)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsCheckingServiceTracingDecorator.setUidMode(AppOpsCheckingServiceTracingDecorator.java:120)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2233)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.server.appop.AppOpsService.setUidMode(AppOpsService.java:2174)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8669)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.app.AppOpsManager.setUidMode(AppOpsManager.java:8700)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpModeAsUser(Permissions.java:908)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.setAppOpUidModeAsUser(Permissions.java:885)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantPermissionAndAppOpAsUser(Permissions.java:373)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantSingleAsUser(Permissions.java:247)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Permissions.grantAsUser(Permissions.java:205)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.model.Role.grantAsUser(Role.java:947)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.addRoleHolderInternal(RoleControllerServiceImpl.java:380)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.controller.service.RoleControllerServiceImpl.onGrantDefaultRoles(RoleControllerServiceImpl.java:163)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.lambda$grantDefaultRoles$1(LocalRoleController.java:56)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController.$r8$lambda$ye-flP7Mf14AbTzwSmiTgndT6Cg(LocalRoleController.java:0)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at com.android.role.LocalRoleController$$ExternalSyntheticLambda1.run(R8$$SyntheticClass:0)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.os.Handler.handleCallback(Handler.java:1012)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.os.Handler.dispatchMessage(Handler.java:113)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.os.Looper.loopOnce(Looper.java:249)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.os.Looper.loop(Looper.java:339)
+07-23 16:19:25.684  1522  2426 E AppOpService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+07-23 16:19:25.688  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.688  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.695  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.695  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.712  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.713  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.717  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.717  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.723  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.745  2580  2580 E NAVBAR  : setLauncherIsAnimator = false
+07-23 16:19:25.750  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.750  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.751  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.751  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.751  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.751  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.751  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.752  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.752  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.753  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.753  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.757  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.759  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.762  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.763  2252  2292 E ZuiHandWritingManager: Constructor called
+07-23 16:19:25.763  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.765  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.766  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.769  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.770  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.771  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.775  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.776  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.777  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.777  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.778  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.778  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.781  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.781  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.782  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.787  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.787  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.788  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.790  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.791  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.792  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.797  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.799  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.799  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.802  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.803  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.803  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.804  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.806  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.806  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.809  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.814  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.814  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.815  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.816  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.816  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.816  1131  2664 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.816  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.816  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.817  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.819  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.821  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.821  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.825  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.826  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.827  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.827  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.828  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.828  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.831  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.837  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.837  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.837  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.837  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.838  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.839  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.839  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.844  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.844  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.848  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.848  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.848  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.849  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.849  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.857  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.857  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.859  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.859  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.859  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.860  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.860  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.863  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.863  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.870  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.872  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.872  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.876  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.878  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.881  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.883  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.883  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.888  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.892  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.892  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.894  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.894  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.903  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.903  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.905  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.905  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.905  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.912  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 1
+07-23 16:19:25.912  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.914  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.915  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.916  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.916  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.919  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.925  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.926  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.927  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.927  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.927  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.936  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.938  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.938  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.938  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.948  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.949  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.949  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.955  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.959  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.959  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.960  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.960  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.961  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.970  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.971  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.971  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.973  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.974  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.981  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.982  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.983  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.983  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.986  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.992  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:25.994  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:25.994  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.995  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:25.996  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.003  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:26.003  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.005  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.005  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.005  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.014  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:26.016  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.016  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.018  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.020  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.025  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:26.025  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.027  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.027  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.027  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.033  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.033  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.037  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.037  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:26.039  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.039  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.041  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.046  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.049  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.049  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.051  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.055  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.056  1522  3264 E ZuiModeService: judgeVSRMode return 
+07-23 16:19:26.056  1522  3264 E Transition: isRecentTransitionRuning = false, mSyncId = 532
+07-23 16:19:26.057  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.061  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.061  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.061  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.061  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.061  1131  2664 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.073  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.073  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.080  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.090  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.108  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.110  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.110  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.111  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.111  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.143  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.144  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.209  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.aed15355bcbaba53f_v2
+07-23 16:19:26.209  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.a9c51db51cf0aa286_v2
+07-23 16:19:26.210  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.aa409b59646f42112_v2
+07-23 16:19:26.210  1522  3182 E AppSearchAppIndxrImpl: Certificate not found for package: org.chromium.webapk.a3854133280f8702d_v2
+07-23 16:19:26.396  1522  1630 E ZuiModeService: !mVsrVideoModeAccessibleWhiteList set persist.sys.vsr.fps=0
+07-23 16:19:26.400  1522  1630 E ZuiModeService: judgeVSRMode return 
+07-23 16:19:26.400  1522  1630 E ZuiModeService: !mVsrVideoModeAccessibleWhiteList set persist.sys.vsr.fps=0
+07-23 16:19:26.421  1522  1522 E MBrainLocalService: notifyAppSwitch failed
+07-23 16:19:26.421  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.425  2252  2292 E OvcGuideManager: canTriggerFullscreenGuide, Removed_when_porting_OVC: OvCaptionBarObserver.checkUserGuideShown(false)
+07-23 16:19:26.433  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.445 30929 30981 E QT      : [QT]file does not exist
+07-23 16:19:26.457  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.459  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.460  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.460  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.468  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.468  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.480  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.481  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.480  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.482  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.488  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.488  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.488  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.488  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.488  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.499  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.504 30929 30929 E ashmem  : Pinning is deprecated since Android Q. Please use trim or other methods.
+07-23 16:19:26.636 30929 30929 E ZuiHandWritingManager: Constructor called
+07-23 16:19:26.665  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.671  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.681  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.683  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.688  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:26.688  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.691  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.699  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.775  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.853  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:26.928  1522  2198 E ZuiModeService: ClassNotFoundException for android.util.BoostFramework
+07-23 16:19:26.928  1522  2198 E ZuiModeService: java.lang.ClassNotFoundException: android.util.BoostFramework
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at java.lang.Class.classForName(Native Method)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at java.lang.Class.forName(Class.java:591)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at java.lang.Class.forName(Class.java:496)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at com.android.server.ZuiModeManagerService.maybeForName(ZuiModeManagerService.java:3085)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at com.android.server.ZuiModeManagerService.-$$Nest$smmaybeForName(ZuiModeManagerService.java:0)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at com.android.server.ZuiModeManagerService$ZuiModeHandler.handleMessage(ZuiModeManagerService.java:2022)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at android.os.Handler.dispatchMessage(Handler.java:120)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at android.os.Looper.loopOnce(Looper.java:249)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at android.os.Looper.loop(Looper.java:339)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+07-23 16:19:26.928  1522  2198 E ZuiModeService: Caused by: java.lang.ClassNotFoundException: android.util.BoostFramework
+07-23 16:19:26.928  1522  2198 E ZuiModeService: 	... 10 more
+07-23 16:19:27.523  1522  1630 E BigPalmInputPolicy: notifyCurrentTopWhiteApp: reject : 0
+07-23 16:19:27.530 30929 30929 E nnotesinkcanvas: [perfctl] 30929 30929 FPSGO ver:0
+07-23 16:19:27.530 30929 30929 E nnotesinkcanvas: [perfctl] 0 0 0 0
+07-23 16:19:27.532  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.532  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.533  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.533  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.536  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.657  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.657  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.658  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.659  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.667  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.667  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.680  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.680  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.685  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.687  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.688  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.689  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.699  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.699  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.712  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.712  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.722  2580  2580 E Freeform: SettingNotFoundException :enable_zuifreeformbar
+07-23 16:19:27.723  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.723  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.728  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.729  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.731  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.731  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.739  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.739  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.747  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.750  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.752  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.752  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.756  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.764  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.764  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.776  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.776  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.779  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.780  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.781  2580  2580 E Launcher.Utilities: mapToRange: range has 0 length
+07-23 16:19:27.782  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.784  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.784  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.788  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.788  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.788  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.788  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.791  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.794  1131  2643 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.794  1131  2643 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.799  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.799  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.799  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.805  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.805  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.809  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.810  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.817  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.817  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.821  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.827  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.827  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.832  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.839  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.839  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.843  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.849  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.849  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.854  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.861  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.861  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.865  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.866  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.872  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.872  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.874  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.874  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.876  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.877  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.887  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.896  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.903  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.903  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.918  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.918  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.929  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.929  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.941  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.941  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.946  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 1
+07-23 16:19:27.946  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.960  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.960  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.969  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 1
+07-23 16:19:27.969  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.973  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.973  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.973  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.974  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.980  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 1
+07-23 16:19:27.980  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.988  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.988  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:27.995  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:27.995  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:28.571  1522  4821 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+07-23 16:19:28.619  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:28.678  1131  1390 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:28.742  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:28.820  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.048  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.052  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.053  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.483  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.516  1108  1178 E libPowerHal: [getCPUFreq] error cid:2, nClusterNum:2
+07-23 16:19:29.583  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.583  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.596  1522  2209 E ActivityManager: setAppsFreezeState frozen = true isJank true
+07-23 16:19:29.599  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.599  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.609  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.609  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.620  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.620  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.631  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.631  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.643  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.643  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.653  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.653  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.667  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.667  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.678  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.678  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.689  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.689  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.700  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.700  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.721  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.721  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.740  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.740  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.745  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.745  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.754  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.754  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.776  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.776  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.787  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.787  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.798  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.798  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.798  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.812  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.812  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.831  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.831  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.842  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.842  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.854  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.854  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.863  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.863  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.874  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.874  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.885  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.885  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.896  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.896  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.908  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.908  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.919  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.919  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.930  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.930  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.941  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.941  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.952  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.952  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.963  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.963  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.974  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.974  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.985  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.985  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:29.996  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:29.997  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.008  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.008  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.018  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.018  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.029  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.030  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.041  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.041  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.052  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.052  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.064  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.064  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.075  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.075  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.086  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.086  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.097  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.097  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.107  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.107  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.119  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.119  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.130  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.130  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.141  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.141  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.152  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.152  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.163  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.163  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.174  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.174  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.185  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.185  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.196  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.197  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.207  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.208  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.219  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.219  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.230  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.230  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.252  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.252  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.263  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.263  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.275  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.275  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.286  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.286  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.318  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.318  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:30.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:30.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.675  1108  1178 E libPowerHal: [getCPUFreq] error cid:2, nClusterNum:2
+07-23 16:19:31.709  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.709  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.720  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.720  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.731  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.731  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.742  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.742  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.753  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.753  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.764  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.765  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.775  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.776  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.781  1131  1131 E SurfaceFlinger: ZuiJankTracker::checkSFJankEvent call reportZuiJankEvent for mLongCompositeFrameCounter = 5  Composite Frame cost (16)ms target (11)ms Current FPS 90.000000 Report Jank Level = 8
+07-23 16:19:31.789  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.789  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.798  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.798  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.804  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.805  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.809  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.809  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.820  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.820  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.820  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.825  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.826  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.837  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.837  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.842  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.842  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.846  1108  1135 E mtkpower@impl: [setMode] unknown type
+07-23 16:19:31.855  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.855  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.864  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.864  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.877  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.877  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.886  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.886  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.897  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.898  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.908  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.908  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.920  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.920  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.931  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.931  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.942  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.942  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.953  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.953  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.964  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.964  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.974  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.974  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.986  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.986  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:31.998  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:31.998  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.008  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.008  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.019  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.019  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.030  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.030  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.041  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.042  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.048  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.052  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.052  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.053  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.053  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.064  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.064  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.075  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.075  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.086  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.086  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.097  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.097  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.108  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.108  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.119  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.119  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.130  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.130  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.141  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.141  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.152  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.152  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.164  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.164  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.174  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.175  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.185  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.185  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.197  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.197  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.208  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.208  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.219  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.219  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.230  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.230  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.252  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.252  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.264  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.264  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.275  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.275  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.286  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.286  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.296  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.297  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.308  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.308  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.319  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.319  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.330  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.330  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.352  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.352  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.364  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.364  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.374  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.374  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.385  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.385  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.408  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.408  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.438  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.438  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.453  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:32.453  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:32.799  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:33.800  1108  1135 E mtkpower@impl: [setMode] unknown type
+07-23 16:19:34.454  1131  1394 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:34.691  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.843  1131  1392 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:34.845  1108  1178 E libPowerHal: [getCPUFreq] error cid:2, nClusterNum:2
+07-23 16:19:34.848  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.848  1131  1394 E RefreshRateSelector: Can't find max refresh rate by policy with the same group 0
+07-23 16:19:34.869  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.869  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.875  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.875  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.878  1108  1135 E mtkpower@impl: [setMode] unknown type
+07-23 16:19:34.888  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.888  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.899  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.899  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.909  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.909  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.909 30929 30981 E nnotesinkcanvas: legacy_receive_flag: 0
+07-23 16:19:34.919  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.919  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.930  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.930  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.941  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.941  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.953  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.953  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.970  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.971  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.976  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.976  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.988  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.988  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:34.997  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:34.997  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.009  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.009  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.019  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.019  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.030  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.030  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.042  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.042  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.049  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.053  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.053  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.054  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.054  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.064  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.064  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.075  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.076  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.088  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.088  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.098  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.098  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.109  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.109  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.120  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.120  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.131  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.131  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.142  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.142  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.153  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.153  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.164  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.164  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.176  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.176  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.187  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.187  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.198  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.198  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.209  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.209  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.220  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.220  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.231  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.231  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.241  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.253  1131  1349 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.253  1131  1349 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.265  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.265  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.277  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.277  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.288  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.288  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.298  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.298  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.309  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.309  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.320  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.320  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.332  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.332  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.337  9865 12143 E chromium: [ERROR:components/sync/engine/get_updates_processor.cc:270] PostClientToServerMessage() failed during GetUpdates with error Network error (ERR_NAME_NOT_RESOLVED)
+07-23 16:19:35.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.342  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.353  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.353  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.365  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.365  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.376  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.376  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.386  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.387  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.398  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.398  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.410  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.410  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.420  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.420  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.431  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.431  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.442  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.442  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.453  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.453  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.464  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.464  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.476  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.476  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.487  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.487  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.498  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.498  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.509  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.509  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.520  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.520  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.533  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.533  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.543  1131  1170 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.543  1131  1170 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.557  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.557  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.564  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.564  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.575  1131  1169 E SurfaceFlinger: isStylusTargetLayer getHWCFrameQueueSize outvalue 0
+07-23 16:19:35.575  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:35.800  1131  1169 E SurfaceFlinger: isStylusTargetLayer notifyTargetLayerDisconnect in
+07-23 16:19:36.802  1108  1135 E mtkpower@impl: [setMode] unknown type

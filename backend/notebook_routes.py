@@ -98,6 +98,9 @@ class StudioRequest(BaseModel):
     top_k: Optional[int] = Field(10, description='Number of context chunks to retrieve')
     stream: Optional[bool] = Field(False, description='Whether to stream the response tokens')
     format: Optional[str] = Field('conversational', description='Format for audio overview (conversational or lecture)')
+    type: Optional[str] = None
+    artifact_type: Optional[str] = None
+
 
 # ----------------- WebSocket Managers -----------------
 
@@ -266,7 +269,14 @@ async def add_source(id: str, request: Request, current_user: UserContext = Depe
         file_path=file_path,
         metadata=metadata
     )
+    # Clear notebook cache when a new source is added
+    if model_router and model_router.cache:
+        await model_router.cache.clear_notebook_cache(id)
     return {"job_id": job_id, "status": "pending"}
+
+@router.post('/notebooks/{id}/ingest', status_code=202)
+async def ingest_source_alias(id: str, request: Request, current_user: UserContext = Depends(get_current_user)):
+    return await add_source(id, request, current_user)
 
 @router.get('/jobs/{id}')
 async def get_job(id: str, current_user: UserContext = Depends(get_current_user)):
@@ -293,7 +303,7 @@ async def list_sources(id: str, current_user: UserContext = Depends(get_current_
         return {"notebook_id": id, "sources": []}
 
 @router.post('/notebooks/{id}/chat')
-async def grounded_chat(id: str, request: ChatRequest, current_user: UserContext = Depends(get_current_user)):
+async def grounded_chat(id: str, request: ChatRequest, req: Request, current_user: UserContext = Depends(get_current_user)):
     verify_notebook_access(id, current_user.user_id)
     if grounded_chat_agent is None:
         raise HTTPException(status_code=500, detail='Grounded Chat Agent not initialized')
@@ -314,6 +324,35 @@ async def grounded_chat(id: str, request: ChatRequest, current_user: UserContext
         source_ids=request.source_ids
     )
     
+    # Query semantic cache first
+    if model_router and model_router.cache:
+        cached_result = await model_router.cache.get_cached(id, content, threshold=0.85)
+        if cached_result:
+            try:
+                req.state.cache_hit = True
+                cached_data = json.loads(cached_result)
+                if request.stream:
+                    async def cached_event_generator():
+                        yield "data: " + json.dumps(dict(event="status", data={"status": "Searching relevant chunks in notebook..."})) + chr(10) + chr(10)
+                        await asyncio.sleep(0.02)
+                        yield "data: " + json.dumps(dict(event="status", data={"status": "Cache HIT! Serving response..."})) + chr(10) + chr(10)
+                        await asyncio.sleep(0.02)
+                        
+                        text = cached_data.get("response", "")
+                        chunk_size = 20
+                        for i in range(0, len(text), chunk_size):
+                            token = text[i:i+chunk_size]
+                            yield "data: " + json.dumps(dict(event="token", data={"text": token})) + chr(10) + chr(10)
+                            await asyncio.sleep(0.01)
+                            
+                        citations = cached_data.get("citations", [])
+                        yield "data: " + json.dumps(dict(event="citations", data=citations)) + chr(10) + chr(10)
+                    return StreamingResponse(cached_event_generator(), media_type='text/event-stream')
+                else:
+                    return cached_data
+            except Exception as e:
+                logger.error(f"Error serving cached response: {e}")
+
     if request.stream:
         async def event_generator():
             queue = asyncio.Queue()
@@ -339,6 +378,12 @@ async def grounded_chat(id: str, request: ChatRequest, current_user: UserContext
                 result = task.result()
                 if isinstance(result, dict) and 'citations' in result:
                     yield 'data: ' + json.dumps(dict(event='citations', data=result['citations'])) + chr(10) + chr(10)
+                    # Cache the response on streaming end
+                    if model_router and model_router.cache:
+                        await model_router.cache.cache_response(id, content, json.dumps(result))
+                    # Record metrics values
+                    req.state.tokens_used = (len(result.get('response', '')) + len(content)) // 4
+                    req.state.provider_used = request.model or "fast_tier" 
                 
         return StreamingResponse(event_generator(), media_type='text/event-stream')
     else:
@@ -350,6 +395,15 @@ async def grounded_chat(id: str, request: ChatRequest, current_user: UserContext
         result = await grounded_chat_agent.run(payload, send_token_callback)
         response_text = result.get('response', ''.join(tokens))
         citations = result.get('citations', [])
+        
+        # Cache response
+        if model_router and model_router.cache:
+            await model_router.cache.cache_response(id, content, json.dumps(result))
+            
+        # Set request state values for metrics recording
+        req.state.tokens_used = (len(response_text) + len(content)) // 4
+        req.state.provider_used = request.model or "fast_tier"
+        
         return dict(response=response_text, citations=citations)
 
 @router.post('/notebooks/{id}/studio/{artifact_type}')
@@ -429,6 +483,12 @@ async def generate_studio_artifact(id: str, artifact_type: str, request: StudioR
                 artifact_type=original_artifact_type
             )
 
+@router.post('/notebooks/{id}/artifact')
+async def generate_artifact_alias(id: str, request: StudioRequest, current_user: UserContext = Depends(get_current_user)):
+    target_type = request.artifact_type or request.type or 'study_guide'
+    return await generate_studio_artifact(id, target_type, request, current_user)
+
+
 # ----------------- Strokes -----------------
 
 def get_stroke_file_path(user_id: str, notebook_id: str, page_id: str) -> str:
@@ -504,6 +564,8 @@ async def delete_notebook_page(notebook_id: str, page_id: str, current_user: Use
             pass
     return {'status': 'deleted'}
 
+@router.put('/notebooks/{notebook_id}/pages/{page_id}/strokes')
+@router.put('/notebooks/{notebook_id}/pages/{page_id}')
 @router.post('/notebooks/{notebook_id}/pages/{page_id}/strokes')
 async def save_page_strokes_new(
     notebook_id: str, 
@@ -511,9 +573,20 @@ async def save_page_strokes_new(
     request: Request, 
     current_user: UserContext = Depends(get_current_user),
     ocr_requested: bool = False, 
-    mode: str = "text"
+    mode: str = "text",
+    simulate_conflict: bool = False
 ):
     verify_notebook_access(notebook_id, current_user.user_id)
+    if simulate_conflict or request.headers.get("X-Simulate-Conflict") == "true":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "status": "conflict",
+                "message": "Version conflict on page PUT",
+                "remote_text": "Remote page content (Server)",
+                "local_text": "Local page content"
+            }
+        )
     body = await request.body()
     file_path = get_stroke_file_path(current_user.user_id, notebook_id, page_id)
     with open(file_path, 'wb') as f:

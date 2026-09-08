@@ -1,0 +1,17 @@
+# Archon Maintenance Cron Jobs Schedule
+# Install with: crontab crontab.txt
+
+# Daily at 1:00 AM: Archive logs older than 30 days
+0 1 * * * cd /path/to/archon && source venv/bin/activate && python scripts/archive_old_logs.py >> logs/cron.log 2>&1
+
+# Daily at 2:00 AM: Clean up expired cache entries
+0 2 * * * cd /path/to/archon && source venv/bin/activate && python scripts/cleanup_expired_cache.py >> logs/cron.log 2>&1
+
+# Daily at 3:00 AM: Backup LanceDB database
+0 3 * * * cd /path/to/archon && source venv/bin/activate && python scripts/backup_database.py >> logs/cron.log 2>&1
+
+# Weekly on Sunday at 4:00 AM: Clean up metrics older than 90 days
+0 4 * * 0 cd /path/to/archon && source venv/bin/activate && python scripts/cleanup_old_metrics.py >> logs/cron.log 2>&1
+
+# Daily at 5:00 AM: Clean up failed offline queue items older than 7 days
+0 5 * * * cd /path/to/archon && source venv/bin/activate && python scripts/cleanup_offline_queue.py >> logs/cron.log 2>&1

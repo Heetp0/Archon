@@ -140,3 +140,55 @@ class ObsidianExporter:
 
         except Exception as e:
             logger.error(f"Error executing Obsidian file exports: {e}")
+
+
+class LectureExporter:
+    def __init__(self):
+        import config as config_module
+        self.workspace_root = config_module.WORKSPACE_ROOT
+
+    def save_lecture_note(self, notes_content: str, subject: str, lecture_num: int, vault_path: str = None) -> str:
+        export_root = vault_path or os.getenv("OBSIDIAN_VAULT_PATH", os.path.join(self.workspace_root, "Obsidian", "Archon-Notes"))
+        
+        # Create directory for subject
+        subject_dir = os.path.join(export_root, subject)
+        os.makedirs(subject_dir, exist_ok=True)
+        
+        # Generate filename
+        date_str = time.strftime("%Y-%m-%d")
+        filename = os.path.join(subject_dir, f"Lecture_{lecture_num}_{date_str}.md")
+        
+        # Save note
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(notes_content)
+        
+        # Update Index.md
+        try:
+            self.update_index_file(export_root, subject, lecture_num, date_str)
+        except Exception as e:
+            logger.error(f"Failed to update Obsidian Index file: {e}")
+            
+        return filename
+
+    def update_index_file(self, export_root: str, subject: str, lecture_num: int, date_str: str):
+        index_path = os.path.join(export_root, "Index.md")
+        
+        content = ""
+        if os.path.exists(index_path):
+            with open(index_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        else:
+            content = "# Study Index\n\n"
+            
+        header_text = f"## {subject}"
+        wikilink = f"- [[{subject}/Lecture_{lecture_num}_{date_str}|Lecture {lecture_num} ({date_str})]]"
+        
+        if header_text in content:
+            if wikilink not in content:
+                parts = content.split(header_text)
+                content = parts[0] + header_text + "\n" + wikilink + parts[1]
+        else:
+            content += f"\n{header_text}\n{wikilink}\n"
+            
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(content)

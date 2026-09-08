@@ -15,6 +15,9 @@ import DashboardMode from "@/components/modes/DashboardMode";
 import ObsidianMode from "@/components/modes/ObsidianMode";
 import AgentsDirectoryMode from "@/components/modes/AgentsDirectoryMode";
 import NotebookMode from "@/components/modes/NotebookMode";
+import LectureMode from "@/components/modes/LectureMode";
+import MonitoringDashboard from "@/components/modes/MonitoringDashboard";
+import { AlertBanner } from "@/components/AlertBanner";
 import SettingsModal from "@/components/SettingsModal";
 
 // Modes that can show the left context sidebar (user toggles)
@@ -29,6 +32,8 @@ const MODE_LABELS: Record<AppMode, string> = {
   obsidian: "Obsidian",
   directory: "Agents",
   notebook: "Notebook Mode",
+  monitoring: "Monitoring & Telemetry",
+  lecture: "Lecture to Notes",
 };
 
 
@@ -145,6 +150,8 @@ export default function Home() {
           {mode === "obsidian"  && <ObsidianMode />}
           {mode === "directory" && <AgentsDirectoryMode />}
           {mode === "notebook"  && <NotebookMode />}
+          {mode === "lecture"   && <LectureMode />}
+             {mode === "monitoring"&& <MonitoringDashboard />}
         </div>
       </div>
 

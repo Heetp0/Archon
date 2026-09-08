@@ -132,10 +132,6 @@ class IngestionQueue:
             else:
                 raise ValueError(f"Unsupported source type: {source_type}")
                 
-            job["status"] = "completed"
-            job["progress"] = 100
-            job["result"] = result
-            job["completed_at"] = time.time()
             if self.retriever:
                 try:
                     await self.retriever.index_source(
@@ -146,7 +142,13 @@ class IngestionQueue:
                     )
                 except Exception as idx_err:
                     print(f"Error indexing job {job_id} in retriever: {idx_err}")
+
+            job["status"] = "completed"
+            job["progress"] = 100
+            job["result"] = result
+            job["completed_at"] = time.time()
             await self._broadcast_status(job_id)
+
             
         except Exception as e:
             logger.exception(f"Error executing job {job_id}")

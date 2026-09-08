@@ -71,6 +71,20 @@ export default function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isOverloaded, setIsOverloaded] = useState(false);
+
+  useEffect(() => {
+    const handleServerLoad = (e: Event) => {
+      const load = (e as CustomEvent).detail;
+      setIsOverloaded((prev) => {
+        if (load > 0.75) return true;
+        if (load < 0.60) return false;
+        return prev;
+      });
+    };
+    window.addEventListener("server-load", handleServerLoad);
+    return () => window.removeEventListener("server-load", handleServerLoad);
+  }, []);
   const [activeTools, setActiveTools] = useState<string[]>(["file_search"]);
 
   // Find files for active project
@@ -266,9 +280,13 @@ export default function ChatInput({
             <button
               type="button"
               onClick={handleSendClick}
-              disabled={disabled || !value.trim()}
-              className="w-8 h-8 flex items-center justify-center rounded bg-[#0070f3] text-white hover:bg-[#0060df] disabled:bg-neutral-800 disabled:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Send Message"
+              disabled={disabled || !value.trim() || isOverloaded}
+              className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+                isOverloaded
+                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50"
+                  : "bg-[#0070f3] text-white hover:bg-[#0060df] disabled:bg-neutral-800 disabled:text-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
+              title={isOverloaded ? "Server is busy. Try again in a few seconds." : "Send Message"}
             >
               <Send className="w-3.5 h-3.5" />
             </button>

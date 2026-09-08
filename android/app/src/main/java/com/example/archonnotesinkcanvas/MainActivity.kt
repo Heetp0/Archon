@@ -1,10 +1,11 @@
-﻿package com.example.archonnotesinkcanvas
+package com.example.archonnotesinkcanvas
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -16,11 +17,16 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        try {
+            androidx.ink.nativeloader.NativeLoader.load()
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
         enableEdgeToEdge()
         setContent {
             ArchonNotesInkCanvasTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val windowSizeClass = calculateWindowSizeClass(this)

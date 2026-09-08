@@ -32,6 +32,7 @@ export default function ContextSidebar() {
             )}
           </button>
           <button
+            aria-label="Collapse sidebar"
             onClick={() => setContextSidebarOpen(false)}
             className="w-7 h-7 rounded-lg flex items-center justify-center border border-transparent text-text-secondary hover:text-text-primary hover:bg-panel-bg/60 hover:border-border-core/60 transition-all"
             title="Collapse sidebar"

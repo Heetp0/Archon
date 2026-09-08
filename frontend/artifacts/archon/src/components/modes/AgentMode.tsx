@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import { Button } from "@/components/ui/button";
@@ -121,11 +122,11 @@ function NewAgentProjectBlocker() {
 
 // ── Main Agent Mode ────────────────────────────────────────────────────────────
 export default function AgentMode() {
-  const {
-    agentStatuses, taskQueue, connected,
-    terminalLines, dangerousCommand,
-    sendAgentCommand, approveCommand, denyCommand,
-  } = useWebSocketContext();
+  const { sendAgentCommand, approveCommand, denyCommand, connected } = useWebSocketContext();
+  const agentStatuses = useWebSocketStore(s => s.agentStatuses);
+  const taskQueue = useWebSocketStore(s => s.taskQueue);
+  const terminalLines = useWebSocketStore(s => s.terminalLines);
+  const dangerousCommand = useWebSocketStore(s => s.dangerousCommand);
 
   const { projects, activeProjectId } = useProjectsContext();
   const activeProject = projects.find((p) => p.id === activeProjectId);
@@ -169,7 +170,7 @@ export default function AgentMode() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-col h-full bg-[#01040A]"
+        className="flex flex-col h-full bg-app-bg"
       >
         <NewAgentProjectBlocker />
       </motion.div>
@@ -181,7 +182,7 @@ export default function AgentMode() {
       initial={{ opacity: 0, scale: 1.02 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col h-full bg-[#01040A] relative"
+      className="flex flex-col h-full bg-app-bg relative"
     >
       {/* Hidden file input */}
       <input
@@ -403,7 +404,7 @@ export default function AgentMode() {
               transition={{ duration: 0.18 }}
               className="absolute inset-0 flex flex-col bg-app-bg"
             >
-              <div className="flex items-center justify-between px-4 py-2 bg-[#050E05] border-b border-green-900/30 flex-shrink-0">
+              <div className="flex items-center justify-between px-4 py-2 bg-panel-bg border-b border-green-900/30 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-accent-rose/70" />
@@ -423,7 +424,7 @@ export default function AgentMode() {
 
               <div
                 className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed min-h-0"
-                style={{ scrollbarWidth: "thin", scrollbarColor: "#1a3a1a transparent" }}
+                style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}
               >
                 {terminalLines.map((line) => (
                   <div key={line.id} className={`flex gap-3 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>
@@ -441,7 +442,7 @@ export default function AgentMode() {
                 <div ref={terminalEndRef} />
               </div>
 
-              <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-[#020A02] flex-shrink-0">
+              <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-panel-bg flex-shrink-0">
                 <span className="text-accent-emerald font-mono text-sm select-none">$</span>
                 <input
                   ref={inputRef}
@@ -485,7 +486,7 @@ export default function AgentMode() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="relative max-w-lg w-full mx-6 bg-[#0A0000] border-2 border-red-500/60 rounded-xl overflow-hidden "
+              className="relative max-w-lg w-full mx-6 bg-panel-bg border-2 border-red-500/60 rounded-xl overflow-hidden "
             >
               <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
               <div className="p-8">

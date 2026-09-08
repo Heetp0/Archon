@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 import json
@@ -595,3 +596,76 @@ async def get_tesseract_model_status(notebook_id: str, current_user: UserContext
             "next_training_date": time.time() + 30 * 86400,
             "history": []
         }
+
+class NotebookGradeRequest(BaseModel):
+    student_answer_latex: str
+    expected_answer_latex: str = "\\frac{1}{2}x^2"
+    topic: str = "integration"
+
+class NotebookSocraticRequest(BaseModel):
+    question_text: str = "Evaluate integral of x dx"
+    expected_answer_latex: str = "\\frac{1}{2}x^2"
+    student_answer_latex: str = "x"
+    error_type: Optional[str] = "power_rule"
+    level: int = 1
+
+@router.get("/notebooks/{notebook_id}/quiz")
+async def list_quiz_questions_alias(
+    notebook_id: str,
+    topic: Optional[str] = None,
+    difficulty: Optional[int] = None,
+    due_only: bool = False,
+    current_user: UserContext = Depends(get_current_user)
+):
+    return await list_questions(notebook_id, topic, difficulty, due_only, current_user)
+
+@router.post("/notebooks/{notebook_id}/grade")
+async def grade_notebook_answer(
+    notebook_id: str,
+    req: NotebookGradeRequest,
+    current_user: UserContext = Depends(get_current_user)
+):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    val_res = validate_math_answer(
+        student_latex=req.student_answer_latex,
+        expected_latex=req.expected_answer_latex,
+        q_type=req.topic
+    )
+    return {
+        "is_correct": val_res.is_correct,
+        "score": val_res.score,
+        "error_type": val_res.error_type,
+        "feedback": val_res.suggestion or ("Correct!" if val_res.is_correct else "Incorrect answer.")
+    }
+
+@router.post("/notebooks/{notebook_id}/trigger-training")
+async def trigger_lora_training(
+    notebook_id: str,
+    epochs: int = 1,
+    current_user: UserContext = Depends(get_current_user)
+):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    try:
+        from agents.tutor_training import TutorTrainingPipeline
+        pipeline = TutorTrainingPipeline()
+        res = pipeline.run_lora_finetuning(notebook_id, epochs=epochs)
+        return {"status": "success", "result": res}
+    except Exception as e:
+        logger.error(f"Training pipeline execution failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/notebooks/{notebook_id}/training-status")
+async def get_training_status(
+    notebook_id: str,
+    current_user: UserContext = Depends(get_current_user)
+):
+    verify_notebook_access(notebook_id, current_user.user_id)
+    checkpoint_dir = os.path.join("./lora_checkpoints", notebook_id, "final")
+    manifest_path = os.path.join(checkpoint_dir, "adapter_config.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+        return {"status": "available", "manifest": manifest}
+    return {"status": "not_started", "notebook_id": notebook_id}
+
+

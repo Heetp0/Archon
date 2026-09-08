@@ -1,4 +1,4 @@
-﻿package com.archon.notes.canvas
+package com.archon.notes.canvas
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -8,6 +8,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.archonnotesinkcanvas.BuildConfig
 
 @Serializable
 data class BoundingBoxData(val x: Float, val y: Float, val width: Float, val height: Float)
@@ -27,33 +28,55 @@ data class SaveStrokesResponse(val status: String, val page_id: String, val ocr_
 @Serializable
 data class CorrectionRequest(val original_token: String, val corrected_token: String, val confidence: Float)
 
+sealed class SyncResult {
+    data class Success(val response: SaveStrokesResponse = SaveStrokesResponse("success", "")) : SyncResult()
+    data class Conflict(val localVersion: String = "v1.0", val remoteVersion: String = "v1.1") : SyncResult()
+    data object Offline : SyncResult()
+}
+
 object MyScriptOcrService {
-    private const val BASE_URL = "http://10.0.2.2:8000"
+    private val BASE_URL = BuildConfig.BACKEND_URL
     private val json = Json { ignoreUnknownKeys = true }
+    private var myScriptCallCount = 0
 
     suspend fun saveStrokesAndTriggerOcr(
         notebookId: String,
         pageId: String,
         binaryStrokes: ByteArray,
-        mode: String = "text"
-    ): SaveStrokesResponse = withContext(Dispatchers.IO) {
-        val url = "/notebooks//pages//strokes?ocr_requested=true&mode="
-        val conn = URL(url).openConnection() as HttpURLConnection
+        mode: String = "text",
+        simulateConflict: Boolean = false
+    ): SyncResult = withContext(Dispatchers.IO) {
+        myScriptCallCount++
+        android.util.Log.d("MyScriptQuota", "API call #$myScriptCallCount for user default_user")
+        
+        val urlStr = "$BASE_URL/notebooks/$notebookId/pages/$pageId/strokes?ocr_requested=true&mode=$mode"
+        val conn = URL(urlStr).openConnection() as HttpURLConnection
         try {
-            conn.requestMethod = "POST"
+            conn.requestMethod = "PUT"
             conn.setRequestProperty("Content-Type", "application/octet-stream")
+            if (simulateConflict) {
+                conn.setRequestProperty("X-Simulate-Conflict", "true")
+            }
             conn.doOutput = true
             conn.connectTimeout = 5000
             conn.readTimeout = 5000
             conn.outputStream.use { out ->
                 out.write(binaryStrokes)
             }
-            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+            val responseCode = conn.responseCode
+            if (responseCode == HttpURLConnection.HTTP_CONFLICT) {
+                val localVer = conn.getHeaderField("X-Local-Version") ?: "v1.0"
+                val remoteVer = conn.getHeaderField("X-Remote-Version") ?: "v1.1"
+                return@withContext SyncResult.Conflict(localVer, remoteVer)
+            } else if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED || responseCode == 202) {
                 val respText = conn.inputStream.use { it.readBytes().decodeToString() }
-                return@withContext json.decodeFromString<SaveStrokesResponse>(respText)
+                val parsed = json.decodeFromString<SaveStrokesResponse>(respText)
+                return@withContext SyncResult.Success(parsed)
             } else {
-                throw IOException("Server returned HTTP error code: ")
+                return@withContext SyncResult.Offline
             }
+        } catch (e: Exception) {
+            return@withContext SyncResult.Offline
         } finally {
             conn.disconnect()
         }

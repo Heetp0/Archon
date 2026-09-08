@@ -1,7 +1,11 @@
-﻿plugins {
+import java.util.Properties
+import java.io.FileInputStream
+
+plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.ksp)
 }
 
 android {
@@ -16,10 +20,30 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            val keystoreProperties = Properties()
+            if (keystorePropertiesFile.exists()) {
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+            }
+            keyAlias = keystoreProperties["keyAlias"] as String? ?: ""
+            keyPassword = keystoreProperties["keyPassword"] as String? ?: ""
+            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
+            storePassword = keystoreProperties["storePassword"] as String? ?: ""
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+            buildConfigField("String", "BACKEND_URL", "\"https://api.archon.app\"")
+        }
+        debug {
+            buildConfigField("String", "BACKEND_URL", "\"http://10.0.2.2:8000\"")
         }
     }
 
@@ -82,10 +106,10 @@ dependencies {
     // Icons (extended set for NavRail icons)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Room  (annotationProcessor avoids KSP/AGP-9 incompatibility)
+    // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
@@ -103,7 +127,11 @@ dependencies {
     implementation(libs.androidx.ink.brush.compose)
     implementation(libs.androidx.ink.geometry.compose)
     implementation(libs.androidx.ink.storage)
-    implementation(libs.androidx.graphics.core)
+    implementation("androidx.graphics:graphics-core") {
+        version {
+            strictly("1.0.0-alpha03")
+        }
+    }
     implementation(libs.androidx.input.motionprediction)
 
     // Tests

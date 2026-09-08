@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type AppMode = "dashboard" | "chat" | "council" | "research" | "agents" | "obsidian" | "directory" | "notebook";
+export type AppMode = "dashboard" | "chat" | "council" | "research" | "agents" | "obsidian" | "directory" | "notebook" | "lecture" | "monitoring";
 
 export interface HistoryItem {
   id: string;
@@ -33,7 +33,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AppMode>(() => {
     try {
       const saved = localStorage.getItem("archon_appMode");
-      if (saved && ["dashboard", "chat", "council", "research", "agents", "obsidian", "directory", "notebook"].includes(saved)) {
+      if (saved && ["dashboard", "chat", "council", "research", "agents", "obsidian", "directory", "notebook", "lecture"].includes(saved)) {
         return saved as AppMode;
       }
       return "dashboard";

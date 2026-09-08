@@ -16,6 +16,8 @@ import CalendarWidget from "@/components/CalendarWidget";
 import OnboardingFlow from "@/components/dashboard/OnboardingFlow";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import HelpSystem from "@/components/dashboard/HelpSystem";
+import NewsWidget from "@/components/dashboard/NewsWidget";
+import MetricsPanel from "@/components/dashboard/MetricsPanel";
 
 interface MailItem {
   id: string;
@@ -119,42 +121,108 @@ function useUptime() {
 }
 
 function SystemHealthPanel() {
+  const [health, setHealth] = useState<{
+    status: string;
+    checks: {
+      api_server: boolean;
+      database_lancedb: boolean;
+      embeddings_ollama: boolean;
+      model_provider_groq: boolean;
+      model_provider_gemini: boolean;
+    };
+  } | null>(null);
+  const [load, setLoad] = useState<{
+    cpu_percent: number;
+    ram_percent: number;
+    overall_load: number;
+    latency_ms?: number;
+  } | null>(null);
+
+  const fetchHealth = async () => {
+    try {
+      const res = await fetch("/api/health");
+      if (res.ok) {
+        setHealth(await res.json());
+      } else {
+        setHealth({ status: "offline", checks: { api_server: false, database_lancedb: false, embeddings_ollama: false, model_provider_groq: false, model_provider_gemini: false } });
+      }
+    } catch (e) {
+      setHealth({ status: "offline", checks: { api_server: false, database_lancedb: false, embeddings_ollama: false, model_provider_groq: false, model_provider_gemini: false } });
+    }
+  };
+
+  const fetchLoad = async () => {
+    try {
+      const res = await fetch("/api/health/load");
+      if (res.ok) {
+        setLoad(await res.json());
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchHealth();
+    fetchLoad();
+    const healthInterval = setInterval(fetchHealth, 30000);
+    const loadInterval = setInterval(fetchLoad, 10000);
+    return () => {
+      clearInterval(healthInterval);
+      clearInterval(loadInterval);
+    };
+  }, []);
+
+  const getStatusColor = () => {
+    if (!health) return "bg-zinc-500";
+    if (health.status === "healthy") return "bg-emerald-500";
+    if (health.status === "degraded") return "bg-amber-500";
+    return "bg-red-500";
+  };
+
+  const getStatusText = () => {
+    if (!health) return "UNKNOWN";
+    return health.status.toUpperCase();
+  };
+
+  const cpuPercent = load ? load.cpu_percent : 12;
+  const ramPercent = load ? load.ram_percent : 26;
+  const latencyVal = load?.latency_ms !== undefined ? `${load.latency_ms} ms` : "4 ms";
+
   return (
     <div className="rounded border border-[#222222] bg-[#0a0a0a] p-4 flex flex-col gap-3 font-mono text-[10px]">
       <div className="flex items-center justify-between border-b border-[#222222] pb-2">
         <span className="font-bold text-white uppercase tracking-wider">System Health</span>
-        <span className="flex items-center gap-1.5 text-white">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-          ONLINE
+        <span className="flex items-center gap-1.5 text-white" title={`DB: ${health?.checks.database_lancedb ? "online" : "offline"}, Embeddings: ${health?.checks.embeddings_ollama ? "online" : "offline"}, Groq: ${health?.checks.model_provider_groq ? "online" : "offline"}, Gemini: ${health?.checks.model_provider_gemini ? "online" : "offline"}`}>
+          <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", getStatusColor())} />
+          {getStatusText()}
         </span>
       </div>
       <div className="space-y-2">
         <div>
           <div className="flex justify-between mb-1">
             <span className="text-[#a0a0a0]">CPU Utilisation</span>
-            <span className="text-white">12%</span>
+            <span className="text-white">{cpuPercent}%</span>
           </div>
           <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-[#222222]">
-            <div className="h-full bg-white" style={{ width: "12%" }} />
+            <div className="h-full bg-white transition-all duration-500" style={{ width: `${cpuPercent}%` }} />
           </div>
         </div>
         <div>
           <div className="flex justify-between mb-1">
             <span className="text-[#a0a0a0]">RAM Usage</span>
-            <span className="text-white">4.2 GB / 16 GB</span>
+            <span className="text-white">{ramPercent}%</span>
           </div>
           <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-[#222222]">
-            <div className="h-full bg-white" style={{ width: "26%" }} />
+            <div className="h-full bg-white transition-all duration-500" style={{ width: `${ramPercent}%` }} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-1">
           <div className="p-2 border border-[#222222] bg-black rounded flex flex-col gap-0.5">
             <span className="text-[#666666] text-[8px] uppercase">Latency</span>
-            <span className="text-white text-xs">4 ms</span>
+            <span className="text-white text-xs">{latencyVal}</span>
           </div>
           <div className="p-2 border border-[#222222] bg-black rounded flex flex-col gap-0.5">
             <span className="text-[#666666] text-[8px] uppercase">Daemon Sync</span>
-            <span className="text-white text-xs">Active</span>
+            <span className="text-white text-xs">{health?.status === "offline" ? "Disconnected" : "Active"}</span>
           </div>
         </div>
       </div>
@@ -612,6 +680,12 @@ export default function DashboardMode() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* News Widget + Performance Metrics */}
+          <div className="grid grid-cols-2 gap-6">
+            <NewsWidget />
+            <MetricsPanel />
           </div>
 
           {/* Mail digest + Todo row */}

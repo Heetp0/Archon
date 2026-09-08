@@ -160,7 +160,7 @@ export default function CalendarWidget({ events = [], loading }: CalendarWidgetP
             {events.filter((e) => isSameDay(new Date(e.start.dateTime), today)).length === 0 ? (
               <div className="text-xs font-mono text-text-secondary italic">No events scheduled today</div>
             ) : (
-              <div className="space-y-1.5 max-h-28 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#1e2030 transparent" }}>
+              <div className="space-y-1.5 max-h-28 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}>
                 {events
                   .filter((e) => isSameDay(new Date(e.start.dateTime), today))
                   .sort((a, b) => new Date(a.start.dateTime).getTime() - new Date(b.start.dateTime).getTime())

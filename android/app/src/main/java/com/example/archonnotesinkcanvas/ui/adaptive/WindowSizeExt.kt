@@ -4,5 +4,5 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
 /** True on tablets (medium/expanded width). False on phones (compact). */
-val WindowSizeClass.isTablet: Boolean
+val WindowSizeClass.isTabletMode: Boolean
     get() = widthSizeClass != WindowWidthSizeClass.Compact

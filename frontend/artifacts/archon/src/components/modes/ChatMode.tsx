@@ -6,14 +6,19 @@ import { Paperclip, Send, Bot, User, Loader2, Copy, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
 export default function ChatMode() {
-  const { messages: chatMessages, isStreaming, sendChat, connected, availableModels, cancelStream } = useWebSocketContext();
+  const { sendChat, connected, cancelStream } = useWebSocketContext();
+  const isStreaming = useWebSocketStore(s => s.isStreaming);
+  const availableModels = useWebSocketStore(s => s.availableModels);
+  const messagesMap = useWebSocketStore(s => s.messagesMap);
   const { activeProjectId, activeChatId, createChat } = useProjectsContext();
+  const chatMessages = activeChatId ? messagesMap[activeChatId] || [] : [];
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
   const [input, setInput] = useState("");
@@ -64,7 +69,7 @@ export default function ChatMode() {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col h-full bg-[#030712] relative"
+      className="flex flex-col h-full bg-app-bg relative"
     >
       {/* Hidden native file picker */}
       <input
@@ -149,7 +154,7 @@ export default function ChatMode() {
         </div>
       </ScrollArea>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#020817] via-[#020817] to-transparent pt-12">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-app-bg via-app-bg to-transparent pt-12">
         <div className="max-w-4xl mx-auto">
           <div className="glass-panel border border-border-core rounded-xl p-2 focus-within:border-blue-500/50 focus-within:transition-all">
             <Textarea

@@ -289,7 +289,7 @@ export default function ProjectHistoryPanel({ currentMode }: { currentMode: AppM
   }
 
   // chat | council | research — light projects
-  const mode = currentMode as Exclude<typeof currentMode, "agents" | "dashboard" | "obsidian" | "directory" | "notebook">;
+  const mode = currentMode as Exclude<typeof currentMode, "agents" | "dashboard" | "obsidian" | "directory" | "notebook" | "lecture">;
   const modeProjects = projects.filter((p) => p.mode === mode && p.kind === "light");
   const ungrouped = ungroupedChats[mode as "chat" | "council" | "research"] ?? [];
 

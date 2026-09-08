@@ -59,6 +59,66 @@ def migrate_database(db_path: str) -> None:
         except Exception as e:
             logger.error(f"Failed to migrate table '{name}': {e}")
 
+    # Phase 6: Add new Tutor mode tables
+    new_tables = {
+        "handwriting_training_data": pa.schema([
+            pa.field("id", pa.string()),
+            pa.field("user_id", pa.string()),
+            pa.field("session_id", pa.string()),
+            pa.field("question_id", pa.string()),
+            pa.field("handwriting_image_b64", pa.string()),
+            pa.field("ground_truth_text", pa.string()),
+            pa.field("user_recognized_text", pa.string()),
+            pa.field("myScript_confidence", pa.float64()),
+            pa.field("tesseract_confidence", pa.float64()),
+            pa.field("timestamp", pa.string()),
+            pa.field("topic", pa.string()),
+            pa.field("difficulty", pa.string()),
+            pa.field("feedback_type", pa.string(), nullable=True),
+            pa.field("user_choice", pa.string(), nullable=True)
+        ]),
+        "mastery_tracking": pa.schema([
+            pa.field("id", pa.string()),
+            pa.field("user_id", pa.string()),
+            pa.field("topic", pa.string()),
+            pa.field("questions_attempted", pa.int32()),
+            pa.field("avg_score", pa.float64()),
+            pa.field("last_attempt", pa.string()),
+            pa.field("next_review_date", pa.string()),
+            pa.field("review_count", pa.int32()),
+            pa.field("mastery_level", pa.float64())
+        ]),
+        "spaced_repetition_schedule": pa.schema([
+            pa.field("id", pa.string()),
+            pa.field("user_id", pa.string()),
+            pa.field("topic", pa.string()),
+            pa.field("attempt_number", pa.int32()),
+            pa.field("interval_days", pa.int32()),
+            pa.field("due_date", pa.string()),
+            pa.field("completed", pa.bool_())
+        ]),
+        "training_loop_results": pa.schema([
+            pa.field("id", pa.string()),
+            pa.field("user_id", pa.string()),
+            pa.field("run_date", pa.string()),
+            pa.field("sample_count", pa.int32()),
+            pa.field("status", pa.string()),
+            pa.field("checkpoint_path", pa.string()),
+            pa.field("notes", pa.string(), nullable=True)
+        ])
+    }
+
+    for table_name, schema in new_tables.items():
+        if table_name not in table_names:
+            logger.info(f"Creating new table '{table_name}'...")
+            try:
+                db.create_table(table_name, schema=schema)
+                logger.info(f"Successfully created table '{table_name}'.")
+            except Exception as e:
+                logger.error(f"Failed to create table '{table_name}': {e}")
+        else:
+            logger.debug(f"Table '{table_name}' already exists. Skipping creation.")
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     DAEMON_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -154,7 +154,7 @@ function AvailableRow({ provider, onConnect }: { provider: Provider; onConnect: 
                   autoFocus
                   className="w-full bg-panel-bg border border-border-core/25 rounded-xl px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-border-core/40 pr-10"
                 />
-                <button onClick={() => setShow((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary">
+                <button aria-label="Toggle visibility" onClick={() => setShow((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary">
                   {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
@@ -192,7 +192,7 @@ function CustomProviderRow({ provider, onRemove }: { provider: CustomProvider; o
         <p className="text-[10px] font-mono text-text-secondary truncate mt-0.5">{provider.baseUrl}</p>
         {provider.apiKey && <p className="text-[10px] font-mono text-text-secondary mt-0.5 tracking-wider">{masked}</p>}
       </div>
-      <button onClick={onRemove} className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0">
+      <button aria-label="Remove" onClick={onRemove} className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0">
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -230,7 +230,7 @@ function AddCustomProviderForm({ onAdd }: { onAdd: (p: CustomProvider) => void }
                 <Label className="font-mono text-[10px] text-text-secondary uppercase tracking-wider">API key (optional)</Label>
                 <div className="relative">
                   <input type={showKey ? "text" : "password"} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-..." className="w-full bg-panel-bg border border-border-core/25 rounded-xl px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-border-core/40 pr-10" />
-                  <button onClick={() => setShowKey((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary">{showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
+                  <button aria-label="Toggle visibility" onClick={() => setShowKey((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary">{showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
                 </div>
               </div>
               <Button onClick={handleAdd} disabled={!name.trim() || !baseUrl.trim()} className="w-full bg-accent-indigo hover:bg-accent-indigo text-text-primary text-xs font-mono disabled:opacity-30 rounded-xl" size="sm">Add Provider</Button>
@@ -365,7 +365,7 @@ function McpTab() {
           <div className="space-y-2">
             {servers.map((server) => (
               <div key={server.id} className={cn("flex items-center gap-3 px-4 py-3 rounded-xl border transition-all", server.enabled ? "border-emerald-500/15 bg-accent-emerald/[0.03]" : "border-border-core/20 bg-panel-bg opacity-60")}>
-                <button onClick={() => toggle(server.id)} className="flex-shrink-0">
+                <button aria-label="Toggle server" onClick={() => toggle(server.id)} className="flex-shrink-0">
                   {server.enabled ? <CheckCircle2 className="w-4 h-4 text-accent-emerald" /> : <Circle className="w-4 h-4 text-text-secondary" />}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -373,7 +373,7 @@ function McpTab() {
                   <div className="text-[10px] font-mono text-text-secondary truncate">{server.url}</div>
                   {server.description && <div className="text-[10px] font-mono text-text-secondary mt-0.5">{server.description}</div>}
                 </div>
-                <button onClick={() => remove(server.id)} className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button aria-label="Remove server" onClick={() => remove(server.id)} className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
           </div>
@@ -467,7 +467,7 @@ function ProjectDetailView({ project, onBack }: { project: Project; onBack: () =
             {project.folderPath || "No folder (Light Project)"}
           </span>
           {project.folderPath && (
-            <button className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0">
+            <button aria-label="Clear folder" className="text-text-secondary hover:text-accent-rose transition-colors flex-shrink-0">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
@@ -491,7 +491,7 @@ function ProjectDetailView({ project, onBack }: { project: Project; onBack: () =
                   <Icon className="w-3.5 h-3.5 text-text-secondary flex-shrink-0" />
                   <span className="flex-1 text-xs font-mono text-text-secondary truncate min-w-0">{f.name}</span>
                   <span className="text-[9px] font-mono text-text-secondary">{f.kind}</span>
-                  <button onClick={() => removeContextFile(project.id, f.id)} className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-accent-rose transition-all flex-shrink-0">
+                  <button aria-label="Remove file" onClick={() => removeContextFile(project.id, f.id)} className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-accent-rose transition-all flex-shrink-0">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -641,6 +641,7 @@ export default function SettingsModal() {
         MISTRAL_API_KEY: localStorage.getItem("archon_apikey_mistral") || "",
         OPENROUTER_API_KEY: localStorage.getItem("archon_apikey_openrouter") || "",
         CEREBRAS_API_KEY: localStorage.getItem("archon_apikey_cerebras") || "",
+        CLOUDFLARE_API_KEY: localStorage.getItem("archon_apikey_cloudflare") || "",
       };
 
       const response = await fetch(`${protocol}://${host}:${port}/settings/api-keys`, {
@@ -650,13 +651,13 @@ export default function SettingsModal() {
       });
 
       if (response.ok) {
-        alert("Settings saved and pushed to daemon successfully!");
+        toast.success("Settings saved and pushed to daemon successfully!");
         setSettingsOpen(false);
       } else {
-        alert("Failed to push settings to daemon.");
+        toast.error("Failed to push settings to daemon.");
       }
     } catch (err) {
-      alert("Error connecting to daemon: " + (err as Error).message);
+      toast.error("Error connecting to daemon: " + (err as Error).message);
     }
   };
 
@@ -707,7 +708,7 @@ export default function SettingsModal() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: "thin", scrollbarColor: "#1a1b26 transparent" }}>
+            <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}>
               {tab === "api"        && <ProvidersTab />}
               {tab === "network"    && <NetworkTab />}
               {tab === "mcp"        && <McpTab />}

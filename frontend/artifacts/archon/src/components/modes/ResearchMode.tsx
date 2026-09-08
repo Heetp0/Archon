@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Paperclip, Download, Globe } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,9 @@ function getDynamicGraph(text: string) {
 }
 
 export default function ResearchMode() {
-  const { isStreaming, researchText, citations } = useWebSocketContext();
+  const isStreaming = useWebSocketStore(s => s.isStreaming);
+  const researchText = useWebSocketStore(s => s.researchText);
+  const citations = useWebSocketStore(s => s.citations);
   const { activeProjectId } = useProjectsContext();
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
@@ -139,7 +142,7 @@ export default function ResearchMode() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col h-full bg-[#05050A]"
+      className="flex flex-col h-full bg-app-bg"
     >
       {/* Hidden native file picker */}
       <input

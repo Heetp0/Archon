@@ -1,4 +1,4 @@
-﻿# retriever.py
+# retriever.py
 import os
 import json
 import logging
@@ -238,8 +238,27 @@ class Retriever:
             except Exception as fe:
                 logger.error(f"Substring fallback search failed: {fe}")
 
-        # 5. Combine results using Reciprocal Rank Fusion (RRF)
+        # 5. Fallback search if candidate filter returned no chunks
+        if not dense_res and not sparse_res:
+            base_filter = f"notebook_id = '{escaped_nb_id}'"
+            if source_ids is not None and source_ids:
+                escaped_req_sources = [s.replace("'", "''") for s in source_ids]
+                req_sources_list = ", ".join([f"'{s}'" for s in escaped_req_sources])
+                base_filter += f" AND source_id IN ({req_sources_list})"
+            try:
+                dense_res = self.chunks_table.search(query_vector).where(base_filter).limit(top_k * 2).to_list()
+            except Exception:
+                pass
+            try:
+                all_nb_chunks = self.chunks_table.search().where(base_filter).limit(top_k * 2).to_list()
+                if not sparse_res:
+                    sparse_res = all_nb_chunks
+            except Exception:
+                pass
+
+        # 6. Combine results using Reciprocal Rank Fusion (RRF)
         combined = self._reciprocal_rank_fusion(dense_res, sparse_res)
+
 
         # 6. Re-rank / remove near-duplicates
         deduped = self._remove_near_duplicates(combined)

@@ -33,7 +33,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, Error
   render() {
     if (this.state.hasError) {
       return (
-        <div className="error-fallback flex flex-col items-center justify-center h-screen bg-[#020617] text-text-primary p-6 font-mono">
+        <div className="error-fallback flex flex-col items-center justify-center h-screen bg-app-bg text-text-primary p-6 font-mono">
           <h2 className="text-sm font-bold text-accent-rose mb-2">Something went wrong</h2>
           <p className="text-xs text-text-secondary mb-4 max-w-md text-center">{this.state.error?.message}</p>
           <button

@@ -1,7 +1,7 @@
 import React from "react";
-import { useAppContext, AppMode } from "@/context/AppContext";
-import { useWebSocketContext } from "@/context/WebSocketContext";
-import {
+import { Activity, useAppContext, AppMode } from "@/context/AppContext";
+import { Activity, useWebSocketContext } from "@/context/WebSocketContext";
+import { Activity,
   House,
   ChatCircle,
   Users,
@@ -10,9 +10,10 @@ import {
   Book,
   Robot,
   Gear,
-  Notebook
+  Notebook,
+  Microphone
 } from "@phosphor-icons/react";
-import { cn } from "@/lib/utils";
+import { Activity, cn } from "@/lib/utils";
 
 const NAV_ITEMS: {
   id: AppMode;
@@ -58,6 +59,11 @@ const NAV_ITEMS: {
     id: "notebook",
     icon: Notebook,
     label: "Notebook Mode",
+  },
+  {
+    id: "lecture",
+    icon: Microphone,
+    label: "Lecture to Notes",
   },
 ];
 

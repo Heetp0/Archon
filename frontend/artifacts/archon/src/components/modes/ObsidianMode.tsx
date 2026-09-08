@@ -6,6 +6,7 @@ import {
   Star, Zap, RefreshCw, BookMarked, Brain, Target
 } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -401,7 +402,8 @@ function AddSkillModal({
 
 // ── Main Obsidian Mode ─────────────────────────────────────────────────────────
 export default function ObsidianMode() {
-  const { sendChat, isStreaming, connected } = useWebSocketContext();
+  const { sendChat, connected } = useWebSocketContext();
+  const isStreaming = useWebSocketStore(s => s.isStreaming);
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
   const [scheduled, setScheduled] = useState<ScheduledTask[]>([]);
   const [runningSkillId, setRunningSkillId] = useState<string | null>(null);

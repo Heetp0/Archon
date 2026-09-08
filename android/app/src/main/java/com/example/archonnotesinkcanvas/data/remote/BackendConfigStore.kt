@@ -1,4 +1,4 @@
-﻿package com.example.archonnotesinkcanvas.data.remote
+package com.example.archonnotesinkcanvas.data.remote
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import com.example.archonnotesinkcanvas.BuildConfig
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "archon_prefs")
 
@@ -15,7 +16,7 @@ class BackendConfigStore(private val context: Context) {
     private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
 
     val backendUrl: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[BACKEND_URL] ?: "http://192.168.1.10:8000"
+        preferences[BACKEND_URL] ?: BuildConfig.BACKEND_URL
     }
 
     val onboardingDone: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -35,6 +36,6 @@ class BackendConfigStore(private val context: Context) {
     }
 
     suspend fun getBackendUrlSnapshot(): String {
-        return context.dataStore.data.first()[BACKEND_URL] ?: "http://192.168.1.10:8000"
+        return context.dataStore.data.first()[BACKEND_URL] ?: BuildConfig.BACKEND_URL
     }
 }
