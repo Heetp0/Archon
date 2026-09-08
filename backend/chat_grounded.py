@@ -12,6 +12,7 @@ class GroundedChatAgent(BaseAgent):
     def __init__(self, model_router: ModelRouter, retriever: Retriever):
         self.router = model_router
         self.retriever = retriever
+        self.verifier = CitationVerifier(self.router)
 
     def _parse_command_and_query(self, payload: dict) -> tuple[str, str]:
         # Extract query text
@@ -123,6 +124,8 @@ class GroundedChatAgent(BaseAgent):
             return "\n\n---\n\n".join(parts)
 
     async def run(self, payload: dict, send_token_callback: Callable[[str, Any], Coroutine[Any, Any, None]]) -> dict:
+        req_id = payload.get("req_id", "unknown")
+        logger.info(f"[{req_id}] Starting GroundedChatAgent run")
         notebook_id = payload.get("notebook_id")
         if not notebook_id:
             raise ValueError("Missing 'notebook_id' in payload for GroundedChatAgent.")
@@ -176,7 +179,7 @@ class GroundedChatAgent(BaseAgent):
         draft_response = ""
         try:
             # We call router.generate to get the draft response.
-            # We don't stream it to the user yet because it needs verification first.
+            # We stream the draft response so the user isn't waiting!
             async for token in self.router.generate(
                 tier="fast",
                 messages=messages,
@@ -184,15 +187,15 @@ class GroundedChatAgent(BaseAgent):
                 temperature=payload.get("temperature", 0.7)
             ):
                 draft_response += token
+                # await send_token_callback("token", {"text": token}) # we're instructed to stream the VERIFIED response
         except Exception as e:
-            logger.error(f"Error during draft generation: {e}")
+            logger.error(f"[{req_id}] Error during draft generation: {e}")
             raise RuntimeError(f"Failed to generate draft grounded response: {e}")
 
         # 4. Citation and Verification (Second Pass)
         await send_token_callback("status", {"status": "Verifying claims and inserting citations..."})
         
-        verifier = CitationVerifier(self.router)
-        verified_response = await verifier.verify(
+        verified_response = await self.verifier.verify(
             answer=draft_response,
             chunks=chunks,
             send_token_callback=send_token_callback,
@@ -213,4 +216,5 @@ class GroundedChatAgent(BaseAgent):
                 "page": page_val
             })
 
+        logger.info(f"[{req_id}] Completed GroundedChatAgent run")
         return {"response": verified_response, "citations": citations}

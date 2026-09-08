@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
 import pyarrow as pa
 import lancedb
+from datetime import datetime
 
 # Import agent modules
 from chat_agent import ChatAgent
@@ -94,8 +95,8 @@ class ConnectionManager:
         }
         try:
             await websocket.send_json(message)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error sending event to websocket: {e}")
 
     async def broadcast(self, event_type: str, payload: Any):
         for connection in list(self.active_connections):
@@ -349,6 +350,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         payload["topic"] = task_text
 
                 # Intercept context attachments and decode base64
+                temp_dir = None
                 if isinstance(payload, dict):
                     context = payload.get("context")
                     if isinstance(context, dict):
@@ -356,17 +358,43 @@ async def websocket_endpoint(websocket: WebSocket):
                         if attachments:
                             import tempfile
                             import base64
+                            import shutil
                             temp_dir = tempfile.mkdtemp(prefix="archon_attach_")
                             local_paths = []
+                            ALLOWED_EXTS = {'.pdf', '.txt', '.md', '.docx', '.pptx', '.png', '.jpg', '.jpeg'}
                             for att in attachments:
                                 name = att.get("name", "unnamed")
+                                ext = os.path.splitext(name)[1].lower()
+                                if ext not in ALLOWED_EXTS:
+                                    logger.error(f"File extension {ext} not allowed for {name}")
+                                    if req_id:
+                                        await manager.send_event(websocket, req_id, "error", {"error": f"File type {ext} not allowed: {name}"})
+                                    continue
+
                                 content_b64 = att.get("content", "")
+                                # Fast check string length before decoding
+                                if len(content_b64) > 22 * 1024 * 1024:
+                                    logger.error(f"File {name} exceeds 16MB limit before decode")
+                                    if req_id:
+                                        await manager.send_event(websocket, req_id, "error", {"error": f"File {name} exceeds 16MB limit"})
+                                    continue
+                                    
                                 file_path = os.path.join(temp_dir, name)
                                 try:
                                     file_data = base64.b64decode(content_b64)
+                                    if len(file_data) > 16 * 1024 * 1024:
+                                        logger.error(f"File {name} exceeds 16MB limit after decode")
+                                        if req_id:
+                                            await manager.send_event(websocket, req_id, "error", {"error": f"File {name} exceeds 16MB limit"})
+                                        continue
                                 except Exception as decode_err:
                                     logger.error(f"Failed to decode base64 for file {name}: {decode_err}")
                                     file_data = b""
+                                    continue
+                                
+                                if not file_data:
+                                    continue
+                                    
                                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                                 with open(file_path, "wb") as f_out:
                                     f_out.write(file_data)
@@ -415,6 +443,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     await manager.send_event(websocket, req_id, "error", {"error": str(e)})
                 finally:
                     manager.active_gates.pop(req_id, None)
+                    if temp_dir:
+                        import shutil
+                        asyncio.create_task(asyncio.to_thread(shutil.rmtree, temp_dir, ignore_errors=True))
 
             except json.JSONDecodeError:
                 await manager.send_event(websocket, "unknown", "error", {"error": "Invalid JSON format."})

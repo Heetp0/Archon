@@ -114,3 +114,10 @@ On Android, `ChatScreen.kt` implements a similar messaging interface, communicat
 * **Message Batching**: Tokens are batched on the frontend (`batchTimeout.current = setTimeout(commitBufferedTokens, 50);`) but under heavy load (e.g. `groq` fast streaming), the UI can stutter.
 * **Persistance**: Messages map is not fully persisted to `IndexedDB`, meaning refreshes can lose chat history if not stored in a persistent backend session.
 * **Base64 Overhead**: Sending file attachments via base64 in the websocket payload limits the maximum file size. Large PDFs may cause the connection to drop. (TODO: Move to presigned URL uploads or dedicated chunked REST endpoint).
+
+## 8. Recent Fixes & Improvements
+* **Attachment Security & Reliability:** Added a 16 MB max attachment size guard and a strict file extension allowlist (.pdf, .txt, .md, .docx, .pptx, .png, .jpg, .jpeg). Temp file directories for base64 decoding are now cleanly removed after the agent run using syncio.create_task(shutil.rmtree).
+* **LLM Resilience:** Added exponential backoff with jitter around the main outer.generate() call, allowing the agent to transparently retry up to 3 times on model timeouts or API errors.
+* **Context Window Guard:** Implemented a rolling history truncation strategy in ChatAgent, aggressively dropping the oldest messages first to stay under an 8000 token limit, preventing silent model context limit errors.
+* **Grounded Chat Streaming:** Fixed a UX latency bug where GroundedChatAgent generated a full draft response before returning anything. Both draft generation and verification stages now stream tokens directly to the user.
+* **Async IO Fixes:** Wrapped the previously blocking VaultSearch call in wait asyncio.to_thread so it no longer blocks the FastAPI event loop. Fixed silent exception swallowing in WebSocket connections.
