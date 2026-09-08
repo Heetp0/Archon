@@ -17,16 +17,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Brush
-import androidx.compose.material.icons.outlined.Create
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Undo
-import androidx.compose.material.icons.outlined.Redo
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.CropFree
-import androidx.compose.material.icons.outlined.Flare
-import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -208,6 +199,13 @@ fun FloatingToolbar(
                                 isActive = selectedTool == "shape",
                                 onClick = { selectedTool = "shape"; onToolSelected("shape") }
                             )
+                            // 8. Study Tape tool (StarNote Inspired)
+                            ToolButton(
+                                label = "Tape",
+                                icon = ToolIcon.Tape,
+                                isActive = selectedTool == "tape",
+                                onClick = { selectedTool = "tape"; onToolSelected("tape") }
+                            )
 
                             ToolbarDivider()
 
@@ -296,7 +294,7 @@ fun FloatingToolbar(
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 /** Distinct tool icon types for silhouette differentiation */
-enum class ToolIcon { Pen, Pencil, Highlighter, Eraser, Lasso, Laser, Shape }
+enum class ToolIcon { Pen, Pencil, Highlighter, Eraser, Lasso, Laser, Shape, Tape }
 
 @Composable
 private fun ToolButton(
@@ -329,6 +327,7 @@ private fun ToolButton(
                 ToolIcon.Lasso -> Icons.Outlined.CropFree
                 ToolIcon.Laser -> Icons.Outlined.Flare
                 ToolIcon.Shape -> Icons.Outlined.Category
+                ToolIcon.Tape -> Icons.Outlined.FormatPaint
                 else -> Icons.Outlined.Edit
             }
             Icon(

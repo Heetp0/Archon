@@ -1,81 +1,117 @@
-# Canvas Mode
+# Canvas Mode & Interactive Tutor
 
-## 1. Overview
-Canvas Mode brings spatial reasoning, freeform drawing, and mathematical grading to Archon. Primarily implemented as a robust Android tablet interface (`CanvasHost.kt`), it supports stylus input, palm rejection, page-based layouts, and OCR-powered validation for math/physics homework. The backend provides an intelligent spaced-repetition tutoring system (`tutor_routes.py`) that grades handwritten derivations.
+## 1. Overview & Inspirations
+Canvas Mode brings spatial handwriting, freeform digital ink, and interactive Socratic tutoring to Archon.
+The user experience takes direct inspiration from:
+- **Duolingo & Mimo:** Active accountability with low cognitive friction — instant, in-place verification without leaving your flow.
+- **Khanmigo & Brilliant:** Socratic scaffolding rather than immediate answer spoilers — tiered disclosure (`Nudge` → `Diagnostic Question` → `Methodological Hint` → `Worked Sub-step`).
+- **GoodNotes, Apple Math Notes & Nebo:** Distraction-free digital ink canvas with low-latency stylus rendering, Cornell/grid templates, and MyScript Interactive Ink math recognition.
 
-## 2. Architecture & Data Flow
-Canvas Mode relies on the Android Ink API/Compose Canvas on the client side, interacting with standard REST endpoints on the backend for quiz logic and grading.
+---
+
+## 2. The Unified Dual-Mode Architecture
+
+The mode supports two complementary view paradigms switchable via a top toggle:
+
+### A. Practice / Exam Mode (Canvas-First)
+- **100% Viewport Ink Canvas:** Complete spatial freedom for long derivations, circuit diagrams, and scratchpad calculations.
+- **Top Hovering Question Bar:** A floating rectangular island (`top: 24px`, centered, frosted glass):
+  ```
+  +-----------------------------------------------------------------------------------+
+  | [Q 3/5] Solve for x:  2x² - 8x + 6 = 0                            [ ✓ CHECK STEP ]|
+  +-----------------------------------------------------------------------------------+
+  ```
+- **In-Place Accordion Feedback:** Tapping `[CHECK STEP]` evaluates strokes via backend OCR & SymPy/LLM, smoothly expanding downward *inside the same rectangle*:
+  ```
+  +-----------------------------------------------------------------------------------+
+  | [Q 3/5] Solve for x:  2x² - 8x + 6 = 0                            [  RE-CHECK  ]  |
+  |-----------------------------------------------------------------------------------|
+  | 💡 Tutor: Good factorization of 2(x² - 4x + 3)! In your final roots step, check   |
+  |           the sign of the second factor (x - 3)(x - 1).                           |
+  | [Request Hint]                                                [Next Question →]   |
+  +-----------------------------------------------------------------------------------+
+  ```
+
+### B. Learn Mode (Continuous Stream)
+- **Vertical Learning Stream:** Modeled after interactive notebooks and ChatGPT/Claude study modes:
+  1. **Theory Block:** High-density conceptual explanation with LaTeX formulas and diagrams.
+  2. **Dedicated Canvas Sandbox:** Embedded digital ink block directly beneath the theory for solving the checkpoint.
+  3. **Check Step Button:** Anchored in the sandbox footer to verify mastery before unlocking downstream sections.
+  4. **Progressive Unlocking:** Step-by-step topic mastery with adaptive difficulty.
+- **Floating Tutor Control Panel (Side Dock):**
+  - Dedicated side button opening a slide-over tutor chat drawer.
+  - Allows adapting notes in real-time (*"make the theory notes more visual"*, *"explain using an aerodynamic analogy"*, *"make the next question harder"*).
+
+---
+
+## 3. Architecture & Data Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant CanvasHost (Android UI)
-    participant InkCanvas (Stroke Engine)
-    participant TutorNetworkService (Android API Client)
-    participant TutorRoutes (FastAPI backend)
-    participant MyScriptOCR / Tesseract
-    participant SocraticAgent / SymPy
+    participant CanvasUI as Canvas / Stream UI
+    participant FloatPill as Top Hovering Bar / Side Dock
+    participant Backend as FastAPI (tutor_routes.py)
+    participant OCR as OCR / Vision Service
+    participant SymPy as SymPy Math Validator
+    participant Socratic as Socratic Agent (LLM)
+    participant SM2 as Spaced Repetition (SM-2)
 
-    User->>CanvasHost: Draws math equation with stylus
-    CanvasHost->>InkCanvas: Capture InkStrokeState
-    User->>CanvasHost: Taps "Submit Answer"
+    User->>CanvasUI: Writes handwritten derivation with stylus
+    User->>FloatPill: Taps [CHECK STEP]
+    FloatPill->>Backend: POST /quiz-attempts/{id}/check-ink (or /answers)
     
-    CanvasHost->>TutorNetworkService: submitAnswer(attempt_id, latex, time_spent)
-    TutorNetworkService->>TutorRoutes: POST /quiz-attempts/{id}/answers
-    
-    Note over TutorRoutes: Math Validation
-    TutorRoutes->>SocraticAgent: Grade using SymPy / LLM 
-    SocraticAgent-->>TutorRoutes: ValidationResponse (is_correct, feedback)
-    
-    TutorRoutes-->>TutorNetworkService: Response Payload
-    TutorNetworkService-->>CanvasHost: Show success/hint UI
+    alt Ink / Image Provided
+        Backend->>OCR: Recognize handwriting to LaTeX
+        OCR-->>Backend: Recognized LaTeX string
+    end
+
+    Backend->>SymPy: Symbolic algebraic equivalence test
+    alt Math Match
+        SymPy-->>Backend: is_correct: true, score: 1.0
+        Backend->>SM2: Update ease factor & review interval
+        Backend-->>FloatPill: Success feedback & celebration state
+    else Math Discrepancy / Error
+        SymPy-->>Backend: error_type (sign_error, incomplete, etc.)
+        Backend->>Socratic: Generate non-spoiler Socratic hint (Level 1-3)
+        Socratic-->>Backend: Targeted hint text
+        Backend-->>FloatPill: Accordion expansion with Socratic hint
+    end
 ```
 
-## 3. Key API Endpoints & WebSocket Messages
+---
 
-Unlike Chat and Council mode which rely heavily on WebSockets, Canvas Mode's integration primarily uses standard REST endpoints managed by `backend/tutor_routes.py`.
+## 4. Key API Endpoints
 
-* `GET /notebooks/{notebook_id}/quiz-questions` - Fetches pending questions, optionally filtered by `due_only` (spaced repetition).
-* `POST /notebooks/{notebook_id}/quiz-questions` - Manually or automatically seeds new questions.
-* `POST /notebooks/{notebook_id}/quiz-attempts?question_id={id}` - Starts a new attempt.
-* `POST /quiz-attempts/{attempt_id}/answers` - Submits a final or partial answer (LaTeX or numeric).
-* `POST /quiz-attempts/{attempt_id}/hints` - Requests progressively stronger hints.
-* `POST /quiz-attempts/{attempt_id}/finalize` - Finishes the attempt and calculates the next SM2 spaced repetition interval.
+Managed primarily by `backend/tutor_routes.py` and `backend/ocr_routes.py`:
 
-## 4. Data Models / Database Schema
+* `GET /notebooks/{id}/quiz-questions` — List questions (supports `due_only` for spaced repetition).
+* `POST /notebooks/{id}/quiz-attempts?question_id={id}` — Start an active attempt.
+* `POST /quiz-attempts/{id}/answers` — Submit student LaTeX answer for SymPy/LLM validation.
+* `POST /quiz-attempts/{id}/hints` — Request tiered Socratic hint (Level 1: Nudge, Level 2: Error-focused, Level 3: Next step).
+* `POST /quiz-attempts/{id}/finalize` — Finalize attempt and recalculate SM-2 interval.
+* `POST /tutor/chat` — Contextual dialogue with the tutor to adapt notes, explain theory, or request tailored questions.
+* `POST /canvas/evaluate-strokes` — Direct ink stroke / image evaluation for clients without local OCR.
 
-Managed by LanceDB in the backend via `quiz_manager.py`.
+---
 
-### QuizQuestion
-* `question_id` (UUID)
-* `notebook_id` (String)
-* `topic` (String)
-* `difficulty` (Int)
-* `question_latex` / `expected_answer_latex` (Strings)
-* `spaced_repetition_json` (Stores SM2 variables: `ease`, `interval`, `repetitions`, `next_review_date`)
+## 5. Data Models & Database Schema
 
-### QuizAttempt
-* `attempt_id` (UUID)
-* `question_id` (UUID)
-* `status` (Enum: active, completed, failed)
-* `student_answer_latex` (String)
-* `time_spent_seconds` (Int)
+Stored in LanceDB via `quiz_manager.py`:
+- **`QuizQuestion`**: `question_id`, `notebook_id`, `topic`, `difficulty`, `question_latex`, `expected_answer_latex`, `spaced_repetition_json`.
+- **`QuizAttempt`**: `attempt_id`, `question_id`, `status`, `student_answer_latex`, `hints_requested`, `score`, `time_spent_seconds`.
+- **`LearningLesson`**: `lesson_id`, `topic`, `theory_markdown`, `checkpoints_json`.
 
-## 5. UI Component Tree
-* **Android Specific**:
-  * `CanvasHost` (`com.example.archonnotesinkcanvas.ui.canvas.CanvasHost`)
-    * `InkCanvas` (Handles actual stroke rendering and interaction)
-    * `FloatingToolbar` (Pen, Color, Stroke width, Undo/Redo overlaid on canvas)
-    * `PageThumbnailStrip` (Bottom navigation for multi-page canvas layouts)
+---
 
 ## 6. Android Implementation
-Canvas Mode is a native citizen of the Android ecosystem, optimized for stylus hardware:
-* **Palm Rejection**: Heuristics check (`PalmRejectionHelper.kt`) touch size and tool type to drop spurious inputs.
-* **Low Latency Rendering**: Uses `LowLatencyRenderer.kt` hardware buffers when available to reduce stylus trailing.
-* **Motion Prediction**: `CanvasMotionPredictor.kt` predicts ahead of touch events to render smoother lines.
-* **OCR Integration**: Interfaces with `MyScriptOcrService` to seamlessly convert ink strokes to LaTeX equations before submitting to `TutorNetworkService.kt`.
+- `CanvasHost.kt` & `InkCanvas.kt`: Low-latency front-buffered stylus rendering with palm rejection.
+- `TutorModeScreen.kt`: Jetpack Compose UI with top question island and FloatingToolbar.
+- `TutorNetworkService.kt`: Ktor HTTP client managing attempts, answers, and hints.
 
-## 7. Known Issues / Open TODOs
-* **isDrawing state propagation**: In `CanvasHost.kt`, `isDrawing` is initialized but assumes connection to `InkCanvas` for auto-hiding the toolbar. (TODO: Hook up gesture listeners to properly toggle `isDrawing`).
-* **Cross-platform parity**: There is currently no web equivalent for Canvas Mode. It requires the Android daemon/app.
-* **Stroke Synchronization**: Multi-device sync for real-time collaboration (`test_e2e_canvas_sync.py`) can encounter race conditions under poor network conditions.
+---
+
+## 7. Known Issues & Roadmap
+- Backend needs direct stroke/image evaluation fallback for clients without MyScript SDK licenses.
+- Tutor chat needs bidirectional synchronization with the active lesson theory markdown.
+
