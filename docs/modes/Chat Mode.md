@@ -1,123 +1,229 @@
 # Chat Mode
 
 ## 1. Overview
-Chat Mode is the primary conversational interface for Archon, providing a real-time, streaming dialogue with an AI assistant. It supports multi-turn history, dynamic context attachment (files and images), and retrieved context from the knowledge vault. Unlike standard chat apps, Archon's Chat Mode allows direct execution of commands, seamless switching of language models during a session, and deep integration with the underlying file system via MarkitDown for attachment parsing.
+Chat Mode is the primary conversational interface for Archon. It provides real-time, streaming dialogue with an AI assistant over a persistent WebSocket connection. Key capabilities:
+
+- **Multi-turn history** with an 8,000-token rolling context window (oldest messages dropped first)
+- **Dynamic file attachment** — up to 16 MB per file; allowed types: `.pdf`, `.txt`, `.md`, `.docx`, `.pptx`, `.png`, `.jpg`, `.jpeg`
+- **Vault-grounded context** — optional semantic search of the knowledge vault (LanceDB), injected into the system prompt via `asyncio.to_thread` (non-blocking)
+- **Live model switching** — change LLM mid-session without reconnecting
+- **Web search toggle** — enables provider-native grounding (Gemini: `googleSearch`, xAI/Grok: `search_parameters`)
+- **Grounded chat variant** (`GroundedChatAgent`) — two-pass generation with inline citation verification, fully streaming
+
+---
 
 ## 2. Architecture & Data Flow
-The architecture relies on a persistent WebSocket connection between the React frontend and the FastAPI backend. 
 
 ```mermaid
 sequenceDiagram
     participant User
     participant ChatMode (React)
     participant WebSocketStore (Zustand)
-    participant WebSocketManager (React Context)
+    participant WebSocketContext
     participant Daemon (main.py)
-    participant ChatAgent (Backend)
-    participant MarkitDown
+    participant ChatAgent
+    participant asyncio.to_thread
     participant VaultSearch
+    participant MarkitDown
     participant ModelRouter
 
-    User->>ChatMode: Types message, attaches files, clicks send
-    ChatMode->>WebSocketManager: sendChat(message, model)
-    WebSocketManager->>Daemon: WS {"mode": "chat", "payload": {content, history, context}}
+    User->>ChatMode: Type message, attach files, click Execute
+    ChatMode->>WebSocketContext: sendChat(input, model)
+    WebSocketContext->>Daemon: WS {"mode":"chat","payload":{content,history,context,use_vault,web_search}}
+
+    Note over Daemon: Validate attachment extensions (allowlist)<br/>Decode base64 → temp file (max 16 MB guard)<br/>Register shutil.rmtree in finally block
+
     Daemon->>ChatAgent: run(payload, send_token_callback)
-    
-    par Document Parsing
-        ChatAgent->>MarkitDown: convert(attachments)
-        MarkitDown-->>ChatAgent: markdown content
-    and Vault Retrieval
-        ChatAgent->>VaultSearch: search(content, top_k=3)
-        VaultSearch-->>ChatAgent: vault_context
+
+    par Async vault search (non-blocking)
+        ChatAgent->>asyncio.to_thread: vault_search.search(text, top_k=3)
+        asyncio.to_thread-->>ChatAgent: search_results
+    and Attachment parsing
+        ChatAgent->>MarkitDown: convert(file_path)
+        MarkitDown-->>ChatAgent: markdown string
     end
-    
-    ChatAgent->>ChatAgent: Assemble system prompt & history
-    ChatAgent->>ModelRouter: generate(messages, tier="fast")
-    
-    loop Stream Tokens
-        ModelRouter-->>ChatAgent: token
+
+    ChatAgent->>ChatAgent: Truncate history to ~8000 tokens (drop oldest first)
+    ChatAgent->>ChatAgent: Assemble [system] + history + [user+context]
+
+    loop LLM generation (up to 3 retries, exp backoff + jitter: 1s/2s/4s)
+        ChatAgent->>ModelRouter: generate(messages, tier="fast", model=target)
+        ModelRouter-->>ChatAgent: token stream
         ChatAgent->>Daemon: send_token_callback("token", {text})
-        Daemon->>WebSocketManager: WS {"event": "token", "payload": {text}}
-        WebSocketManager->>WebSocketStore: buffer and append to messagesMap
-        WebSocketStore-->>ChatMode: re-render UI
+        Daemon->>WebSocketContext: WS {"event":"token","payload":{text}}
+        WebSocketContext->>WebSocketStore: append token to messagesMap[activeChatId]
+        WebSocketStore-->>ChatMode: re-render
     end
+
     ChatAgent->>Daemon: send_token_callback("done", {status})
-    Daemon->>WebSocketManager: WS {"event": "done"}
+    Daemon->>WebSocketContext: WS {"event":"done"}
+    Note over Daemon: Cleanup: asyncio.create_task(shutil.rmtree(temp_dir, ignore_errors=True))
 ```
+
+### Grounded Chat Variant (GroundedChatAgent)
+
+Used when `mode == "chat_grounded"` (Notebook RAG context). Two-pass pipeline:
+
+1. **Pass 1 — Draft**: LLM streams tokens directly to the user via `send_token_callback("token", ...)` while building the draft in a buffer simultaneously.
+2. **Pass 2 — Verification**: `CitationVerifier` (instantiated once per agent lifecycle in `__init__`) verifies claims against retrieved chunks and streams the verified final response.
+3. Returns `{"response": verified_response, "citations": [{source_id, text, page}]}`.
+
+---
 
 ## 3. Key API Endpoints & WebSocket Messages
 
-### WebSocket Messages Sent by Client
+### WebSocket Connection
+- **URL**: `ws://<daemon-host>:<port>/ws`
+- **Auth**: JWT Bearer token passed as `Authorization` header or `?token=<jwt>` query param
+
+### Client → Server (send)
 ```json
 {
-  "id": "req-uuid",
+  "id": "req-<uuid4>",
   "mode": "chat",
   "payload": {
-    "content": "What is the capital of France?",
+    "content": "Explain the Navier-Stokes equations",
     "model": "groq/llama-3.1-8b-instant",
     "history": [
-      {"role": "user", "content": "Hello"},
-      {"role": "assistant", "content": "Hi there!"}
+      {"role": "user",      "content": "Hello"},
+      {"role": "assistant", "content": "Hi! How can I help?"}
     ],
     "context": {
       "attachments": [
-        {"name": "file.txt", "content": "base64_encoded_string"}
+        {"name": "notes.pdf", "content": "<base64-encoded-bytes>"}
       ]
     },
     "use_vault": true,
-    "web_search": false
+    "web_search": false,
+    "req_id": "req-<uuid4>"
   }
 }
 ```
 
-### WebSocket Messages Received by Client
-* **Status Updates**: `{"id": "req-uuid", "event": "status", "payload": {"status": "Generating response..."}}`
-* **Token Streams**: `{"id": "req-uuid", "event": "token", "payload": {"text": " Paris", "model": "assistant"}}`
-* **Completion**: `{"id": "req-uuid", "event": "done", "payload": {"status": "success"}}`
+### Server → Client (receive)
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `status` | `{"status": "Searching vault context..."}` | Processing step indicator |
+| `token` | `{"text": " Paris"}` | Single streamed LLM token |
+| `done` | `{"status": "success"}` | Stream completed |
+| `error` | `{"error": "Attachment too large (max 16 MB)"}` | Error with description |
+
+### Attachment Constraints (enforced server-side in `main.py`)
+| Constraint | Value |
+|-----------|-------|
+| Max file size | **16 MB** (checked post-decode) |
+| Allowed extensions | `.pdf` `.txt` `.md` `.docx` `.pptx` `.png` `.jpg` `.jpeg` |
+| Transport | base64 inside WebSocket JSON payload |
+| Temp file cleanup | `asyncio.create_task(shutil.rmtree(temp_dir, ignore_errors=True))` in `finally` |
+
+---
 
 ## 4. Data Models / Database Schema
-There is no dedicated persistent relational database for chat sessions in the core schema; instead, state is maintained in-memory on the frontend and optionally synced to LanceDB or JSON logs depending on the system config.
+
+Chat sessions are **in-memory only** on the frontend. There is no persistent relational store for messages in the current schema.
 
 ### Frontend State (Zustand `websocketStore`)
 ```typescript
 interface ChatMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
+  id:      string;
+  role:    "user" | "assistant" | "system";
   content: string;
-  model?: string;
+  model?:  string;                  // Model ID shown for assistant messages
 }
 
+// Keyed by activeChatId (uuid string)
 type MessagesMap = Record<string, ChatMessage[]>;
-// Keyed by `activeChatId`
+
+interface WebSocketStore {
+  isStreaming:     boolean;
+  availableModels: ModelMeta[];
+  messagesMap:     MessagesMap;
+}
 ```
 
+### History Truncation Algorithm (in `ChatAgent.run()`)
+Token estimate per message: `len(content) // 4`. Drop from the oldest history entry (never the system prompt or current user turn) until total estimated tokens ≤ **8,000**. A `WARNING` log fires if the estimate exceeds **6,000** tokens before truncation.
+
+---
+
 ## 5. UI Component Tree
-* `ChatMode` (`frontend/artifacts/archon/src/components/modes/ChatMode.tsx`)
-  * `input type="file"` (Hidden native file picker for attachments via `useFileAttach`)
-  * `ScrollArea` (Radix UI scrolling container)
-    * `MessageBubble` (User and Assistant distinct styling)
-      * `ReactMarkdown` (Renders markdown safely for assistant responses)
-      * `CopyButton` (Clipboard utilities)
-  * `InputContainer` (Bottom fixed area)
-    * `Textarea` (User input)
-    * `ModelSelector` (`Select` component for changing LLMs dynamically)
-    * `Paperclip` (Attachment trigger)
-    * `Send / Stop Stream Button`
+
+```
+ChatMode (frontend/artifacts/archon/src/components/modes/ChatMode.tsx)
+├── <input type="file"> [hidden]           # Native file picker, useFileAttach hook
+├── ScrollArea (Radix UI)
+│   └── div#message-list [max-w-4xl mx-auto space-y-6 pb-32]
+│       ├── EmptyState                     # Rendered when chatMessages.length === 0
+│       ├── MessageBubble × N
+│       │   ├── Avatar
+│       │   │   ├── [user]      <User /> icon, bg-panel-bg border
+│       │   │   └── [assistant] <Bot />  icon, bg-blue-900/30 border-blue-500/50
+│       │   └── ContentBubble
+│       │       ├── [user]     plain whitespace-pre-wrap + CopyButton (hover reveal)
+│       │       └── [assistant] <ReactMarkdown prose-invert> + CopyButton (hover reveal)
+│       └── StreamingIndicator             # Shown while isStreaming === true
+│           ├── <Loader2 animate-spin />
+│           └── 3× bouncing dot (accent-indigo, staggered animation-delay)
+└── InputBar (absolute bottom-0, gradient fade)
+    └── GlassPanel [glass-panel border rounded-xl focus-within:border-blue-500/50]
+        ├── Textarea                       # Enter→send, Shift+Enter→newline, ↑→recall last msg
+        ├── CharCount (input.length)
+        ├── PaperclipButton → openPicker() # Disabled without activeProjectId
+        ├── ModelSelector (shadcn Select)  # Populated from Zustand availableModels
+        └── ExecuteButton / StopButton     # Swaps conditionally on isStreaming
+```
+
+### Key Hooks & Context
+| Hook / Context | File | Purpose |
+|---|---|---|
+| `useWebSocketContext()` | `context/WebSocketContext` | `sendChat`, `connected`, `cancelStream` |
+| `useWebSocketStore()` | `store/websocketStore` | `isStreaming`, `availableModels`, `messagesMap` |
+| `useProjectsContext()` | `context/ProjectsContext` | `activeProjectId`, `activeChatId`, `createChat` |
+| `useFileAttach()` | `hooks/useFileAttach` | `openPicker`, `handleFilesSelected`, `inputRef` |
+
+---
 
 ## 6. Android Implementation
-On Android, `ChatScreen.kt` implements a similar messaging interface, communicating typically via REST or Ktor Websockets. 
-* **State Management**: `ChatViewModel` holds the `messages: StateFlow<List<ChatMessage>>`.
-* **UI Structure**: Uses Jetpack Compose `LazyColumn` for the message list.
-* **Input**: `OutlinedTextField` with an integrated attachment icon and send button.
+
+[`ChatScreen.kt`](android/app/src/main/java/com/example/archonnotesinkcanvas/ui/screens/ChatScreen.kt)
+
+| Concern | Implementation |
+|---------|---------------|
+| State management | `ChatViewModel` — `messages: StateFlow<List<ChatMessage>>` |
+| Transport | Ktor WebSocket client (same WS protocol as web) |
+| Message list | `LazyColumn`, auto-scroll on new item |
+| Input | `OutlinedTextField` + attachment `IconButton` + send `IconButton` |
+| Streaming | Collects `StateFlow` emissions; each token appended to last `assistant` message in-place |
+
+---
 
 ## 7. Known Issues / Open TODOs
-* **Message Batching**: Tokens are batched on the frontend (`batchTimeout.current = setTimeout(commitBufferedTokens, 50);`) but under heavy load (e.g. `groq` fast streaming), the UI can stutter.
-* **Persistance**: Messages map is not fully persisted to `IndexedDB`, meaning refreshes can lose chat history if not stored in a persistent backend session.
-* **Base64 Overhead**: Sending file attachments via base64 in the websocket payload limits the maximum file size. Large PDFs may cause the connection to drop. (TODO: Move to presigned URL uploads or dedicated chunked REST endpoint).
 
-## 8. Recent Fixes & Improvements
-* **Attachment Security & Reliability:** Added a 16 MB max attachment size guard and a strict file extension allowlist (.pdf, .txt, .md, .docx, .pptx, .png, .jpg, .jpeg). Temp file directories for base64 decoding are now cleanly removed after the agent run using syncio.create_task(shutil.rmtree).
-* **LLM Resilience:** Added exponential backoff with jitter around the main outer.generate() call, allowing the agent to transparently retry up to 3 times on model timeouts or API errors.
-* **Context Window Guard:** Implemented a rolling history truncation strategy in ChatAgent, aggressively dropping the oldest messages first to stay under an 8000 token limit, preventing silent model context limit errors.
-* **Grounded Chat Streaming:** Fixed a UX latency bug where GroundedChatAgent generated a full draft response before returning anything. Both draft generation and verification stages now stream tokens directly to the user.
-* **Async IO Fixes:** Wrapped the previously blocking VaultSearch call in wait asyncio.to_thread so it no longer blocks the FastAPI event loop. Fixed silent exception swallowing in WebSocket connections.
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| **IndexedDB persistence missing** | Medium | `messagesMap` is Zustand in-memory only; page refresh loses all chat history. TODO: persist to IndexedDB or a backend session store |
+| **Token batching stutter** | Low | Frontend batches tokens every 50 ms. Under fast Groq streaming the UI can stutter. Consider RAF-based batching |
+| **Base64 attachment transport** | Medium | 16 MB base64 payload strains the WebSocket. TODO: move to presigned URL / chunked REST multipart upload endpoint |
+| **Android attachment support** | Low | Android `ChatScreen.kt` does not yet implement file attachment UI; backend attachment path is ready |
+| **No per-user server-side history** | Medium | Chat threads are session-scoped only; no server-side storage |
+| **Web search UI indicator absent** | Low | When `web_search=true`, no visible indicator shows which tokens are web-grounded |
+
+---
+
+## 8. Recent Fixes & Improvements (2026-09-08)
+
+| Fix | Category | Commit |
+|-----|----------|--------|
+| `datetime` NameError in `ServerLoadTracker` — `datetime.utcnow()` called without import | Bug | `e36c342f` |
+| Temp file leak — `tempfile.mkdtemp()` never deleted; now cleaned via `asyncio.create_task(shutil.rmtree(...))` | Bug | `e36c342f` |
+| Attachment 16 MB hard cap before `base64.b64decode()` — oversized files send error event and are skipped | Security | `e36c342f` |
+| File extension allowlist — 8 allowed types only; unknown types rejected with WS error event | Security | `e36c342f` |
+| Blocking vault search — `vault_search.search()` now wrapped in `await asyncio.to_thread(...)` | Perf | `e36c342f` |
+| Silent `send_event` exception swallow — exceptions now logged before `pass` | Reliability | `e36c342f` |
+| History truncation — rolling 8,000-token window, drops oldest history entries first | Reliability | `e36c342f` |
+| LLM retry — 3 retries, exponential backoff + jitter (1 s → 2 s → 4 s) around `router.generate()` | Reliability | `e36c342f` |
+| `CitationVerifier` moved to `__init__` in `GroundedChatAgent` — no per-request instantiation overhead | Perf | `e36c342f` |
+| Grounded chat streaming — draft tokens now stream immediately; TTFT eliminated | UX | `e36c342f` |
+| `req_id` tracing through all log statements in `ChatAgent` and `GroundedChatAgent` | Observability | `e36c342f` |
+| Context window warning at 6,000 estimated tokens | Observability | `e36c342f` |
+
