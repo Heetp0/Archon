@@ -1,5 +1,7 @@
-﻿import json
+import json
 import logging
+import asyncio
+import random
 from typing import Dict, Any, List, Optional
 from model_router import ModelRouter
 
@@ -9,80 +11,80 @@ class SocraticAgent:
     def __init__(self, model_router: ModelRouter):
         self.router = model_router
 
-    async def _call_llm(self, system_prompt: str, user_content: str) -> str:
+    async def _call_llm(self, system_prompt: str, user_content: str, max_retries: int = 3) -> str:
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content}
         ]
-        try:
-            generator = self.router.generate(tier="fast", messages=messages)
-            response_chunks = []
-            async for chunk in generator:
-                response_chunks.append(chunk)
-            return "".join(response_chunks).strip()
-        except Exception as e:
-            logger.error(f"LLM call failed in SocraticAgent: {e}")
-            raise e
-
-    async def generate_socratic_hint(
-        self,
-        question_text: str,
-        expected_answer_latex: str,
-        student_answer_latex: str,
-        error_type: Optional[str],
-        level: int
-    ) -> str:
-        # Step 1: Error Analyzer
-        error_analyzer_system = (
-            "You are an Error Analyzer AI. Classify any errors in the student's mathematical work compared to the expected answer.\n"
-            "Identify what went wrong (e.g., sign error, forgot constant of integration, arithmetic mistake, incomplete simplification).\n"
-            "Provide a short, precise description of the error."
-        )
-        error_analyzer_user = (
-            f"Question: {question_text}\n"
-            f"Expected Solution: {expected_answer_latex}\n"
-            f"Student Answer: {student_answer_latex}\n"
-            f"Detected error code: {error_type or 'UNKNOWN'}"
-        )
         
-        try:
-            error_analysis = await self._call_llm(error_analyzer_system, error_analyzer_user)
-        except Exception:
-            error_analysis = f"Student got an incorrect answer. Sympy error code: {error_type or 'OTHER_ERROR'}."
+        base_delay = 1.0
+        
+        for attempt in range(max_retries):
+            try:
+                generator = self.router.generate(tier="fast", messages=messages)
+                response_chunks = []
+                async for chunk in generator:
+                    response_chunks.append(chunk)
+                return "".join(response_chunks).strip()
+            except Exception as e:
+                logger.error(f"LLM call failed in SocraticAgent (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt == max_retries - 1:
+                    raise e
+                
+                # Exponential backoff with jitter
+                delay = (base_delay * (2 ** attempt)) + random.uniform(0, 0.5)
+                await asyncio.sleep(delay)
 
-        logger.info(f"SocraticAgent - Step 1 (Error Analysis): {error_analysis}")
-
-        # Step 2: Hint Generator
+    async def generate_scaffold(
+        self,
+        student_error: str,
+        expected_answer: str,
+        tier: int = 1,
+        question_text: str = ""
+    ) -> Dict[str, Any]:
+        """
+        4 tiers of progressive disclosure:
+        Level 1: Nudge / error zone highlight (high-level, no numbers spoiled)
+        Level 2: Diagnostic question (e.g. "Look at step 2 where you factored...")
+        Level 3: Methodological hint (suggests next rule/identity to apply)
+        Level 4: Worked sub-step (demonstrates how to simplify one sub-part)
+        """
         hint_gen_system = (
-            f"You are a Socratic Hint Generator. Generate a math hint of level {level} (1 to 3) to guide the student.\n"
-            "Guidelines:\n"
-            "- Level 1 (Mild): Generic guidance. Ask a high-level question about the method or order of operations. Do NOT mention specific numbers/variables from the error.\n"
-            "- Level 2 (Moderate): Focus on the error type. Point out that they made a sign error, or forgot a constant, and ask them how to fix it.\n"
-            "- Level 3 (Strong): Specific step help. Lead them right to the next action (e.g. 'What happens when you subtract 5 from both sides?') but do NOT compute it for them.\n"
-            "CRITICAL: Do NOT give away the expected final answer under any circumstances. Phrase your hint as a Socratic question."
+            "You are a Socratic Saffolding Tutor. Generate a mathematical hint in strictly valid JSON format.\n"
+            "Format: {\"hint\": \"...\", \"tier\": %d, \"is_spoiler\": false}\n"
+            "Guidelines based on tier:\n"
+            "- Tier 1 (Nudge): High-level error zone highlight. Point out the general area, but no numbers/variables. Ask a nudge question.\n"
+            "- Tier 2 (Diagnostic): Ask a diagnostic question (e.g. 'Look at step 2, what happens when you factored x?').\n"
+            "- Tier 3 (Methodological): Suggest a specific rule, identity, or method to apply next without doing it.\n"
+            "- Tier 4 (Worked sub-step): Demonstrate simplifying one sub-part of the problem, but leave the final result out.\n"
+            "CRITICAL: Do NOT leak the final expected answer! Phrase your hint as a Socratic question if possible." % tier
         )
         hint_gen_user = (
             f"Question: {question_text}\n"
-            f"Expected Solution: {expected_answer_latex}\n"
-            f"Student Answer: {student_answer_latex}\n"
-            f"Error Analysis: {error_analysis}\n"
-            f"Requested Hint Level: {level}"
+            f"Expected Solution: {expected_answer}\n"
+            f"Student Error/Work: {student_error}\n"
+            f"Requested Hint Tier: {tier}"
         )
 
+        draft_json_str = await self._call_llm(hint_gen_system, hint_gen_user)
+        
         try:
-            draft_hint = await self._call_llm(hint_gen_system, hint_gen_user)
+            if "```json" in draft_json_str:
+                draft_json_str = draft_json_str.split("```json")[1].split("```")[0].strip()
+            draft = json.loads(draft_json_str)
+            draft_hint = draft.get("hint", draft_json_str)
         except Exception:
-            draft_hint = "Take a close look at your steps. Can you verify your last calculation?"
+            draft_hint = draft_json_str
 
-        logger.info(f"SocraticAgent - Step 2 (Draft Hint): {draft_hint}")
+        logger.info(f"SocraticAgent - Draft Hint (Tier {tier}): {draft_hint}")
 
-        # Step 3: Validator
+        # Validator
         validator_system = (
-            "You are a Socratic Validator. Verify if the drafted hint spoils or explicitly reveals the expected correct solution.\n"
-            "Respond ONLY with 'SAFE' if the solution is hidden, or 'SPOILED' if it reveals the solution."
+            "You are a strict Socratic Validator. Verify if the drafted hint spoils or explicitly reveals the expected final answer.\n"
+            "Respond ONLY with 'SAFE' if the final answer is hidden, or 'SPOILED' if it reveals the solution."
         )
         validator_user = (
-            f"Expected Solution: {expected_answer_latex}\n"
+            f"Expected Final Solution: {expected_answer}\n"
             f"Drafted Hint: {draft_hint}"
         )
 
@@ -92,31 +94,48 @@ class SocraticAgent:
         except Exception:
             is_spoiled = False
 
-        logger.info(f"SocraticAgent - Step 3 (Validation Result): {validation} (IsSpoiled={is_spoiled})")
-
-        # If spoiled, regenerate with a strict spoiler ban
         if is_spoiled:
-            logger.info("Draft hint was flagged as a spoiler. Regenerating safe hint...")
+            logger.warning("Spoiler detected in draft hint! Regenerating safe hint...")
             strict_system = (
                 "You are a strict Socratic Tutor. Create a safe mathematical hint that contains absolutely NO spoilers.\n"
-                f"It must not mention the expected correct answer '{expected_answer_latex}'."
+                f"It must not mention the expected correct answer '{expected_answer}'. Just output the hint text."
             )
             try:
-                draft_hint = await self._call_llm(strict_system, hint_gen_user)
+                final_hint = await self._call_llm(strict_system, hint_gen_user)
             except Exception:
-                pass
-
-        # Step 4: Tutor (encouraging phrasing)
-        tutor_system = (
-            "You are a Socratic Math Tutor. Rephrase the hint into a warm, encouraging, and clear 1-2 sentence response.\n"
-            "Keep the Socratic question format intact. Do not add any conversational filler like 'Sure!' or 'Here is your hint'."
-        )
-        tutor_user = f"Hint: {draft_hint}"
-
-        try:
-            final_hint = await self._call_llm(tutor_system, tutor_user)
-        except Exception:
+                final_hint = "Double check your steps against the rules of algebra. Are you missing anything?"
+        else:
             final_hint = draft_hint
 
-        logger.info(f"SocraticAgent - Step 4 (Final Hint): {final_hint}")
-        return final_hint
+        return {
+            "hint": final_hint,
+            "tier": tier,
+            "is_spoiler": is_spoiled
+        }
+
+    async def chat_with_tutor(
+        self,
+        message: str,
+        lesson_id: str,
+        checkpoint_id: str,
+        notebook_id: str
+    ) -> Dict[str, Any]:
+        """
+        Floating tutor side-dock chat endpoint handler inside the agent.
+        Takes context to adapt notes, provide analogies, or change difficulty.
+        """
+        system_prompt = (
+            "You are an intelligent side-dock Tutor for Archon. "
+            "You are context-aware of the student's current notebook, lesson, and checkpoint.\n"
+            "If the student asks for simpler theory, visually adapt the notes or provide a brilliant analogy.\n"
+            "Keep the response Socratic, highly informative, and encouraging."
+        )
+        user_content = (
+            f"Notebook ID: {notebook_id}\n"
+            f"Lesson ID: {lesson_id}\n"
+            f"Checkpoint ID: {checkpoint_id}\n"
+            f"Student Message: {message}"
+        )
+        
+        reply = await self._call_llm(system_prompt, user_content)
+        return {"reply": reply}

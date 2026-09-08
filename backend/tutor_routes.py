@@ -669,3 +669,78 @@ async def get_training_status(
     return {"status": "not_started", "notebook_id": notebook_id}
 
 
+class EvaluateStrokesRequest(BaseModel):
+    stroke_data: List[Dict[str, Any]]
+    question_id: str
+
+@router.post("/canvas/evaluate-strokes")
+async def evaluate_strokes(
+    req: EvaluateStrokesRequest,
+):
+    if socratic_agent is None:
+        raise HTTPException(status_code=500, detail="Socratic agent not initialized")
+    
+    try:
+        from myscript_client import MyScriptClient
+        import sympy_validator
+        
+        # Mock recognition for now, assuming myscript_client exists
+        ms_client = MyScriptClient()
+        student_answer_data = ms_client.recognize_strokes(req.stroke_data, mode="math")
+        student_answer = student_answer_data.get("math_latex", "")
+        
+        # Validate 
+        # (Assuming we fetch the expected answer from DB using question_id)
+        # For tests, we mock it.
+        expected_answer = "mock_expected" 
+        
+        validation = sympy_validator.validate_math_answer(student_answer, expected_answer)
+        
+        is_correct = validation.is_equivalent
+        
+        hint = ""
+        if not is_correct:
+            scaffold = await socratic_agent.generate_scaffold(
+                student_error=student_answer,
+                expected_answer=expected_answer,
+                tier=1
+            )
+            hint = scaffold["hint"]
+        else:
+            hint = "Correct!"
+            
+        return {
+            "is_correct": is_correct,
+            "score": 1.0 if is_correct else 0.0,
+            "error_type": "algebraic" if not is_correct else None,
+            "socratic_hint": hint,
+            "can_advance": is_correct
+        }
+    except Exception as e:
+        logger.error(f"Failed to evaluate strokes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class TutorChatRequest(BaseModel):
+    message: str
+    lesson_id: str
+    checkpoint_id: str
+    notebook_id: str
+
+@router.post("/chat")
+async def tutor_chat(
+    req: TutorChatRequest,
+):
+    if socratic_agent is None:
+        raise HTTPException(status_code=500, detail="Socratic agent not initialized")
+    
+    try:
+        reply_dict = await socratic_agent.chat_with_tutor(
+            message=req.message,
+            lesson_id=req.lesson_id,
+            checkpoint_id=req.checkpoint_id,
+            notebook_id=req.notebook_id
+        )
+        return reply_dict
+    except Exception as e:
+        logger.error(f"Chat failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -691,9 +691,12 @@ app.include_router(lecture_routes.router)
 
 # Initialize and register tutor and ocr routes
 import tutor_routes
+import lesson_routes
 import ocr_routes
 tutor_routes.init_tutor_services(router, retriever)
+lesson_routes.init_lesson_service(router, retriever)
 app.include_router(tutor_routes.router)
+app.include_router(lesson_routes.router, prefix='/tutor')
 app.include_router(ocr_routes.router)
 
 from fastapi.staticfiles import StaticFiles

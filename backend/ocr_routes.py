@@ -12,7 +12,7 @@ import uuid
 import logging
 from pathlib import Path
 
-from backend.agents.ocr_finetuning import OCRFinetuner, TrainingSample
+from agents.ocr_finetuning import OCRFinetuner, TrainingSample
 
 logger = logging.getLogger("ocr_routes")
 
