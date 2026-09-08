@@ -9,7 +9,8 @@ import {
   Cpu,
   Book,
   Robot,
-  Gear
+  Gear,
+  PencilSimple
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,14 @@ const NAV_ITEMS: {
     color: "text-accent-indigo",
     activeClass: "bg-accent-indigo/10 border-accent-indigo/40",
     dot: "bg-accent-indigo",
+  },
+  {
+    id: "canvas",
+    icon: PencilSimple,
+    label: "Canvas",
+    color: "text-accent-emerald",
+    activeClass: "bg-accent-emerald/10 border-accent-emerald/40",
+    dot: "bg-accent-emerald",
   },
 ];
 

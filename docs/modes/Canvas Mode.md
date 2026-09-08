@@ -102,16 +102,46 @@ Stored in LanceDB via `quiz_manager.py`:
 - **`QuizAttempt`**: `attempt_id`, `question_id`, `status`, `student_answer_latex`, `hints_requested`, `score`, `time_spent_seconds`.
 - **`LearningLesson`**: `lesson_id`, `topic`, `theory_markdown`, `checkpoints_json`.
 
+## 6. Web Frontend Implementation (`CanvasMode.tsx`)
+The web application provides a high-performance cross-platform digital inking environment inspired by **StarNote**, **GoodNotes 6**, and **Apple Notes**:
+* **High-DPI Inking Engine**: Responsive HTML5 canvas supporting Bézier curve smoothing, variable stroke width, and pressure simulation.
+* **8-Tool Floating Palette**:
+  - `Pen`: Fine inking with dark/light obsidian contrast.
+  - `Pencil`: Textured graphite sketching.
+  - `Highlighter`: Translucent overlay with blend mode.
+  - `Eraser`: Precise stroke-intersection erasure.
+  - `Lasso Tool`: Ray-casting selection loop, dashed bounding box, live drag-to-move translation, duplicate, recolor, and batch delete.
+  - `Study Tape Tool (StarNote signature)`: Draws opaque pastel tape strips over formulas or answers; tap to toggle reveal/hide for active recall flashcard testing, plus a global reveal-all/hide-all button.
+  - `Shape Snapping`: Recognizes straight lines and circular/elliptical loops and snaps to clean geometry.
+  - `Scratch-to-Erase`: Detects rapid horizontal/vertical zigzag scribbles and instantly erases underlying strokes.
+* **Paper Templates**:
+  - Cornell Notes (title banner, cue column, notes area, summary footer).
+  - Dot Grid (28px spacing).
+  - Ruled / Lined (32px line height with left margin guide).
+  - Graph / Grid (24px coordinate grid).
+  - Blank Paper with Dark Obsidian (`#0E1013`) or Cream Paper themes.
+* **Unified Dual-Mode UI**:
+  - **Practice Mode**: Full-screen canvas with a top hovering question island (`[Q 1/5] ... [✓ CHECK STEP]`). Tapping check triggers in-place accordion expansion with Socratic feedback.
+  - **Learn Mode**: Vertical continuous stream of theory cards alternating with dedicated checkpoint ink sandboxes, accompanied by a slide-over **Watchful Tutor Chat** drawer.
+* **Export**: Instant one-click PNG export (`archon-canvas-[timestamp].png`).
+
 ---
 
-## 6. Android Implementation
-- `CanvasHost.kt` & `InkCanvas.kt`: Low-latency front-buffered stylus rendering with palm rejection.
-- `TutorModeScreen.kt`: Jetpack Compose UI with top question island and FloatingToolbar.
-- `TutorNetworkService.kt`: Ktor HTTP client managing attempts, answers, and hints.
+## 7. Android Implementation
+Canvas Mode on Android provides low-latency front-buffered stylus rendering with native hardware integration:
+* **`InkCanvasComposable.kt`**: Jetpack Compose wrapper for `androidx.ink` stroke rendering.
+* **`LassoSelectionManager.kt`**: Ray-casting polygon containment, stroke batch translation, duplication, and color reassignment.
+* **`StudyTapeManager.kt`**: Opaque masking and tap-to-reveal toggle state management.
+* **`ShapeRecognizer.kt`**: Heuristic chord ratio and circularity evaluation for geometric shape snapping.
+* **`ScratchToEraseDetector.kt`**: Direction reversal counter for instant scribble erasure.
+* **`FloatingToolbar.kt`**: Draggable glassmorphic toolbar with 8 tools, 6 color swatches, and 3 stroke widths.
+* **`CanvasHost.kt`**: Low-latency rendering pipeline with hardware palm rejection and motion prediction.
 
 ---
 
-## 7. Known Issues & Roadmap
-- Backend needs direct stroke/image evaluation fallback for clients without MyScript SDK licenses.
-- Tutor chat needs bidirectional synchronization with the active lesson theory markdown.
+## 8. Verification & Test Coverage
+* **Android**: Compiled cleanly via `./gradlew assembleDebug` and verified on Lenovo TB336FU (`HNY03WRL`).
+* **Web Frontend**: Built cleanly via `npm run build` (Vite 7.3) with production bundles generated.
+* **Backend**: 5 integration test suites in `backend/tests/test_canvas_tutor_backend.py` covering stroke evaluation, lesson stream generation, and Socratic hints.
+
 

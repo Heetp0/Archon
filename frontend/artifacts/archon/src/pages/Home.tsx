@@ -15,6 +15,7 @@ import AgentMode from "@/components/modes/AgentMode";
 import DashboardMode from "@/components/modes/DashboardMode";
 import ObsidianMode from "@/components/modes/ObsidianMode";
 import AgentsDirectoryMode from "@/components/modes/AgentsDirectoryMode";
+import CanvasMode from "@/components/modes/CanvasMode";
 import SettingsModal from "@/components/SettingsModal";
 
 // Modes that can show the left context sidebar (user toggles)
@@ -51,7 +52,8 @@ const TopBar = React.memo(function TopBar({
               mode === "research" ? "Research" :
               mode === "agents" ? "Agent Runtime" :
               mode === "obsidian" ? "Obsidian" :
-              mode === "directory" ? "Agents" : "";
+              mode === "directory" ? "Agents" :
+              mode === "canvas" ? "Canvas" : "";
             
             const activeProject = projects.find((p: any) => p.id === activeProjectId);
             if (activeProject && activeProject.mode === mode) {
@@ -127,6 +129,7 @@ export default function Home() {
       case "agents": return <AgentMode />;
       case "obsidian": return <ObsidianMode />;
       case "directory": return <AgentsDirectoryMode />;
+      case "canvas": return <CanvasMode />;
       default: return null;
     }
   }, [mode]);
