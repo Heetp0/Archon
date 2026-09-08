@@ -1,8 +1,9 @@
 import React from "react";
-import { Search, Zap, Link as LinkIcon, Loader2, Send } from "lucide-react";
+import { Search, Zap, Loader2, Send } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ContextFilesSection } from "./ContextFilesSection";
+import { ResearchSource } from "@/store/websocketStore";
 
 interface ResearchOutputPanelProps {
   researchQuery: string;
@@ -11,7 +12,7 @@ interface ResearchOutputPanelProps {
   connected: boolean;
   isStreaming: boolean;
   researchText: string;
-  citations: any[];
+  citations: ResearchSource[];
   activeProjectId: string | null;
 }
 
@@ -74,15 +75,20 @@ export const ResearchOutputPanel = React.memo(function ResearchOutputPanel({
             <h4 className="text-[10px] uppercase tracking-widest text-text-secondary font-mono">Citation Vault</h4>
             <div className="space-y-2">
               {citations.length > 0 ? (
-                citations.map((c: any) => (
-                  <a key={c.id} href={c.url} target="_blank" rel="noopener noreferrer"
-                    className="block bg-panel-bg/80 border border-border-core hover:border-purple-500/50 rounded p-2 transition-colors">
-                    <div className="flex items-center gap-2 text-[10px] font-mono text-accent-indigo mb-1">
-                      <LinkIcon className="w-3 h-3" /> [{c.id}]
-                    </div>
-                    <div className="text-xs text-text-primary line-clamp-1">{c.title}</div>
-                  </a>
-                ))
+                citations.map((c) => {
+                  const domain = (() => { try { return new URL(c.url).hostname.replace('www.',''); } catch { return c.url; } })();
+                  return (
+                    <a key={c.id} href={c.url} target="_blank" rel="noopener noreferrer"
+                       className="block bg-panel-bg/80 border border-border-core hover:border-purple-500/50 rounded p-2 transition-colors">
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-accent-indigo mb-1">
+                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=12`} className="w-3 h-3" alt="" />
+                        [{c.id}] {domain}
+                      </div>
+                      <div className="text-xs text-text-primary line-clamp-1">{c.title}</div>
+                      {c.snippet && <div className="text-[9px] text-text-secondary line-clamp-2 mt-0.5">{c.snippet}</div>}
+                    </a>
+                  );
+                })
               ) : (
                 <div className="text-xs font-mono text-text-secondary italic text-center py-2">
                   No citations yet.

@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import Dict, List, Any
 
@@ -71,3 +72,9 @@ class AutopilotSupervisor:
 
     def is_halted(self) -> tuple[bool, str]:
         return self.halted, self.halt_reason
+
+    @property
+    def semaphore(self) -> asyncio.Semaphore:
+        if not hasattr(self, '_semaphore'):
+            self._semaphore = asyncio.Semaphore(5)
+        return self._semaphore

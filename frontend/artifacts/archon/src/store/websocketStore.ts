@@ -17,6 +17,19 @@ export type Telemetry = {
   latency: number;
 };
 
+export interface ResearchSource {
+  id: number;
+  url: string;
+  title: string;
+  snippet: string;
+  summary?: string;
+}
+
+export interface ResearchGraphData {
+  nodes: Array<{ id: string; label: string; x: number; y: number; r: number; primary?: boolean }>;
+  edges: Array<{ from: string; to: string }>;
+}
+
 interface WebSocketState {
   activeChatId: string | null;
   setActiveChatId: (id: string | null) => void;
@@ -25,8 +38,11 @@ interface WebSocketState {
   councilMessages: CouncilMessageMap;
   isStreaming: boolean;
   telemetry: Telemetry;
-  citations: any[];
+  citations: ResearchSource[];
   researchText: string;
+  researchOutline: string[];
+  researchGraphData: ResearchGraphData | null;
+  researchSuggestions: string[];
   agentStatuses: any[];
   taskQueue: any[];
   availableModels: any[];
@@ -40,8 +56,11 @@ interface WebSocketState {
   setCouncilMessages: (updater: (prev: CouncilMessageMap) => CouncilMessageMap) => void;
   setIsStreaming: (isStreaming: boolean) => void;
   setTelemetry: (telemetry: Telemetry) => void;
-  setCitations: (updater: (prev: any[]) => any[]) => void;
+  setCitations: (citationsOrUpdater: ResearchSource[] | ((prev: ResearchSource[]) => ResearchSource[])) => void;
   setResearchText: (updater: (prev: string) => string) => void;
+  setResearchOutline: (outline: string[]) => void;
+  setResearchGraphData: (data: ResearchGraphData | null) => void;
+  setResearchSuggestions: (suggestions: string[]) => void;
   setAgentStatuses: (updater: (prev: any[]) => any[]) => void;
   setTaskQueue: (updater: (prev: any[]) => any[]) => void;
   setAvailableModels: (models: any[]) => void;
@@ -62,6 +81,9 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   telemetry: { tokens: 0, cost: 0, latency: 0 },
   citations: [],
   researchText: "",
+  researchOutline: [],
+  researchGraphData: null,
+  researchSuggestions: [],
   agentStatuses: [],
   taskQueue: [],
   availableModels: [],
@@ -74,8 +96,15 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   setCouncilMessages: (updater) => set((state) => ({ councilMessages: updater(state.councilMessages) })),
   setIsStreaming: (isStreaming) => set({ isStreaming }),
   setTelemetry: (telemetry) => set({ telemetry }),
-  setCitations: (updater) => set((state) => ({ citations: updater(state.citations) })),
+  setCitations: (citationsOrUpdater) => set((state) => ({
+    citations: typeof citationsOrUpdater === 'function'
+      ? citationsOrUpdater(state.citations)
+      : citationsOrUpdater
+  })),
   setResearchText: (updater) => set((state) => ({ researchText: updater(state.researchText) })),
+  setResearchOutline: (outline) => set({ researchOutline: outline }),
+  setResearchGraphData: (data) => set({ researchGraphData: data }),
+  setResearchSuggestions: (suggestions) => set({ researchSuggestions: suggestions }),
   setAgentStatuses: (updater) => set((state) => ({ agentStatuses: updater(state.agentStatuses) })),
   setTaskQueue: (updater) => set((state) => ({ taskQueue: updater(state.taskQueue) })),
   setAvailableModels: (models) => set({ availableModels: models }),

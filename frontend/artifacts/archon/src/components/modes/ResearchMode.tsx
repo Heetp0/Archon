@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Paperclip, Download, Globe } from "lucide-react";
+import { Paperclip, Download, Globe, ChevronDown, ChevronRight, BookMarked } from "lucide-react";
 import { useWebSocketContext } from "@/context/WebSocketContext";
-import { useWebSocketStore } from "@/store/websocketStore";
+import { useWebSocketStore, ResearchSource } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ReactMarkdown from "react-markdown";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
@@ -100,19 +101,83 @@ function getDynamicGraph(text: string) {
   return { nodes, edges, nodeMap };
 }
 
+// ── Citation badge shown inline in markdown text ──────────────────────────────
+
+function CitationBadge({ id, sources }: { id: number; sources: ResearchSource[] }) {
+  const src = sources.find(s => s.id === id);
+  const [show, setShow] = useState(false);
+  const domain = src ? (() => { try { return new URL(src.url).hostname.replace('www.', ''); } catch { return src.url; } })() : '';
+  return (
+    <sup
+      className="relative inline-flex items-center cursor-pointer"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span className="inline-flex items-center gap-0.5 bg-accent-indigo/15 hover:bg-accent-indigo/30 text-accent-indigo text-[9px] font-mono px-1 py-0.5 rounded border border-accent-indigo/30 transition-colors">
+        {domain && <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=12`} className="w-3 h-3" alt="" />}
+        {domain ? `${domain} [${id}]` : `[${id}]`}
+      </span>
+      {show && src && (
+        <div className="absolute bottom-full left-0 mb-1 z-50 w-56 bg-panel-bg border border-border-core rounded-lg p-2.5 shadow-xl text-left pointer-events-none">
+          <div className="text-[10px] font-mono text-text-primary font-semibold line-clamp-2 mb-1">{src.title}</div>
+          <div className="text-[9px] font-mono text-text-secondary line-clamp-3">{src.snippet}</div>
+        </div>
+      )}
+    </sup>
+  );
+}
+
+// ── Inline text renderer that replaces [N] with CitationBadge ─────────────────
+
+function CitingText({ children, citations }: { children: string; citations: ResearchSource[] }) {
+  const parts = children.split(/(\[\d+\])/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const match = part.match(/^\[(\d+)\]$/);
+        if (match) {
+          return <CitationBadge key={i} id={parseInt(match[1])} sources={citations} />;
+        }
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+      })}
+    </>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function ResearchMode() {
   const isStreaming = useWebSocketStore(s => s.isStreaming);
   const researchText = useWebSocketStore(s => s.researchText);
   const citations = useWebSocketStore(s => s.citations);
+  const researchOutline = useWebSocketStore(s => s.researchOutline);
+  const researchGraphData = useWebSocketStore(s => s.researchGraphData);
+  const researchSuggestions = useWebSocketStore(s => s.researchSuggestions);
+
   const { activeProjectId } = useProjectsContext();
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
+  const { sendResearch } = useWebSocketContext();
 
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(true);
+
+  // Save to Notebook dialog
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedNotebookId, setSelectedNotebookId] = useState<string>("");
+  const [notebooks, setNotebooks] = useState<Array<{ id: string; name: string }>>([]);
+  const [saving, setSaving] = useState(false);
+
+  // Research query stored for export/save metadata
+  const [researchQuery, setResearchQuery] = useState("");
 
   const { nodes, edges, nodeMap } = useMemo(() => {
+    if (researchGraphData && researchGraphData.nodes.length > 0) {
+      const nodeMap = Object.fromEntries(researchGraphData.nodes.map(n => [n.id, n]));
+      return { nodes: researchGraphData.nodes, edges: researchGraphData.edges, nodeMap };
+    }
     return getDynamicGraph(researchText);
-  }, [researchText]);
+  }, [researchText, researchGraphData]);
 
   const handleExport = () => {
     if (!researchText) return;
@@ -122,8 +187,8 @@ export default function ResearchMode() {
     
     if (citations && citations.length > 0) {
       markdown += `\n\n## References\n`;
-      citations.forEach((url, idx) => {
-        markdown += `[${idx + 1}] ${url}\n`;
+      citations.forEach((c) => {
+        markdown += `[${c.id}] ${c.title} — ${c.url}\n`;
       });
     }
 
@@ -136,6 +201,61 @@ export default function ResearchMode() {
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleFollowUp = useCallback((s: string) => {
+    sendResearch(s);
+  }, [sendResearch]);
+
+  const openSaveDialog = useCallback(async () => {
+    setSaveDialogOpen(true);
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      const token = localStorage.getItem("archon_token") || "";
+      const res = await fetch(`${protocol}://${host}:${port}/api/notebooks`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.notebooks || []);
+        setNotebooks(list);
+        if (list.length > 0) setSelectedNotebookId(list[0].id);
+      }
+    } catch {
+      // ignore fetch errors
+    }
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedNotebookId || !researchText) return;
+    setSaving(true);
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      const token = localStorage.getItem("archon_token") || "";
+      await fetch(`${protocol}://${host}:${port}/notebooks/${selectedNotebookId}/sources`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          source_type: "text",
+          content: researchText,
+          metadata: {
+            title: researchQuery || "Research Report",
+            citations: citations.map(c => c.url)
+          }
+        })
+      });
+    } catch {
+      // ignore
+    }
+    setSaving(false);
+    setSaveDialogOpen(false);
+  }, [selectedNotebookId, researchText, researchQuery, citations]);
 
   return (
     <motion.div
@@ -157,13 +277,27 @@ export default function ResearchMode() {
       {/* Header */}
       <div className="px-5 py-3 border-b border-border-core/60 flex items-center gap-3 flex-shrink-0">
         <span className="text-xs font-mono text-text-secondary">Knowledge Graph</span>
-        <span className="text-text-secondary">A</span>
-        <span className="text-xs font-mono text-text-secondary">Quantum Error Correction</span>
+        <span className="text-text-secondary">›</span>
+        <span className="text-xs font-mono text-text-secondary truncate max-w-[200px]">
+          {researchQuery || "Research Report"}
+        </span>
         <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center gap-2 text-[10px] font-mono text-text-secondary">
             {isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-accent-indigo animate-pulse" />}
-            {isStreaming ? "Traversing..." : `${nodes.length} nodes ? ${edges.length} edges`}
+            {isStreaming ? "Traversing..." : `${nodes.length} nodes · ${edges.length} edges`}
           </div>
+
+          {researchText && !isStreaming && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openSaveDialog}
+              className="border-border-core/60 text-text-secondary hover:text-text-primary bg-panel-bg/50 text-[10px] h-7 px-2 font-mono"
+            >
+              <BookMarked className="w-3.5 h-3.5 mr-1" />
+              Save to Notebook
+            </Button>
+          )}
           
           <Button
             variant="outline"
@@ -217,6 +351,7 @@ export default function ResearchMode() {
                 {edges.map((edge, i) => {
                   const a = nodeMap[edge.from];
                   const b = nodeMap[edge.to];
+                  if (!a || !b) return null;
                   const active = hoveredNode === edge.from || hoveredNode === edge.to
                               || selectedNode === edge.from || selectedNode === edge.to;
                   return (
@@ -276,7 +411,7 @@ export default function ResearchMode() {
                   className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-panel-bg border border-border-core/60 rounded font-mono text-xs text-text-primary z-10 animate-fade-in"
                 >
                   {nodeMap[selectedNode]?.label.replace("\n", " ")}
-                  <span className="text-text-secondary ml-2">A click to deselect</span>
+                  <span className="text-text-secondary ml-2">· click to deselect</span>
                 </motion.div>
               )}
             </div>
@@ -286,12 +421,38 @@ export default function ResearchMode() {
 
           {/* Right Panel: Research Report & Sources */}
           <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-slate-950/40 border-l border-border-core/20">
+            {/* Outline progress strip */}
+            {isStreaming && researchOutline.length > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-border-core/30 flex-wrap flex-shrink-0">
+                <span className="text-[9px] font-mono text-text-secondary uppercase tracking-widest">Outline</span>
+                {researchOutline.map((section, i) => (
+                  <span key={i} className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-accent-indigo/30 text-accent-indigo/70 bg-accent-indigo/5">
+                    {section}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="flex-1 flex flex-col min-h-0">
               <ScrollArea className="flex-1 p-4 md:p-6">
                 <div className="space-y-6 pb-20">
                   {researchText ? (
                     <div className="prose prose-invert max-w-none text-xs leading-relaxed font-mono">
-                      <ReactMarkdown>{researchText}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <p>
+                              {React.Children.map(children, child =>
+                                typeof child === "string"
+                                  ? <CitingText citations={citations}>{child}</CitingText>
+                                  : child
+                              )}
+                            </p>
+                          )
+                        }}
+                      >
+                        {researchText}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-64 text-text-secondary text-xs font-mono text-center px-4">
@@ -301,28 +462,54 @@ export default function ResearchMode() {
                       </p>
                     </div>
                   )}
-                  
-                  {/* Sources / Citations list */}
-                  {citations && citations.length > 0 && (
-                    <div className="border-t border-border-core/30 pt-4 mt-6">
-                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-accent-indigo" />
-                        Crawled Sources
-                      </h4>
-                      <ul className="space-y-2">
-                        {citations.map((url: string, index: number) => (
-                          <li key={index} className="text-[10px] font-mono text-text-secondary truncate">
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-accent-indigo transition-colors"
-                            >
-                              [{index + 1}] {url}
-                            </a>
-                          </li>
+
+                  {/* Sources collapsible panel */}
+                  {citations.length > 0 && (
+                    <div className="border-t border-border-core/30 mt-6">
+                      <button
+                        onClick={() => setSourcesOpen(o => !o)}
+                        className="flex items-center gap-2 w-full px-0 py-3 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors"
+                      >
+                        {sourcesOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        <Globe className="w-3 h-3 text-accent-indigo" />
+                        Sources ({citations.length})
+                      </button>
+                      {sourcesOpen && (
+                        <div className="space-y-2 pb-4">
+                          {citations.map((src) => {
+                            const domain = (() => { try { return new URL(src.url).hostname.replace('www.',''); } catch { return src.url; } })();
+                            return (
+                              <a key={src.id} href={src.url} target="_blank" rel="noopener noreferrer"
+                                 className="flex items-start gap-2 p-2 rounded border border-border-core/30 hover:border-accent-indigo/40 transition-colors group">
+                                <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} className="w-4 h-4 mt-0.5 flex-shrink-0" alt="" />
+                                <div className="min-w-0">
+                                  <div className="text-[10px] font-mono text-accent-indigo/80 mb-0.5">[{src.id}] {domain}</div>
+                                  <div className="text-xs text-text-primary font-mono line-clamp-1 group-hover:text-accent-indigo transition-colors">{src.title}</div>
+                                  <div className="text-[10px] text-text-secondary font-mono line-clamp-2 mt-0.5">{src.snippet}</div>
+                                </div>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Follow-up suggestion chips */}
+                  {!isStreaming && researchSuggestions.length > 0 && (
+                    <div className="border-t border-border-core/30 pt-4 mt-4">
+                      <p className="text-[9px] font-mono text-text-secondary uppercase tracking-widest mb-2">Follow-up questions</p>
+                      <div className="flex flex-wrap gap-2">
+                        {researchSuggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleFollowUp(s)}
+                            className="text-[10px] font-mono px-3 py-1.5 rounded-full border border-border-core/50 text-text-secondary hover:border-accent-indigo/50 hover:text-accent-indigo transition-colors text-left"
+                          >
+                            {s}
+                          </button>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -331,6 +518,48 @@ export default function ResearchMode() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Save to Notebook Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="bg-panel-bg border border-border-core text-text-primary">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-mono">Save to Notebook</DialogTitle>
+          </DialogHeader>
+          <div className="py-3">
+            {notebooks.length > 0 ? (
+              <select
+                value={selectedNotebookId}
+                onChange={e => setSelectedNotebookId(e.target.value)}
+                className="w-full bg-app-bg border border-border-core rounded px-3 py-2 text-xs font-mono text-text-primary focus:outline-none focus:border-accent-indigo/50"
+              >
+                {notebooks.map(nb => (
+                  <option key={nb.id} value={nb.id}>{nb.name}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs font-mono text-text-secondary">No notebooks found.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSaveDialogOpen(false)}
+              className="text-[10px] font-mono border-border-core/60"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={!selectedNotebookId || saving}
+              className="bg-accent-indigo hover:bg-accent-indigo text-white text-[10px] font-mono"
+            >
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

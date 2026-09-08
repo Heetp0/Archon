@@ -29,6 +29,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setTelemetry,
     setCitations,
     setResearchText,
+    setResearchOutline,
+    setResearchGraphData,
+    setResearchSuggestions,
     setAgentStatuses,
     setAvailableModels,
     setTerminalLines,
@@ -245,14 +248,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           command: data.payload.command
         });
       }
-      
-      if (statusMsg && statusMsg.startsWith("Crawling: ")) {
-        const url = statusMsg.replace("Crawling: ", "").trim();
-        state.setCitations((prev) => {
-          if (prev.includes(url)) return prev;
-          return [...prev, url];
-        });
-      }
     } else if (data.event === "gate") {
       state.setDangerousCommand({
         id: data.id,
@@ -260,7 +255,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       });
       const gatePayload = data.payload as any;
       if (gatePayload?.urls) {
-        state.setCitations(() => gatePayload.urls);
+        state.setCitations(gatePayload.urls);
       }
     } else if (data.event === "done") {
       state.setIsStreaming(false);
@@ -277,6 +272,18 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
       const errorMsg = data.payload?.error || data.payload || "An error occurred";
       toast.error(`Daemon Error: ${errorMsg}`);
+    } else if (data.event === "sources") {
+      state.setCitations(data.payload.sources ?? []);
+    } else if (data.event === "outline") {
+      if (Array.isArray(data.payload.sections)) {
+        state.setResearchOutline(data.payload.sections);
+      }
+    } else if (data.event === "graph_nodes") {
+      state.setResearchGraphData(data.payload);
+    } else if (data.event === "suggestions") {
+      if (Array.isArray(data.payload.suggestions)) {
+        state.setResearchSuggestions(data.payload.suggestions);
+      }
     }
   }, [commitBufferedTokens]);
 
@@ -453,6 +460,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const state = useWebSocketStore.getState();
     state.setIsStreaming(true);
     state.setResearchText(() => "");
+    state.setResearchOutline([]);
+    state.setResearchGraphData(null);
+    state.setResearchSuggestions([]);
+    state.setCitations([]);
 
     const attachments = activeFilesRef.current.map((f) => ({
       name: f.name,
