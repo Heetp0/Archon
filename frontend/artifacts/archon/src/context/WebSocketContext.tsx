@@ -11,7 +11,7 @@ type WebSocketContextType = {
   sendAgentCommand: (cmd: string) => void;
   approveCommand: () => void;
   denyCommand: () => void;
-  sendChat: (message: string, model: string) => void;
+  sendChat: (message: string, model: string, options?: { web_search?: boolean; use_vault?: boolean }) => void;
   sendCouncil: (message: string, models: string[]) => void;
   sendResearch: (message: string) => void;
   cancelStream: () => void;
@@ -189,6 +189,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         batchTimeout.current = setTimeout(commitBufferedTokens, 50);
       }
     } else if (data.event === "status") {
+      const statusMsg = data.payload.status as string;
+      state.setLastStatus(statusMsg);
       const statusModel = data.payload.model as string;
       if (statusModel && ["Planner", "Coder", "OpenCode Delegator", "Tester", "Logger", "Journal", "Supervisor"].includes(statusModel)) {
         state.setAgentStatuses((prev) => {
@@ -244,7 +246,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         });
       }
       
-      const statusMsg = data.payload.status as string;
       if (statusMsg && statusMsg.startsWith("Crawling: ")) {
         const url = statusMsg.replace("Crawling: ", "").trim();
         state.setCitations((prev) => {
@@ -263,12 +264,14 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       }
     } else if (data.event === "done") {
       state.setIsStreaming(false);
+      state.setLastStatus(null);
       if (data.payload?.telemetry) {
         state.setTelemetry(data.payload.telemetry as any);
       }
       toast.success("Execution completed successfully");
     } else if (data.event === "error") {
       state.setIsStreaming(false);
+      state.setLastStatus(null);
       if (data.payload?.telemetry) {
         state.setTelemetry(data.payload.telemetry as any);
       }
@@ -306,6 +309,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     
     const state = useWebSocketStore.getState();
     state.setIsStreaming(true);
+    state.setLastStatus("Initializing agent...");
 
     state.setTerminalLines((prev) => [
       ...prev,
@@ -357,7 +361,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     state.setDangerousCommand(null);
   }, [send]);
 
-  const sendChat = useCallback((message: string, model: string) => {
+  const sendChat = useCallback((message: string, model: string, options?: { web_search?: boolean; use_vault?: boolean }) => {
     if (!send) return;
     const msgId = Math.random().toString();
     lastReqId.current = msgId;
@@ -382,6 +386,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
 
     state.setIsStreaming(true);
+    state.setLastStatus("Sending message...");
     const attachments = activeFilesRef.current.map((f) => ({
       name: f.name,
       content: f.content || "",
@@ -394,7 +399,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         content: message,
         model,
         history,
-        context: { attachments }
+        context: { attachments },
+        ...(options?.web_search !== undefined ? { web_search: options.web_search } : {}),
+        ...(options?.use_vault !== undefined ? { use_vault: options.use_vault } : {})
       }
     });
   }, [send]);

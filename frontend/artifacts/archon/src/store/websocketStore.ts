@@ -33,6 +33,7 @@ interface WebSocketState {
   terminalLines: any[];
   dangerousCommand: any;
   calendarEvents: any[];
+  lastStatus: string | null;
   
   // Actions
   setMessagesMap: (updater: (prev: Record<string, Message[]>) => Record<string, Message[]>) => void;
@@ -47,6 +48,7 @@ interface WebSocketState {
   setTerminalLines: (updater: (prev: any[]) => any[]) => void;
   setDangerousCommand: (cmd: any) => void;
   setCalendarEvents: (events: any[]) => void;
+  setLastStatus: (status: string | null) => void;
   clearChat: () => void;
 }
 
@@ -66,6 +68,7 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   terminalLines: [],
   dangerousCommand: null,
   calendarEvents: [],
+  lastStatus: null,
   
   setMessagesMap: (updater) => set((state) => ({ messagesMap: updater(state.messagesMap) })),
   setCouncilMessages: (updater) => set((state) => ({ councilMessages: updater(state.councilMessages) })),
@@ -79,6 +82,7 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   setTerminalLines: (updater) => set((state) => ({ terminalLines: updater(state.terminalLines) })),
   setDangerousCommand: (cmd) => set({ dangerousCommand: cmd }),
   setCalendarEvents: (events) => set({ calendarEvents: events }),
+  setLastStatus: (status) => set({ lastStatus: status }),
   clearChat: () => set((state) => {
     const activeChatId = state.activeChatId;
     return {
