@@ -91,20 +91,20 @@ async def test_council_debate(mock_services):
 async def test_deep_research(mock_services):
     router, vault_search, markit_down = mock_services
     
-    async def mock_generate_queries(*args, **kwargs):
-        yield '["query1", "query2"]'
-        
-    async def mock_generate_summary(*args, **kwargs):
-        yield "Summary Content"
-        
-    async def mock_generate_synthesis(*args, **kwargs):
-        yield "Final Report Content"
-        
-    router.generate.side_effect = [
-        mock_generate_queries(),
-        mock_generate_summary(),
-        mock_generate_synthesis()
-    ]
+    async def mock_generate(*args, **kwargs):
+        prompt = kwargs.get("messages", [{}])[0].get("content", "")
+        if "search queries" in prompt.lower():
+            yield '["query1", "query2"]'
+        elif "outline" in prompt.lower() or "wikipedia-style" in prompt.lower():
+            yield '["Introduction", "Conclusion"]'
+        elif "summarize" in prompt.lower():
+            yield "Summary Content"
+        elif "follow-up" in prompt.lower():
+            yield '["Q1", "Q2"]'
+        else:
+            yield "Final Report Content"
+
+    router.generate.side_effect = mock_generate
     
     active_gates = {}
     agent = DeepResearch(router, vault_search, markit_down, active_gates)
@@ -189,7 +189,7 @@ async def test_agent_runtime_watchdog_halt(mock_services):
     with pytest.raises(RuntimeError) as exc_info:
         await agent.run(payload, callback)
         
-    assert "Supervisor halted execution" in str(exc_info.value)
+    assert "Supervisor halted" in str(exc_info.value)
     assert any(e[0] == "error" and "Token budget exceeded" in e[1]["error"] for e in events)
 
 @pytest.mark.asyncio

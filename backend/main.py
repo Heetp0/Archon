@@ -332,8 +332,15 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
+            # Fast ping-pong heartbeat framing for WiFi reconnect resilience
+            if data.strip() in ("ping", '{"type":"ping"}', '{"event":"ping"}'):
+                await websocket.send_text("pong")
+                continue
             try:
                 message = json.loads(data)
+                if message.get("type") == "ping" or message.get("event") == "ping":
+                    await websocket.send_json({"type": "pong", "id": message.get("id", "heartbeat")})
+                    continue
                 req_id = message.get("id")
                 mode = message.get("mode")
                 msg_type = message.get("type")

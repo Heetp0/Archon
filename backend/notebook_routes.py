@@ -658,7 +658,9 @@ async def jobs_ws(websocket: WebSocket):
     await job_websocket_manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            if data.strip() in ("ping", '{"type":"ping"}', '{"event":"ping"}'):
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         job_websocket_manager.disconnect(websocket)
     except Exception:
@@ -669,7 +671,9 @@ async def notebook_jobs_ws(websocket: WebSocket, id: str):
     await notebook_job_websocket_manager.connect(id, websocket)
     try:
         while True:
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            if data.strip() in ("ping", '{"type":"ping"}', '{"event":"ping"}'):
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         notebook_job_websocket_manager.disconnect(id, websocket)
     except Exception:
