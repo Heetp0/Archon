@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Callable, Any, Dict
+from typing import Callable, Any, Dict, Optional
 
 logger = logging.getLogger("circuit_breaker")
 
@@ -8,9 +8,9 @@ class CircuitBreakerOpenException(Exception):
     pass
 
 class CircuitBreaker:
-    def __init__(self, failure_threshold: int = 5, recovery_timeout_sec: float = 30.0):
+    def __init__(self, failure_threshold: int = 5, recovery_timeout_sec: float = 30.0, recovery_timeout: Optional[float] = None):
         self.failure_threshold = failure_threshold
-        self.recovery_timeout_sec = recovery_timeout_sec
+        self.recovery_timeout_sec = recovery_timeout if recovery_timeout is not None else recovery_timeout_sec
         self.state = "CLOSED" # CLOSED, OPEN, HALF_OPEN
         self.failure_count = 0
         self.last_state_change = time.time()
@@ -44,15 +44,39 @@ class CircuitBreaker:
             else:
                 raise CircuitBreakerOpenException("Circuit breaker is currently OPEN. Request blocked.")
 
-    async def call(self, func: Callable[..., Any], *args, **kwargs) -> Any:
+    def call(self, func: Callable[..., Any], *args, **kwargs) -> Any:
+        import inspect
         self.check_state()
         try:
-            result = await func(*args, **kwargs)
+            res = func(*args, **kwargs)
+            if inspect.iscoroutine(res):
+                import asyncio
+                # If running in event loop:
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # async call wrapper needed
+                        async def _coro():
+                            try:
+                                r = await res
+                                self.record_success()
+                                return r
+                            except Exception as ex:
+                                self.record_failure()
+                                raise ex
+                        return _coro()
+                    else:
+                        result = loop.run_until_complete(res)
+                except RuntimeError:
+                    result = asyncio.run(res)
+            else:
+                result = res
             self.record_success()
             return result
         except Exception as e:
             self.record_failure()
             raise e
+
 
 # Registry of circuit breakers for distinct services
 circuit_breakers: Dict[str, CircuitBreaker] = {

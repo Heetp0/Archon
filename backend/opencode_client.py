@@ -71,3 +71,26 @@ class OpenCodeClient:
         except Exception as e:
             logger.error(f"Failed to execute OpenCode command: {str(e)}")
             yield f"\n[ERROR] Execution failed: {str(e)}\n"
+        finally:
+            if 'process' in locals() and process and process.returncode is None:
+                try:
+                    logger.info("Cleaning up active OpenCode subprocess and child processes...")
+                    pid = process.pid
+                    try:
+                        import psutil
+                        parent = psutil.Process(pid)
+                        for child in parent.children(recursive=True):
+                            try:
+                                child.kill()
+                            except Exception:
+                                pass
+                        parent.kill()
+                    except Exception:
+                        if sys.platform == "win32":
+                            import subprocess
+                            subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        else:
+                            process.kill()
+                except Exception as cleanup_err:
+                    logger.warning(f"Error terminating OpenCode process: {cleanup_err}")
+

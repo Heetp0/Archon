@@ -78,3 +78,24 @@ def verify_password(stored_hash: str, password: str) -> bool:
         return hmac.compare_digest(key, expected_key)
     except Exception:
         return False
+
+
+class AuthService:
+    """
+    Service wrapper around JWT creation, verification, and password hashing.
+    """
+    def __init__(self, secret: str = SECRET_KEY):
+        self.secret = secret
+
+    def create_access_token(self, data: dict, expires_delta_seconds: int = 86400) -> str:
+        return encode_jwt(data, secret=self.secret, expires_in=expires_delta_seconds)
+
+    def verify_token(self, token: str) -> Optional[dict]:
+        return decode_jwt(token, secret=self.secret)
+
+    def hash_password(self, password: str) -> str:
+        return hash_password(password)
+
+    def verify_password(self, stored_hash: str, password: str) -> bool:
+        return verify_password(stored_hash, password)
+

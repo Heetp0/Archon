@@ -128,13 +128,15 @@ class TestStrokeStorageIsolation:
 
         malicious_uid = "../../etc/passwd"
         result = safe_stroke_path("/data", malicious_uid, "nb1", "p1")
+        normalized = result.replace("\\", "/")
 
-        assert "etc" not in result or result.startswith("/data/strokes/"), (
+        assert "etc" not in normalized or normalized.startswith("/data/strokes/"), (
             f"Path traversal not sanitized: {result}"
         )
-        assert result.startswith("/data/strokes/"), (
+        assert normalized.startswith("/data/strokes/"), (
             f"Path escaped data directory: {result}"
         )
+
 
 
 # ─────────────────────────────────────────────────────────────

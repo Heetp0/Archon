@@ -23,7 +23,9 @@ async def test_vault_search_is_not_blocking():
 @pytest.mark.asyncio
 async def test_history_truncation_under_limit():
     mock_router = MagicMock()
-    mock_router.generate = AsyncMock()
+    async def dummy_gen(*args, **kwargs):
+        yield "response"
+    mock_router.generate = MagicMock(side_effect=dummy_gen)
     agent = ChatAgent(mock_router, MagicMock(), MagicMock())
     
     history = [{"role": "user", "content": "hello"}]
@@ -40,7 +42,9 @@ async def test_history_truncation_under_limit():
 @pytest.mark.asyncio
 async def test_history_truncation_over_limit():
     mock_router = MagicMock()
-    mock_router.generate = AsyncMock()
+    async def dummy_gen(*args, **kwargs):
+        yield "response"
+    mock_router.generate = MagicMock(side_effect=dummy_gen)
     agent = ChatAgent(mock_router, MagicMock(), MagicMock())
     
     # Generate history that exceeds 8000 tokens (32000 chars)

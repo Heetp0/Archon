@@ -22,6 +22,9 @@ class MainActivity : ComponentActivity() {
         } catch (e: Throwable) {
             e.printStackTrace()
         }
+        com.example.archonnotesinkcanvas.data.remote.ArchonApiClient.init(
+            com.example.archonnotesinkcanvas.data.remote.BackendConfigStore(this)
+        )
         enableEdgeToEdge()
         setContent {
             ArchonNotesInkCanvasTheme {

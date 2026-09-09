@@ -41,6 +41,20 @@ def backup_lancedb(db_path: str, backup_dir: str, s3_bucket: Optional[str] = Non
         logger.error(f"Backup failed: {e}")
         return None
 
+
+class BackupScheduler:
+    """
+    Backup scheduler and runner for local data directories.
+    """
+    def __init__(self, data_dir: str, backup_dir: str, retention_days: int = 7):
+        self.data_dir = data_dir
+        self.backup_dir = backup_dir
+        self.retention_days = retention_days
+
+    def run_backup(self) -> Optional[str]:
+        return backup_lancedb(self.data_dir, self.backup_dir)
+
+
 def cleanup_old_backups(backup_dir: str, keep_count: int = 7) -> None:
     try:
         files = [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.endswith(".tar.gz")]

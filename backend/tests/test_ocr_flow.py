@@ -1,4 +1,4 @@
-﻿import os
+import os
 import struct
 import json
 import time
@@ -123,6 +123,8 @@ async def test_ocr_job_manager():
 
 def test_api_endpoints():
     client = TestClient(app)
+    import notebook_routes
+    notebook_routes.active_notebooks["test_notebook"] = {"id": "test_notebook", "user_id": "default_user"}
     
     with patch("notebook_routes.ocr_job_manager") as mock_job_manager:
         mock_job_manager.add_job = AsyncMock(return_value="mock_job_id")

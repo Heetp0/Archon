@@ -23,6 +23,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import okhttp3.*
+import org.json.JSONObject
+import org.json.JSONArray
+import com.example.archonnotesinkcanvas.data.remote.ArchonApiClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 enum class TaskStatus { RUNNING, DONE, FAILED }
 
 data class AgentTask(
@@ -44,7 +51,15 @@ data class PlanStep(
     val type: StepType = StepType.GENERAL
 )
 
-val activeTask = AgentTask(
+data class GateApprovalData(
+    val reqId: String,
+    val action: String,
+    val command: String,
+    val solutionPreview: String,
+    val retryCount: Int = 0
+)
+
+val defaultAgentTask = AgentTask(
     title = "Implement Settings Screen",
     description = "Create a settings screen with theme toggle and notification preferences. Connect to data store.",
     status = TaskStatus.RUNNING,
@@ -52,14 +67,14 @@ val activeTask = AgentTask(
     totalSteps = 7
 )
 
-val samplePlan = listOf(
+val defaultSamplePlan = listOf(
     PlanStep(1, "Analyze requirements", "Reading project structure...", StepStatus.DONE, StepType.ANALYSIS),
     PlanStep(2, "Generate implementation", "Writing ChatScreen.kt...\nWriting CouncilScreen.kt...", StepStatus.DONE, StepType.CODE),
     PlanStep(3, "Run tests", "Executing unit tests for newly added screens", StepStatus.RUNNING, StepType.TEST),
     PlanStep(4, "Deploy to device", "adb install -r app-debug.apk", StepStatus.PENDING, StepType.DEPLOY)
 )
 
-val dummyLogs = listOf(
+val defaultDummyLogs = listOf(
     "[SYSTEM] Task initiated...",
     "[ANALYSIS] Reading project...",
     "[ANALYSIS] Found 42 files.",
@@ -73,7 +88,149 @@ val dummyLogs = listOf(
 @Composable
 fun AgentsScreen(windowSizeClass: WindowSizeClass) {
     var selectedView by remember { mutableStateOf("dashboard") } // "dashboard" | "terminal"
-    val hasActiveTask = true
+
+    // Live state with defaults for graceful fallback
+    var currentTask by remember { mutableStateOf(defaultAgentTask) }
+    val planSteps = remember { mutableStateListOf<PlanStep>().apply { addAll(defaultSamplePlan) } }
+    val liveLogs = remember { mutableStateListOf<String>().apply { addAll(defaultDummyLogs) } }
+
+    var activeGate by remember { mutableStateOf<GateApprovalData?>(null) }
+    var webSocketRef by remember { mutableStateOf<WebSocket?>(null) }
+
+    // WebSocket connection to ws://.../ws
+    LaunchedEffect(Unit) {
+        val baseUrl = try {
+            ArchonApiClient.getBaseUrl()
+        } catch (e: Exception) {
+            "http://10.0.2.2:8000"
+        }
+
+        val wsUrl = if (baseUrl.startsWith("https://")) {
+            baseUrl.replaceFirst("https://", "wss://") + "/ws"
+        } else {
+            baseUrl.replaceFirst("http://", "ws://") + "/ws"
+        }
+
+        val client = OkHttpClient.Builder().build()
+        val request = Request.Builder().url(wsUrl).build()
+
+        val listener = object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
+                webSocketRef = webSocket
+                liveLogs.add("[WS] Connected to Archon Agent Daemon")
+            }
+
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                try {
+                    val root = JSONObject(text)
+                    val reqId = root.optString("id", "")
+                    val event = root.optString("event", "")
+                    val payload = root.optJSONObject("payload")
+
+                    when (event) {
+                        "plan_steps" -> {
+                            val stepsArray = payload?.optJSONArray("steps")
+                            if (stepsArray != null) {
+                                val newSteps = mutableListOf<PlanStep>()
+                                for (i in 0 until stepsArray.length()) {
+                                    val s = stepsArray.getJSONObject(i)
+                                    val id = s.optInt("id", i + 1)
+                                    val title = s.optString("title", "Step $id")
+                                    val criteria = s.optString("acceptance_criteria", "")
+                                    newSteps.add(
+                                        PlanStep(
+                                            id = id,
+                                            title = title,
+                                            detail = criteria,
+                                            status = if (i == 0) StepStatus.RUNNING else StepStatus.PENDING,
+                                            type = if (title.contains("code", true) || title.contains("implement", true)) StepType.CODE
+                                            else if (title.contains("test", true)) StepType.TEST
+                                            else if (title.contains("scan", true) || title.contains("analyze", true)) StepType.ANALYSIS
+                                            else StepType.GENERAL
+                                        )
+                                    )
+                                }
+                                if (newSteps.isNotEmpty()) {
+                                    planSteps.clear()
+                                    planSteps.addAll(newSteps)
+                                    currentTask = currentTask.copy(
+                                        status = TaskStatus.RUNNING,
+                                        completedSteps = 0,
+                                        totalSteps = newSteps.size
+                                    )
+                                    liveLogs.add("[PLAN] Received ${newSteps.size} plan steps from Planner")
+                                }
+                            }
+                        }
+                        "tool_call" -> {
+                            val tool = payload?.optString("tool", "")
+                            val status = payload?.optString("status", "")
+                            val input = payload?.optString("input", "")
+                            liveLogs.add("[TOOL] $tool ($status): $input")
+                        }
+                        "gate" -> {
+                            val action = payload?.optString("action", "execute_code")
+                            val command = payload?.optString("command", "")
+                            val solutionPreview = payload?.optString("solution_preview", "")
+                            val retryCount = payload?.optInt("retry_count", 0) ?: 0
+                            activeGate = GateApprovalData(
+                                reqId = reqId,
+                                action = action ?: "execute_code",
+                                command = command ?: "",
+                                solutionPreview = solutionPreview ?: "",
+                                retryCount = retryCount
+                            )
+                            liveLogs.add("[GATE] Awaiting approval for action: $action")
+                        }
+                        "retry" -> {
+                            val attempt = payload?.optInt("attempt", 1) ?: 1
+                            val max = payload?.optInt("max", 3) ?: 3
+                            val reason = payload?.optString("reason", "") ?: ""
+                            liveLogs.add("[RETRY] Attempt $attempt/$max: $reason")
+                        }
+                        "session_metadata" -> {
+                            val verdict = payload?.optString("verdict", "") ?: ""
+                            val status = payload?.optString("status", "completed")
+                            val isPass = verdict.contains("PASS", ignoreCase = true)
+                            currentTask = currentTask.copy(
+                                status = if (isPass) TaskStatus.DONE else TaskStatus.FAILED,
+                                completedSteps = currentTask.totalSteps
+                            )
+                            liveLogs.add("[SESSION] Complete. Verdict: $verdict ($status)")
+                        }
+                        "status" -> {
+                            val statusText = payload?.optString("status", "")
+                            if (!statusText.isNullOrBlank()) {
+                                liveLogs.add("[STATUS] $statusText")
+                            }
+                        }
+                        "token" -> {
+                            val content = payload?.optString("content", "")
+                            if (!content.isNullOrBlank()) {
+                                liveLogs.add(content.trimEnd())
+                            }
+                        }
+                        "error" -> {
+                            val err = payload?.optString("error", "Unknown error")
+                            liveLogs.add("[ERROR] $err")
+                        }
+                        "done" -> {
+                            liveLogs.add("[DONE] Execution finished.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore parse issues
+                }
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+                liveLogs.add("[WS] Disconnected (using cached/default fallback state)")
+            }
+        }
+
+        val ws = client.newWebSocket(request, listener)
+        webSocketRef = ws
+    }
 
     Column(
         modifier = Modifier
@@ -145,8 +302,8 @@ fun AgentsScreen(windowSizeClass: WindowSizeClass) {
         ) {
             if (selectedView == "dashboard") {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    TaskHeaderCard(activeTask)
-                    StepList(samplePlan, modifier = Modifier.weight(1f))
+                    TaskHeaderCard(currentTask)
+                    StepList(planSteps, modifier = Modifier.weight(1f))
                 }
             } else {
                 // OpenCode Terminal (PC spec: 100% full-width command line interface, JetBrains Mono, green core@local:~$ prompt)
@@ -166,10 +323,10 @@ fun AgentsScreen(windowSizeClass: WindowSizeClass) {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            items(dummyLogs) { log ->
+                            items(liveLogs) { log ->
                                 Text(
                                     log,
-                                    color = if (log.contains("ERROR")) Color(0xFFE11D48) else Color(0xFFE4E4E7),
+                                    color = if (log.contains("ERROR")) Color(0xFFE11D48) else if (log.contains("[GATE]")) Color(0xFFF59E0B) else Color(0xFFE4E4E7),
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace
                                 )
@@ -179,6 +336,136 @@ fun AgentsScreen(windowSizeClass: WindowSizeClass) {
                 }
             }
         }
+    }
+
+    // Approval Gate Dialog rendering dangerous command details and solution_preview
+    activeGate?.let { gate ->
+        AlertDialog(
+            onDismissRequest = { /* Require explicit approve or deny */ },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFE11D48),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Security Sandbox Approval Required",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "The agent requested to execute code in the workspace:",
+                        color = Color(0xFFA1A1AA),
+                        fontSize = 13.sp
+                    )
+
+                    Surface(
+                        color = Color(0xFF18181B),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFF3F3F46)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(
+                                text = "Action: ${gate.action}",
+                                color = Color(0xFFF59E0B),
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Command: ${gate.command}",
+                                color = Color(0xFFE4E4E7),
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    if (gate.solutionPreview.isNotBlank()) {
+                        Text(
+                            text = "Solution Preview (solution.py):",
+                            color = Color(0xFFE4E4E7),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                        Surface(
+                            color = Color(0xFF0D0D10),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFF27272A)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                        ) {
+                            Text(
+                                text = gate.solutionPreview,
+                                color = Color(0xFF34D399),
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val confirmPayload = JSONObject().apply {
+                            put("id", gate.reqId)
+                            put("type", "confirm")
+                            put("payload", JSONObject().apply {
+                                put("decision", "approve")
+                            })
+                        }
+                        webSocketRef?.send(confirmPayload.toString())
+                        liveLogs.add("[GATE] Approved by user.")
+                        activeGate = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text("Approve & Run", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        val cancelPayload = JSONObject().apply {
+                            put("id", gate.reqId)
+                            put("type", "cancel")
+                            put("payload", JSONObject().apply {
+                                put("decision", "deny")
+                            })
+                        }
+                        webSocketRef?.send(cancelPayload.toString())
+                        liveLogs.add("[GATE] Denied by user.")
+                        activeGate = null
+                    },
+                    border = BorderStroke(1.dp, Color(0xFFE11D48)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE11D48)),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text("Deny")
+                }
+            },
+            containerColor = Color(0xFF141416),
+            shape = RoundedCornerShape(12.dp)
+        )
     }
 }
 

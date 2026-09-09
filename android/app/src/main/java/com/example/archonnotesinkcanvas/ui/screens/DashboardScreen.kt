@@ -39,6 +39,10 @@ import com.example.archonnotesinkcanvas.theme.ArchonDesignTokens
 import kotlinx.coroutines.delay
 import java.util.Locale
 
+import com.example.archonnotesinkcanvas.data.remote.ArchonApiClient
+import com.example.archonnotesinkcanvas.data.remote.MetricsSummaryResponse
+import com.example.archonnotesinkcanvas.data.remote.HealthLoadResponse
+
 // Data Models
 data class DashboardStat(
     val id: String,
@@ -208,7 +212,43 @@ fun DashboardScreen(
     val isMedium = widthClass == WindowWidthSizeClass.Medium
     val isExpanded = widthClass == WindowWidthSizeClass.Expanded
 
-    val stats = remember { defaultStats }
+    var liveMetrics by remember { mutableStateOf<MetricsSummaryResponse?>(null) }
+    var liveHealthLoad by remember { mutableStateOf<HealthLoadResponse?>(null) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            try {
+                val metrics = ArchonApiClient.getMetricsSummary()
+                liveMetrics = metrics
+            } catch (e: Exception) {
+                // Fallback preserved
+            }
+            try {
+                val load = ArchonApiClient.getHealthLoad()
+                liveHealthLoad = load
+            } catch (e: Exception) {
+                // Fallback preserved
+            }
+            delay(10000L) // Poll every 10 seconds
+        }
+    }
+
+    // Dynamic stats merged with live data
+    val stats = remember(liveMetrics, liveHealthLoad) {
+        val base = defaultStats.toMutableList()
+        liveMetrics?.let { m ->
+            val formattedTokens = if (m.total_tokens > 1000) String.format(Locale.US, "%.1fk", m.total_tokens / 1000.0) else "${m.total_tokens}"
+            val costStr = String.format(Locale.US, "Est. cost $%.2f", m.estimated_cost)
+            base[1] = DashboardStat("2", "Tokens Used", formattedTokens, costStr, Icons.Outlined.Bolt, ArchonDesignTokens.AccentIndigo)
+        }
+        liveHealthLoad?.let { h ->
+            val cpuPercent = (h.cpu_percent).toInt()
+            val loadText = "CPU: $cpuPercent% | RAM: ${(h.ram_percent).toInt()}%"
+            base[0] = DashboardStat("1", "System Load", "${(h.overall_load * 100).toInt()}%", loadText, Icons.Outlined.Memory, ArchonDesignTokens.AccentIndigo)
+        }
+        base
+    }
+
     val activityData = remember { defaultActivityData }
     val agents = remember { defaultAgents }
     val logs = remember { defaultLogs }
@@ -231,7 +271,11 @@ fun DashboardScreen(
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                DashboardHeader(isBackendConnected = isBackendConnected, onNavigate = onNavigate)
+                DashboardHeader(
+                    isBackendConnected = isBackendConnected,
+                    onNavigate = onNavigate,
+                    healthLoad = liveHealthLoad
+                )
 
                 // 4 Stat Cards in 1 Row
                 Row(
@@ -282,7 +326,11 @@ fun DashboardScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                DashboardHeader(isBackendConnected = isBackendConnected, onNavigate = onNavigate)
+                DashboardHeader(
+                    isBackendConnected = isBackendConnected,
+                    onNavigate = onNavigate,
+                    healthLoad = liveHealthLoad
+                )
 
                 // 4 Stat Cards in 1 Row
                 Row(
@@ -333,7 +381,11 @@ fun DashboardScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                DashboardHeader(isBackendConnected = isBackendConnected, onNavigate = onNavigate)
+                DashboardHeader(
+                    isBackendConnected = isBackendConnected,
+                    onNavigate = onNavigate,
+                    healthLoad = liveHealthLoad
+                )
 
                 // 2x2 Stats Grid
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -370,7 +422,8 @@ fun DashboardScreen(
 @Composable
 fun DashboardHeader(
     isBackendConnected: Boolean,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    healthLoad: HealthLoadResponse? = null
 ) {
     var uptimeSeconds by remember { mutableLongStateOf(15155L) }
 
@@ -415,7 +468,9 @@ fun DashboardHeader(
             // Daemon status pill
             val statusColor = if (isBackendConnected) ArchonDesignTokens.AccentEmerald else ArchonDesignTokens.AccentRose
             val statusIcon = if (isBackendConnected) Icons.Outlined.Wifi else Icons.Outlined.WifiOff
-            val statusText = if (isBackendConnected) "Daemon Online" else "Daemon Offline"
+            val statusText = if (isBackendConnected) {
+                if (healthLoad != null) "Daemon Online · ${(healthLoad.overall_load * 100).toInt()}% load" else "Daemon Online"
+            } else "Daemon Offline"
 
             Surface(
                 color = statusColor.copy(alpha = 0.12f),

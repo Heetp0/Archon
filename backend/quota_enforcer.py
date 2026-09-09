@@ -83,3 +83,37 @@ def check_ocr_quota(db_conn: lancedb.db.LanceDBConnection, user_id: str, user_ro
         raise qe
     except Exception as e:
         logger.debug(f"Quota check skipped or failed: {e}")
+
+
+class QuotaEnforcer:
+    """
+    Per-user quota tracker and enforcer for query and storage limits.
+    """
+    def __init__(self, storage_limit_mb: int = 1024, query_limit_per_hour: int = 100):
+        self.storage_limit_mb = storage_limit_mb
+        self.query_limit_per_hour = query_limit_per_hour
+        self._user_queries: Dict[str, list] = {}
+
+    def record_query(self, user_id: str) -> None:
+        import time
+        now = time.time()
+        if user_id not in self._user_queries:
+            self._user_queries[user_id] = []
+        self._user_queries[user_id].append(now)
+
+    def check_query_quota(self, user_id: str) -> bool:
+        import time
+        now = time.time()
+        hour_ago = now - 3600
+        timestamps = self._user_queries.get(user_id, [])
+        valid_timestamps = [t for t in timestamps if t >= hour_ago]
+        self._user_queries[user_id] = valid_timestamps
+        return len(valid_timestamps) < self.query_limit_per_hour
+
+    def get_usage(self, user_id: str) -> int:
+        import time
+        now = time.time()
+        hour_ago = now - 3600
+        timestamps = self._user_queries.get(user_id, [])
+        return len([t for t in timestamps if t >= hour_ago])
+

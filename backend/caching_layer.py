@@ -32,6 +32,20 @@ class LRUCacheWithTTL:
     def clear(self) -> None:
         self.cache.clear()
 
+
+class SemanticCache(LRUCacheWithTTL):
+    """
+    SemanticCache interface matching performance benchmark and test specifications.
+    """
+    def __init__(self, max_size: int = 1000, ttl_seconds: int = 600):
+        super().__init__(max_size=max_size, default_ttl_sec=ttl_seconds)
+
+    def put(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> None:
+        self.set(key, value, ttl_sec=ttl_seconds)
+
+
 # Global cache instances
 embedding_cache = LRUCacheWithTTL(max_size=2000, default_ttl_sec=3600)  # Embeddings cached for 1 hour
 llm_cache = LRUCacheWithTTL(max_size=500, default_ttl_sec=300)          # LLM completions cached for 5 mins
+semantic_cache = SemanticCache(max_size=1000, ttl_seconds=600)
+
