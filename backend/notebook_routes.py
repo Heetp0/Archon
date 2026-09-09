@@ -38,6 +38,7 @@ DAEMON_DIR = os.path.dirname(os.path.abspath(__file__))
 STROKES_DIR = os.path.join(DAEMON_DIR, 'data', 'strokes')
 
 ocr_job_manager = None
+active_notebooks: Dict[str, Any] = {}
 
 def init_notebook_services(app_router: ModelRouter, app_retriever: Retriever):
     global model_router, retriever, grounded_chat_agent, studio_agent, audio_overview_agent, ocr_job_manager
@@ -62,6 +63,8 @@ def init_notebook_services(app_router: ModelRouter, app_retriever: Retriever):
 
 # Helper to verify notebook ownership
 def verify_notebook_access(notebook_id: str, user_id: str):
+    if notebook_id in active_notebooks:
+        return active_notebooks[notebook_id]
     if retriever is None:
         raise HTTPException(status_code=500, detail="Retriever not initialized")
     nb_table = retriever.db.open_table("notebooks")
@@ -179,11 +182,19 @@ async def create_notebook(request: Optional[NotebookCreate] = None, current_user
     
     new_nb = {
         "id": notebook_id,
+        "notebook_id": notebook_id,
         "user_id": current_user.user_id,
         "name": name,
         "created_at": time.time()
     }
-    nb_table.add([new_nb])
+    db_nb = {
+        "id": notebook_id,
+        "user_id": current_user.user_id,
+        "name": name,
+        "created_at": new_nb["created_at"]
+    }
+    nb_table.add([db_nb])
+    active_notebooks[notebook_id] = new_nb
     return new_nb
 
 @router.get('/notebooks')
