@@ -96,7 +96,20 @@ On Android, `CouncilScreen.kt` provides an adaptive UI for tablets/foldables, sc
   - **Consensus synthesis panel:** An auto-generated final card at the bottom that summarizes where models agreed and diverged — maps directly to Archon's Round 3 Synthesis card.
 * **PC ↔ Android Parity:** On tablet (`CouncilScreen.kt`), columns are shown side-by-side (2-up in landscape, carousel on compact). On web, the same flex-column layout scales from 2 to 4 panels. Both surfaces share the identical WebSocket multi-agent channel and parallel inference pipeline.
 
-## 8. Known Issues / Open TODOs
-* **Rate Limits**: Spawning 3 concurrent requests to the same provider (e.g. Groq) frequently triggers `HTTP 429 Too Many Requests`. (TODO: Implement robust jitter/backoff inside `generate_completion` or enforce diverse provider selection).
+## 8. Backend Resilience Architecture (`council_debate.py`)
+
+To ensure rock-solid stability during parallel multi-agent debate, `CouncilDebate` implements an enterprise-grade resilience layer:
+
+1. **Per-Model Isolation & Timeout Safeguards:** Each model task in Round 1, 2, and 3 is wrapped with `asyncio.wait_for(..., timeout=45.0)`. A stalled or hanging provider is isolated after 45 seconds with an informative error token, allowing the remaining council members to proceed without locking the session.
+2. **Exponential Backoff Retry with Random Jitter:** If a provider hits `HTTP 429 Too Many Requests` or transient network resets, `generate_completion_with_resilience` retries up to 2 times with exponential backoff:
+   $$\text{backoff} = 2^{\text{attempt}} + \text{jitter}(0.2, 0.8)$$
+3. **Context Truncation & Token Budgeting:**
+   - Round 2 (Critique): Peer drafts are capped at $2,000\text{ characters}$ each to prevent prompt ballooning.
+   - Round 3 (Consensus Synthesis): The debate transcript is capped at $7,000\text{ characters}$, with individual draft and critique snippets bounded to $1,200\text{ characters}$.
+   - Shared Context: Attached files and vault snippets are bounded to $3,500\text{ characters}$.
+4. **Visual Round Separation:** An explicit `\n\n---\n### Round 2: Critique & Refinement\n\n` delimiter is emitted before Round 2 tokens stream to prevent Round 2 text from collapsing into the Round 1 draft in the UI.
+5. **Telemetry & Metrics:** Returns `round_latencies_ms` (for Round 1, 2, and 3), `total_elapsed_ms`, and `total_tokens_estimated`.
+
+## 9. Known Issues / Open TODOs
 * **Export feature limitation**: Markdown export does not capture inline media or attached files correctly.
-* **Context Window Overflows**: The Round 3 Synthesis prompt includes all previous drafts and critiques. This can easily exceed the context limits of smaller heavy models.
+* **Model Selection Diversity**: UI should optionally suggest picking models from different providers (e.g. 1 Groq + 1 Gemini + 1 OpenRouter) to minimize single-provider queue congestion.
