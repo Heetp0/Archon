@@ -23,10 +23,13 @@ graph TD
 ```
 
 ## 3. Key API Endpoints & WebSocket Messages
-- `POST /api/notebooks/{id}/upload`: Processes uploaded documents (PDF, TXT, MD), chunks them, generates embeddings, and indexes them in LanceDB.
-- `GET /api/notebooks/{id}/documents`: Retrieves the list of parsed documents in the current notebook.
-- `POST /api/notebooks/{id}/chat`: Sends a message to the RAG backend, retrieving context and generating an answer. Returns streaming tokens.
-- `GET /api/notebooks/{id}/citations/{citation_id}`: Retrieves the exact chunk and surrounding context for a citation reference.
+- `POST /notebooks`: Creates a new notebook collection (`{"name": "..."}`).
+- `GET /notebooks`: Retrieves all notebooks for the authenticated user.
+- `GET /notebooks/{notebook_id}`: Retrieves specific notebook metadata and attached sources.
+- `POST /notebooks/{notebook_id}/sources`: Uploads and queues source documents (multipart/form-data with `source_type`: "pdf" | "codebase" | "audio" and `file`), processed via `IngestionQueue` and indexed in LanceDB.
+- `GET /jobs/{job_id}`: Polling endpoint for document ingestion and embedding status.
+- `POST /notebooks/{notebook_id}/query`: Executes semantic search against indexed notebook chunks with cosine similarity ranking.
+- `GET /notebooks/{notebook_id}/citations/{chunk_id}`: Retrieves the exact chunk text, page number, and source file metadata for inline citation cards.
 
 ## 4. Data Models / Database Schema
 - **LanceDB Collection (`documents`)**:

@@ -3,11 +3,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Cpu, Terminal, Loader2, CheckCircle2, Clock, XCircle,
   ChevronDown, ChevronUp, AlertTriangle, X, Send, LayoutDashboard,
-  Paperclip, Plus,
+  Paperclip, Plus, History, FileCode, RotateCcw, Check, Copy,
+  Columns, Code2, Sparkles, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWebSocketContext } from "@/context/WebSocketContext";
-import { useWebSocketStore } from "@/store/websocketStore";
+import { useWebSocketStore, PlanStep, ToolCall, DangerousCommand } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
 import { useFileAttach } from "@/hooks/useFileAttach";
 import { Button } from "@/components/ui/button";
@@ -30,23 +31,23 @@ const STATUS_COLOR = {
 
 const LINE_COLOR: Record<TerminalLine["kind"], string> = {
   system:  "text-text-secondary",
-  input:   "text-accent-emerald",
-  output:  "text-accent-emerald",
-  warning: "text-accent-rose",
+  input:   "text-accent-emerald font-semibold",
+  output:  "text-text-primary",
+  warning: "text-amber-400",
   error:   "text-accent-rose",
   success: "text-accent-emerald",
 };
 
 const LINE_PREFIX: Record<TerminalLine["kind"], string> = {
-  system:  "  ",
-  input:   "",
+  system:  "ℹ ",
+  input:   "$ ",
   output:  "  ",
   warning: "⚠ ",
   error:   "✖ ",
   success: "✔ ",
 };
 
-// ── New Agent Project flow (from blocking state) ───────────────────────────────
+// ── New Agent Project Blocker ────────────────────────────────────────────────
 function NewAgentProjectBlocker() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -120,33 +121,275 @@ function NewAgentProjectBlocker() {
   );
 }
 
-// ── Main Agent Mode ────────────────────────────────────────────────────────────
+// ── Plan Checklist Card (Devin-style) ─────────────────────────────────────────
+function PlanChecklistCard({ planSteps }: { planSteps: PlanStep[] }) {
+  if (!planSteps || planSteps.length === 0) return null;
+
+  return (
+    <div className="bg-panel-bg border border-border-core rounded-lg p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between border-b border-border-core/40 pb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-accent-emerald" />
+          <h3 className="font-mono text-xs font-bold text-text-primary tracking-wider uppercase">
+            Execution Plan ({planSteps.length} Steps)
+          </h3>
+        </div>
+        <span className="text-[10px] font-mono text-accent-emerald bg-accent-emerald/10 px-2 py-0.5 rounded border border-accent-emerald/20">
+          AUTOPILOT
+        </span>
+      </div>
+
+      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+        {planSteps.map((step) => {
+          const isDone = step.status === "completed";
+          const isRunning = step.status === "running";
+          const isFailed = step.status === "failed";
+
+          return (
+            <div
+              key={step.id}
+              className={`p-2.5 rounded border text-xs font-mono transition-all ${
+                isRunning
+                  ? "border-accent-emerald bg-accent-emerald/5 shadow-[0_0_12px_rgba(16,185,129,0.1)]"
+                  : isDone
+                  ? "border-border-core/50 bg-panel-bg/40 opacity-75"
+                  : isFailed
+                  ? "border-accent-rose/50 bg-accent-rose/5"
+                  : "border-border-core/40 bg-panel-bg"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <div className="flex-shrink-0 mt-0.5">
+                  {isRunning ? (
+                    <Loader2 className="w-3.5 h-3.5 text-accent-emerald animate-spin" />
+                  ) : isDone ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-accent-emerald" />
+                  ) : isFailed ? (
+                    <XCircle className="w-3.5 h-3.5 text-accent-rose" />
+                  ) : (
+                    <span className="inline-block w-3.5 h-3.5 rounded-full border border-text-secondary/40 text-[9px] text-center text-text-secondary leading-3">
+                      {step.id}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`font-semibold ${isDone ? "line-through text-text-secondary" : "text-text-primary"}`}>
+                    {step.title}
+                  </div>
+                  {step.acceptance_criteria && (
+                    <div className="text-[11px] text-text-secondary mt-1 flex items-center gap-1.5">
+                      <span className="text-accent-emerald/80 font-mono text-[9px] uppercase tracking-wider bg-accent-emerald/10 px-1 py-0.2 rounded">
+                        Criteria
+                      </span>
+                      <span className="truncate">{step.acceptance_criteria}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Tool Call Activity Stream (Claude Code-style ⏺ bullets) ───────────────────
+function ToolCallActivityCard({ toolCalls }: { toolCalls: ToolCall[] }) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  if (!toolCalls || toolCalls.length === 0) return null;
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  return (
+    <div className="bg-panel-bg border border-border-core rounded-lg p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between border-b border-border-core/40 pb-2">
+        <div className="flex items-center gap-2">
+          <Code2 className="w-4 h-4 text-accent-emerald" />
+          <h3 className="font-mono text-xs font-bold text-text-primary tracking-wider uppercase">
+            Tool Activity ({toolCalls.length})
+          </h3>
+        </div>
+        <span className="text-[10px] font-mono text-text-secondary">
+          AUDIT LOG
+        </span>
+      </div>
+
+      <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+        {toolCalls.slice(-8).map((tc) => {
+          const isDone = tc.status === "done";
+          const isExp = !!expanded[tc.id];
+
+          return (
+            <div
+              key={tc.id}
+              className="border border-border-core/50 rounded bg-app-bg text-[11px] font-mono overflow-hidden transition-all"
+            >
+              <button
+                onClick={() => toggleExpand(tc.id)}
+                className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-panel-bg/60 transition-colors text-left"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  {isDone ? (
+                    <span className="text-accent-emerald select-none">✔</span>
+                  ) : (
+                    <Loader2 className="w-3 h-3 text-accent-emerald animate-spin flex-shrink-0" />
+                  )}
+                  <span className="font-bold text-accent-emerald">{tc.tool}</span>
+                  <span className="text-text-secondary truncate">{tc.input}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span className="text-[9px] text-text-secondary">{tc.timestamp}</span>
+                  {isExp ? <ChevronUp className="w-3 h-3 text-text-secondary" /> : <ChevronDown className="w-3 h-3 text-text-secondary" />}
+                </div>
+              </button>
+
+              {isExp && (
+                <div className="px-3 py-2 border-t border-border-core/40 bg-panel-bg text-[10px] text-text-secondary space-y-1">
+                  <div><span className="text-text-primary font-bold">Input:</span> {tc.input}</div>
+                  {tc.exit_code !== undefined && <div><span className="text-text-primary font-bold">Exit Code:</span> {tc.exit_code}</div>}
+                  {tc.result_count !== undefined && <div><span className="text-text-primary font-bold">Results:</span> {tc.result_count} entries</div>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Session History Drawer Modal ─────────────────────────────────────────────
+function SessionHistoryModal({
+  open,
+  onClose,
+  onSelectSession
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSelectSession: (taskId: string) => void;
+}) {
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+    const port = localStorage.getItem("archon_daemon_port") || "8765";
+    const protocol = window.location.protocol === "https:" ? "https" : "http";
+    const token = localStorage.getItem("archon_token") || "";
+
+    fetch(`${protocol}://${host}:${port}/agents/sessions?limit=15`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(res => res.json())
+      .then(data => {
+        setSessions(data.sessions || []);
+      })
+      .catch(err => {
+        console.error("Failed to load sessions:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-app-bg/80 backdrop-blur-sm p-4">
+      <div className="bg-panel-bg border border-border-core rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+        <div className="p-4 border-b border-border-core flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-accent-emerald" />
+            <h3 className="font-mono text-sm font-bold text-text-primary">Agent Session History</h3>
+          </div>
+          <button onClick={onClose} className="text-text-secondary hover:text-text-primary">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-4 max-h-96 overflow-y-auto space-y-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-xs font-mono text-text-secondary gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-accent-emerald" />
+              Loading past sessions...
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-8 text-xs font-mono text-text-secondary">
+              No recorded sessions found in journal.
+            </div>
+          ) : (
+            sessions.map((s) => (
+              <div
+                key={s.task_id}
+                className="p-3 rounded border border-border-core/60 bg-app-bg hover:border-accent-emerald/50 transition-colors flex items-center justify-between"
+              >
+                <div>
+                  <div className="font-mono text-xs font-bold text-text-primary">{s.task_id}</div>
+                  <div className="font-mono text-[10px] text-text-secondary mt-0.5">
+                    {s.started_at ? new Date(s.started_at).toLocaleString() : "Unknown date"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                    s.status === "completed"
+                      ? "text-accent-emerald border-accent-emerald/30 bg-accent-emerald/10"
+                      : "text-text-secondary border-border-core bg-panel-bg"
+                  }`}>
+                    {s.status?.toUpperCase()}
+                  </span>
+                  <button
+                    onClick={() => {
+                      onSelectSession(s.task_id);
+                      onClose();
+                    }}
+                    className="px-2.5 py-1 rounded bg-accent-emerald hover:bg-accent-emerald text-text-primary font-mono text-[11px] font-semibold transition-colors"
+                  >
+                    Replay
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Agent Mode Component ────────────────────────────────────────────────
 export default function AgentMode() {
-  const { sendAgentCommand, approveCommand, denyCommand, connected } = useWebSocketContext();
+  const { sendAgentCommand, approveCommand, denyCommand, connected, fetchSessionHistory } = useWebSocketContext();
   const agentStatuses = useWebSocketStore(s => s.agentStatuses);
   const taskQueue = useWebSocketStore(s => s.taskQueue);
   const terminalLines = useWebSocketStore(s => s.terminalLines);
   const dangerousCommand = useWebSocketStore(s => s.dangerousCommand);
+  const planSteps = useWebSocketStore(s => s.planSteps);
+  const toolCalls = useWebSocketStore(s => s.toolCalls);
+  const sessionMetadata = useWebSocketStore(s => s.sessionMetadata);
 
   const { projects, activeProjectId } = useProjectsContext();
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const { inputRef: fileInputRef, openPicker, handleFilesSelected } = useFileAttach(activeProjectId);
 
-  const [terminalOpen, setTerminalOpen] = useState(false);
+  // View state: "split" (Plan + Terminal), "dashboard" (Daemons + Queue), "terminal" (Full terminal)
+  const [viewMode, setViewMode] = useState<"split" | "dashboard" | "terminal">("split");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [cmdInput, setCmdInput] = useState("");
+
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastSentCmdRef = useRef<string>("");
 
   useEffect(() => {
-    if (terminalOpen && terminalEndRef.current) {
+    if (terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [terminalLines, terminalOpen]);
-
-  useEffect(() => {
-    if (terminalOpen) setTimeout(() => inputRef.current?.focus(), 150);
-  }, [terminalOpen]);
+  }, [terminalLines]);
 
   const handleSendCmd = useCallback(() => {
     if (!cmdInput.trim()) return;
@@ -161,6 +404,13 @@ export default function AgentMode() {
       e.preventDefault();
       setCmdInput(lastSentCmdRef.current);
     }
+  };
+
+  const copySolutionCode = () => {
+    if (!dangerousCommand?.solution_preview) return;
+    navigator.clipboard.writeText(dangerousCommand.solution_preview);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   // Blocking state — no active agent project
@@ -179,10 +429,10 @@ export default function AgentMode() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 1.02 }}
+      initial={{ opacity: 0, scale: 1.01 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col h-full bg-app-bg relative"
+      transition={{ duration: 0.2 }}
+      className="flex flex-col h-full bg-app-bg relative overflow-hidden"
     >
       {/* Hidden file input */}
       <input
@@ -195,254 +445,131 @@ export default function AgentMode() {
       />
 
       {/* ── Header bar ── */}
-      <div className="p-4 border-b border-green-900/30 flex items-center justify-between bg-gradient-to-r from-green-950/20 to-transparent flex-shrink-0">
+      <div className="p-3.5 border-b border-border-core flex items-center justify-between bg-panel-bg flex-shrink-0">
         <div>
-          <h1 className="text-lg font-mono text-text-primary font-bold tracking-tight">AGENT RUNTIME</h1>
-          <p className="text-xs font-mono text-text-secondary mt-0.5">
-            <span className="text-green-700">{activeProject.name}</span>
+          <div className="flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-accent-emerald" />
+            <h1 className="text-sm font-mono text-text-primary font-bold tracking-tight">AGENT RUNTIME</h1>
+            {sessionMetadata?.task_id && (
+              <span className="text-[10px] font-mono text-text-secondary bg-app-bg px-2 py-0.5 rounded border border-border-core">
+                {sessionMetadata.task_id}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] font-mono text-text-secondary mt-0.5">
+            <span className="text-accent-emerald font-semibold">{activeProject.name}</span>
             {activeProject.folderPath && (
               <span className="text-text-secondary"> · {activeProject.folderPath}</span>
             )}
           </p>
         </div>
+
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded bg-app-bg border border-border-core flex items-center gap-2">
-            <div className="text-[10px] text-text-secondary font-mono uppercase">CPU</div>
-            <div className="text-sm text-accent-emerald font-mono">—</div>
-          </div>
-          <div className="px-3 py-1.5 rounded bg-app-bg border border-border-core flex items-center gap-2">
-            <div className="text-[10px] text-text-secondary font-mono uppercase">RAM</div>
-            <div className="text-sm text-accent-emerald font-mono">—</div>
-          </div>
+          {/* Replay / History button */}
+          <button
+            onClick={() => setHistoryOpen(true)}
+            title="View Past Agent Sessions"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-app-bg border border-border-core text-xs font-mono text-text-secondary hover:text-text-primary hover:border-accent-emerald/40 transition-colors"
+          >
+            <History className="w-3.5 h-3.5 text-accent-emerald" />
+            <span>History</span>
+          </button>
 
           {/* Attach */}
           <button
             onClick={openPicker}
             title="Attach files to project"
-            className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary border border-border-core rounded bg-app-bg transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-text-primary border border-border-core rounded bg-app-bg transition-colors"
           >
-            <Paperclip className="w-4 h-4" />
+            <Paperclip className="w-3.5 h-3.5" />
           </button>
 
-          {/* View toggle */}
-          <div className="flex rounded border border-border-core overflow-hidden">
+          {/* View toggle pills */}
+          <div className="flex rounded border border-border-core overflow-hidden bg-app-bg">
             <button
-              onClick={() => setTerminalOpen(false)}
-              data-testid="button-show-dashboard"
-              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs transition-colors ${
-                !terminalOpen ? "bg-panel-bg text-text-primary" : "bg-app-bg text-text-secondary hover:text-text-secondary"
+              onClick={() => setViewMode("split")}
+              className={`flex items-center gap-1.5 px-3 py-1 font-mono text-xs transition-colors ${
+                viewMode === "split" ? "bg-accent-emerald/20 text-accent-emerald font-bold" : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              <Columns className="w-3.5 h-3.5" />
+              Split
+            </button>
+            <button
+              onClick={() => setViewMode("dashboard")}
+              className={`flex items-center gap-1.5 px-3 py-1 font-mono text-xs border-l border-border-core transition-colors ${
+                viewMode === "dashboard" ? "bg-accent-emerald/20 text-accent-emerald font-bold" : "text-text-secondary hover:text-text-primary"
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              Dashboard
+              Overview
             </button>
             <button
-              onClick={() => setTerminalOpen(true)}
-              data-testid="button-show-terminal"
-              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs border-l border-border-core transition-colors ${
-                terminalOpen
-                  ? "bg-green-900/30 text-accent-emerald "
-                  : "bg-app-bg text-text-secondary hover:text-accent-emerald"
+              onClick={() => setViewMode("terminal")}
+              className={`flex items-center gap-1.5 px-3 py-1 font-mono text-xs border-l border-border-core transition-colors ${
+                viewMode === "terminal" ? "bg-accent-emerald/20 text-accent-emerald font-bold" : "text-text-secondary hover:text-text-primary"
               }`}
             >
               <Terminal className="w-3.5 h-3.5" />
-              Terminal
+              Shell
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Content ── */}
+      {/* ── Main Content Area ── */}
       <div className="flex-1 overflow-hidden relative">
 
-        {/* Dashboard view */}
-        <AnimatePresence>
-          {!terminalOpen && (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="absolute inset-0 p-6 flex flex-col gap-6 overflow-hidden"
-            >
-              <div className="flex-1 grid grid-cols-2 gap-6 min-h-0 overflow-hidden">
-                {/* Active Daemons */}
-                <div className="flex flex-col space-y-4 overflow-hidden">
-                  <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                    <Cpu className="w-4 h-4 text-accent-emerald" /> Active Daemons
-                  </h2>
-                  <div className="space-y-4 overflow-y-auto flex-1">
-                    {agentStatuses.length === 0 ? (
-                      <div className="text-xs font-mono text-text-secondary text-center py-8">
-                        No agents running. Send a command to start.
-                      </div>
-                    ) : agentStatuses.map((agent) => (
-                      <div
-                        key={agent.id}
-                        className={`glass-panel border rounded-lg p-5 relative overflow-hidden flex-shrink-0 ${
-                          agent.status === "running" ? "border-green-500/30" : "border-border-core"
-                        } ${agent.status === "idle" ? "opacity-60" : ""}`}
-                      >
-                        <div className={`absolute top-0 left-0 w-1 h-full ${
-                          agent.status === "running"
-                            ? "bg-accent-emerald "
-                            : "bg-slate-600"
-                        }`} />
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="font-mono text-text-primary text-sm font-bold">{agent.name}</h3>
-                            <div className="text-xs font-mono text-accent-emerald mt-1">PID: {agent.pid}</div>
-                          </div>
-                          <div className={`px-2 py-1 rounded text-[10px] font-mono border ${
-                            agent.status === "running"
-                              ? "bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20 animate-pulse"
-                              : agent.status === "complete"
-                              ? "bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20"
-                              : agent.status === "failed"
-                              ? "bg-accent-rose/10 text-accent-rose border-accent-rose/20"
-                              : "bg-panel-bg text-text-secondary border-border-core/60"
-                          }`}>
-                            {agent.status.toUpperCase()}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs font-mono">
-                            <span className="text-text-secondary">Current Action</span>
-                            <span className="text-text-primary">{agent.action}</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-panel-bg rounded-full overflow-hidden border border-border-core">
-                            <div
-                              className={`h-full transition-all duration-500 ${
-                                agent.status === "running"
-                                  ? "bg-accent-emerald "
-                                  : "bg-slate-600"
-                              }`}
-                              style={{ width: `${agent.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        {/* VIEW 1: Split View (Devin-style: Plan + Tools on Left, Terminal on Right) */}
+        {viewMode === "split" && (
+          <div className="absolute inset-0 p-4 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-hidden">
+            {/* Left Column: Plan & Tools (5 cols) */}
+            <div className="md:col-span-5 flex flex-col gap-4 overflow-y-auto pr-1">
+              <PlanChecklistCard planSteps={planSteps} />
+              <ToolCallActivityCard toolCalls={toolCalls} />
+              
+              {/* If no plan or tools yet, show empty state helper */}
+              {(!planSteps || planSteps.length === 0) && (!toolCalls || toolCalls.length === 0) && (
+                <div className="bg-panel-bg border border-border-core/50 rounded-lg p-6 text-center space-y-2">
+                  <Cpu className="w-8 h-8 text-accent-emerald/50 mx-auto" />
+                  <h4 className="font-mono text-xs font-bold text-text-primary">Plan & Tool Stream Active</h4>
+                  <p className="font-mono text-[11px] text-text-secondary leading-relaxed">
+                    Dispatch an engineering directive below. The Planner will structure verified steps, and tool executions will stream in real-time.
+                  </p>
                 </div>
+              )}
+            </div>
 
-                {/* Task Queue */}
-                <div className="flex flex-col space-y-4 overflow-hidden">
-                  <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0">
-                    <Terminal className="w-4 h-4 text-accent-emerald" /> Task Queue
-                  </h2>
-                  <div className="flex-1 glass-panel border border-border-core rounded-lg overflow-hidden flex flex-col min-h-0">
-                    <ScrollArea className="flex-1 p-4">
-                      <div className="space-y-2">
-                        {taskQueue.length === 0 ? (
-                          <div className="text-xs font-mono text-text-secondary text-center py-8">
-                            No tasks queued.
-                          </div>
-                        ) : taskQueue.map((task) => {
-                          const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
-                          return (
-                            <div key={task.id} className="flex items-center gap-4 p-3 rounded bg-panel-bg/50 border border-border-core/50">
-                              <div className="font-mono text-[10px] text-text-secondary w-12">{task.id}</div>
-                              <div className={`font-sans text-sm flex-1 ${
-                                task.status === "complete" ? "text-text-secondary line-through" : "text-text-primary"
-                              }`}>
-                                {task.name}
-                              </div>
-                              <div className={`flex items-center gap-1.5 ${STATUS_COLOR[task.status as keyof typeof STATUS_COLOR]}`}>
-                                {task.status === "running"
-                                  ? <Icon className="w-4 h-4 animate-spin" />
-                                  : <Icon className="w-4 h-4" />
-                                }
-                                <span className="text-[10px] font-mono uppercase tracking-wider">{task.status}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  </div>
+            {/* Right Column: Live Terminal & Input (7 cols) */}
+            <div className="md:col-span-7 flex flex-col glass-panel border border-border-core rounded-lg overflow-hidden min-h-0 bg-app-bg">
+              <div className="flex items-center justify-between px-4 py-2 bg-panel-bg border-b border-border-core flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-3.5 h-3.5 text-accent-emerald" />
+                  <span className="text-[11px] font-mono text-accent-emerald tracking-wider uppercase font-bold">
+                    Terminal Output & Verifier Stream
+                  </span>
                 </div>
-              </div>
-
-              {/* Dispatch prompt */}
-              <div className="flex items-center gap-3 border border-border-core rounded-lg bg-app-bg px-4 py-3 flex-shrink-0">
-                <span className="text-accent-emerald font-mono text-sm select-none flex-shrink-0">$</span>
-                <input
-                  type="text"
-                  value={cmdInput}
-                  onChange={(e) => setCmdInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={connected ? "Dispatch command or directive to agent runtime..." : "Daemon offline"}
-                  disabled={!connected}
-                  data-testid="input-dashboard-command"
-                  className="flex-1 bg-transparent text-accent-emerald placeholder:text-text-secondary font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <button
-                  onClick={handleSendCmd}
-                  disabled={!connected || !cmdInput.trim()}
-                  data-testid="button-send-dashboard-command"
-                  className="text-green-700 hover:text-accent-emerald disabled:opacity-30 transition-colors flex-shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Terminal view */}
-        <AnimatePresence>
-          {terminalOpen && (
-            <motion.div
-              key="terminal"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="absolute inset-0 flex flex-col bg-app-bg"
-            >
-              <div className="flex items-center justify-between px-4 py-2 bg-panel-bg border-b border-green-900/30 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-accent-rose/70" />
-                    <div className="w-3 h-3 rounded-full bg-accent-rose/70" />
-                    <div className="w-3 h-3 rounded-full bg-accent-emerald/70" />
-                  </div>
-                  <span className="text-[11px] font-mono text-accent-emerald uppercase tracking-widest">archon — agent shell</span>
-                </div>
-                <button
-                  onClick={() => setTerminalOpen(false)}
-                  className="text-text-secondary hover:text-text-secondary transition-colors"
-                  data-testid="button-close-terminal"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <span className="text-[10px] font-mono text-text-secondary">
+                  {terminalLines.length} lines
+                </span>
               </div>
 
               <div
-                className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed min-h-0"
+                className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed space-y-1 min-h-0"
                 style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-core) transparent" }}
               >
                 {terminalLines.map((line) => (
-                  <div key={line.id} className={`flex gap-3 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>
-                    <span className="text-green-900 select-none flex-shrink-0">{line.timestamp}</span>
+                  <div key={line.id} className={`flex gap-2.5 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>
+                    <span className="text-text-secondary/50 select-none flex-shrink-0 text-[10px]">{line.timestamp}</span>
                     <span className="flex-shrink-0 select-none">{LINE_PREFIX[line.kind as keyof typeof LINE_PREFIX]}</span>
-                    <span className="break-all">{line.text}</span>
+                    <span className="break-all whitespace-pre-wrap">{line.text}</span>
                   </div>
                 ))}
-                <div className="flex gap-3 text-accent-emerald mt-1">
-                  <span className="text-green-900 select-none">
-                    {new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                  </span>
-                  <span className="animate-pulse">█</span>
-                </div>
                 <div ref={terminalEndRef} />
               </div>
 
-              <div className="flex items-center gap-2 px-4 py-3 border-t border-green-900/30 bg-panel-bg flex-shrink-0">
+              {/* Command input */}
+              <div className="flex items-center gap-2 px-4 py-3 border-t border-border-core bg-panel-bg flex-shrink-0">
                 <span className="text-accent-emerald font-mono text-sm select-none">$</span>
                 <input
                   ref={inputRef}
@@ -450,86 +577,266 @@ export default function AgentMode() {
                   value={cmdInput}
                   onChange={(e) => setCmdInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={connected ? "Enter command or directive..." : "Daemon offline"}
+                  placeholder={connected ? "Enter agent instruction or prompt..." : "Daemon offline"}
                   disabled={!connected}
-                  data-testid="input-terminal-command"
-                  className="flex-1 bg-transparent text-accent-emerald placeholder:text-green-900 font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+                  className="flex-1 bg-transparent text-accent-emerald placeholder:text-text-secondary font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
                   autoComplete="off"
                   spellCheck={false}
                 />
                 <button
                   onClick={handleSendCmd}
                   disabled={!connected || !cmdInput.trim()}
-                  data-testid="button-send-command"
-                  className="text-accent-emerald hover:text-accent-emerald disabled:opacity-30 transition-colors"
+                  className="px-3 py-1.5 rounded bg-accent-emerald hover:bg-accent-emerald text-text-primary text-xs font-mono font-bold disabled:opacity-30 transition-colors flex items-center gap-1.5"
                 >
-                  <Send className="w-4 h-4" />
+                  <span>Dispatch</span>
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 2: Dashboard Overview View */}
+        {viewMode === "dashboard" && (
+          <div className="absolute inset-0 p-6 flex flex-col gap-6 overflow-hidden">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0 overflow-hidden">
+              {/* Active Daemons */}
+              <div className="flex flex-col space-y-3 overflow-hidden">
+                <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0 font-bold">
+                  <Cpu className="w-4 h-4 text-accent-emerald" /> Active Node Subprocesses
+                </h2>
+                <div className="space-y-3 overflow-y-auto flex-1 pr-1">
+                  {agentStatuses.length === 0 ? (
+                    <div className="text-xs font-mono text-text-secondary text-center py-12 glass-panel border border-border-core rounded-lg">
+                      No active subagents currently processing.
+                    </div>
+                  ) : (
+                    agentStatuses.map((agent) => (
+                      <div
+                        key={agent.id}
+                        className="glass-panel border border-border-core rounded-lg p-4 relative overflow-hidden"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-mono text-text-primary text-sm font-bold">{agent.name}</h3>
+                            <div className="text-xs font-mono text-accent-emerald mt-0.5">PID: {agent.pid}</div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono border border-accent-emerald/30 text-accent-emerald bg-accent-emerald/10">
+                            {agent.status?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="text-xs font-mono text-text-secondary mt-2">
+                          <span className="text-text-primary font-semibold">Action:</span> {agent.action}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Task Queue */}
+              <div className="flex flex-col space-y-3 overflow-hidden">
+                <h2 className="text-xs font-mono text-text-secondary uppercase tracking-widest flex items-center gap-2 flex-shrink-0 font-bold">
+                  <Terminal className="w-4 h-4 text-accent-emerald" /> Pipeline Stage Queue
+                </h2>
+                <div className="flex-1 glass-panel border border-border-core rounded-lg overflow-hidden flex flex-col min-h-0 p-4">
+                  <div className="space-y-2 overflow-y-auto flex-1">
+                    {taskQueue.length === 0 ? (
+                      <div className="text-xs font-mono text-text-secondary text-center py-12">
+                        Pipeline idle. Send a directive to begin.
+                      </div>
+                    ) : (
+                      taskQueue.map((task) => {
+                        const Icon = STATUS_ICON[task.status as keyof typeof STATUS_ICON];
+                        return (
+                          <div key={task.id} className="flex items-center gap-3 p-3 rounded bg-panel-bg border border-border-core/60">
+                            <div className="font-mono text-[10px] text-text-secondary w-12">{task.id}</div>
+                            <div className="font-mono text-xs flex-1 text-text-primary truncate">{task.name}</div>
+                            <div className={`flex items-center gap-1 text-[10px] font-mono uppercase ${STATUS_COLOR[task.status as keyof typeof STATUS_COLOR]}`}>
+                              {Icon && <Icon className="w-3.5 h-3.5" />}
+                              <span>{task.status}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom prompt */}
+            <div className="flex items-center gap-3 border border-border-core rounded-lg bg-panel-bg px-4 py-3 flex-shrink-0">
+              <span className="text-accent-emerald font-mono text-sm select-none">$</span>
+              <input
+                type="text"
+                value={cmdInput}
+                onChange={(e) => setCmdInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={connected ? "Dispatch command to agent runtime..." : "Daemon offline"}
+                disabled={!connected}
+                className="flex-1 bg-transparent text-accent-emerald placeholder:text-text-secondary font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+              />
+              <button
+                onClick={handleSendCmd}
+                disabled={!connected || !cmdInput.trim()}
+                className="px-3 py-1.5 rounded bg-accent-emerald hover:bg-accent-emerald text-text-primary text-xs font-mono font-bold disabled:opacity-30 transition-colors"
+              >
+                Execute
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3: Full Terminal View */}
+        {viewMode === "terminal" && (
+          <div className="absolute inset-0 flex flex-col bg-app-bg">
+            <div className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed space-y-1 min-h-0">
+              {terminalLines.map((line) => (
+                <div key={line.id} className={`flex gap-3 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>
+                  <span className="text-text-secondary/50 select-none flex-shrink-0 text-[10px]">{line.timestamp}</span>
+                  <span className="flex-shrink-0 select-none">{LINE_PREFIX[line.kind as keyof typeof LINE_PREFIX]}</span>
+                  <span className="break-all whitespace-pre-wrap">{line.text}</span>
+                </div>
+              ))}
+              <div ref={terminalEndRef} />
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-3 border-t border-border-core bg-panel-bg flex-shrink-0">
+              <span className="text-accent-emerald font-mono text-sm select-none">$</span>
+              <input
+                ref={inputRef}
+                type="text"
+                value={cmdInput}
+                onChange={(e) => setCmdInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={connected ? "Enter command or directive..." : "Daemon offline"}
+                disabled={!connected}
+                className="flex-1 bg-transparent text-accent-emerald placeholder:text-text-secondary font-mono text-sm outline-none caret-green-400 disabled:opacity-40"
+              />
+              <button
+                onClick={handleSendCmd}
+                disabled={!connected || !cmdInput.trim()}
+                className="px-3 py-1.5 rounded bg-accent-emerald hover:bg-accent-emerald text-text-primary text-xs font-mono font-bold disabled:opacity-30 transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Dangerous Command Warning Modal ── */}
+      {/* ── High-Fidelity Human-in-the-Loop Approval Gate Modal (Claude Code / Devin Review style) ── */}
       <AnimatePresence>
         {dangerousCommand && (
           <motion.div
-            key="warning-modal"
+            key="approval-gate-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-app-bg/80"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-app-bg/85 backdrop-blur-md p-4"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.94, y: 15 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="relative max-w-lg w-full mx-6 bg-panel-bg border-2 border-red-500/60 rounded-xl overflow-hidden "
+              exit={{ scale: 0.94, y: 15 }}
+              transition={{ type: "spring", damping: 24, stiffness: 320 }}
+              className="relative max-w-2xl w-full bg-panel-bg border-2 border-accent-emerald/60 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
             >
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
-              <div className="p-8">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-accent-rose/10 border border-red-500/30 flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-red-500" />
+              {/* Header banner */}
+              <div className="bg-accent-emerald/15 border-b border-accent-emerald/30 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-accent-emerald/20 border border-accent-emerald/40 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-accent-emerald" />
                   </div>
                   <div>
-                    <h2 className="text-accent-rose font-mono font-bold text-lg tracking-tight uppercase mb-1">
-                      Dangerous Command Intercepted
+                    <h2 className="text-sm font-mono font-bold text-text-primary uppercase tracking-wider">
+                      Authorization Checkpoint
                     </h2>
-                    <p className="text-text-secondary text-sm font-mono">{dangerousCommand.reason}</p>
+                    <p className="text-[11px] font-mono text-accent-emerald">
+                      Target Subproject: {dangerousCommand.target_subproject || "Workspace/ProjectHub"}
+                    </p>
                   </div>
                 </div>
-                <div className="bg-app-bg border border-red-900/50 rounded-lg p-4 mb-6 font-mono">
-                  <div className="text-[10px] text-red-600 uppercase tracking-widest mb-2">Command to Execute</div>
-                  <div className="text-red-300 text-sm break-all">$ {dangerousCommand.command}</div>
+
+                {dangerousCommand.retry_count !== undefined && dangerousCommand.retry_count > 0 && (
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    Self-Correction Retry #{dangerousCommand.retry_count}
+                  </span>
+                )}
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                {/* Command & affected files */}
+                <div className="bg-app-bg border border-border-core rounded-lg p-3 space-y-1.5 font-mono text-xs">
+                  <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Command to Execute</div>
+                  <div className="text-accent-emerald break-all font-semibold">$ {dangerousCommand.command}</div>
+                  {dangerousCommand.files_affected && dangerousCommand.files_affected.length > 0 && (
+                    <div className="text-[11px] text-text-secondary pt-1 border-t border-border-core/40 flex items-center gap-1.5">
+                      <FileCode className="w-3.5 h-3.5 text-accent-emerald" />
+                      <span>Affected Files: {dangerousCommand.files_affected.join(", ")}</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-text-secondary text-xs font-mono mb-6">
-                  This action may modify system files, delete data, or execute privileged operations.
-                  Approve only if you understand the consequences.
+
+                {/* Solution Code Preview (Claude Code Diff / Preview style) */}
+                {dangerousCommand.solution_preview && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-text-primary font-bold flex items-center gap-1.5">
+                        <FileCode className="w-3.5 h-3.5 text-accent-emerald" />
+                        Code Solution Preview (solution.py)
+                      </span>
+                      <button
+                        onClick={copySolutionCode}
+                        className="text-[11px] text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+                      >
+                        {copiedCode ? <Check className="w-3 h-3 text-accent-emerald" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedCode ? "Copied" : "Copy Code"}</span>
+                      </button>
+                    </div>
+
+                    <div className="bg-app-bg border border-border-core rounded-lg p-3 max-h-56 overflow-y-auto font-mono text-xs text-text-primary leading-relaxed whitespace-pre-wrap">
+                      {dangerousCommand.solution_preview}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-[11px] font-mono text-text-secondary leading-relaxed">
+                  The Coder Agent has compiled this solution. Approving allows OpenCode to execute and test it in your local workspace sandbox.
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={denyCommand}
-                    data-testid="button-deny-command"
-                    className="flex-1 py-3 rounded-lg border border-border-core/60 bg-panel-bg text-text-primary font-mono text-sm font-bold hover:border-slate-500 hover:text-text-primary transition-all"
-                  >
-                    DENY
-                  </button>
-                  <button
-                    onClick={approveCommand}
-                    data-testid="button-approve-command"
-                    className="flex-1 py-3 rounded-lg border border-red-500/50 bg-accent-rose/10 text-accent-rose font-mono text-sm font-bold hover:bg-accent-rose/20 hover:border-red-400 transition-all "
-                  >
-                    APPROVE
-                  </button>
-                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 border-t border-border-core bg-panel-bg flex items-center justify-end gap-3 flex-shrink-0">
+                <button
+                  onClick={denyCommand}
+                  className="px-4 py-2 rounded-lg border border-border-core text-text-secondary hover:text-text-primary font-mono text-xs font-bold transition-colors"
+                >
+                  Deny / Cancel (Esc)
+                </button>
+                <button
+                  onClick={approveCommand}
+                  className="px-5 py-2 rounded-lg bg-accent-emerald hover:bg-accent-emerald text-text-primary font-mono text-xs font-bold transition-all shadow-lg shadow-accent-emerald/20 flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Authorize & Execute (Enter)</span>
+                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Session History Modal ── */}
+      <SessionHistoryModal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onSelectSession={(taskId) => {
+          fetchSessionHistory(taskId);
+        }}
+      />
     </motion.div>
   );
 }

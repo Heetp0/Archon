@@ -16,6 +16,7 @@ type WebSocketContextType = {
   sendResearch: (message: string) => void;
   cancelStream: () => void;
   refreshCalendar: () => void;
+  fetchSessionHistory: (taskId: string) => Promise<void>;
 };
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -244,16 +245,95 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         }
       } else if (data.payload.status === "waiting_confirmation") {
         state.setDangerousCommand({
-          id: data.id || lastReqId.current,
-          command: data.payload.command
+          id: data.id || lastReqId.current || "",
+          command: (data.payload.command as string) || ""
         });
       }
+    } else if (data.event === "plan_steps") {
+      const steps = data.payload?.steps;
+      if (Array.isArray(steps)) {
+        state.setPlanSteps(steps);
+        state.setTerminalLines((prev) => [
+          ...prev,
+          {
+            id: Math.random().toString(),
+            text: `[PLAN] ${steps.length} execution step(s) formulated by Planner.`,
+            kind: "system",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          }
+        ]);
+      }
+    } else if (data.event === "tool_call") {
+      const tc = data.payload as any;
+      if (tc) {
+        state.setToolCalls((prev) => {
+          const runningIdx = prev.findIndex((item) => item.tool === tc.tool && item.status === "running");
+          if (runningIdx >= 0 && tc.status === "done") {
+            const updated = [...prev];
+            updated[runningIdx] = { ...updated[runningIdx], ...tc, status: "done" };
+            return updated;
+          }
+          return [
+            ...prev,
+            {
+              id: `${tc.tool || "tool"}_${Date.now()}`,
+              tool: tc.tool || "tool",
+              input: tc.input || "",
+              status: tc.status || "running",
+              exit_code: tc.exit_code,
+              result_count: tc.result_count,
+              timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            }
+          ];
+        });
+
+        const isStart = tc.status === "running";
+        const desc = isStart
+          ? `⏺ [TOOL START] ${tc.tool}: ${tc.input}`
+          : `✔ [TOOL DONE] ${tc.tool} (${tc.result_count !== undefined ? `${tc.result_count} items found` : `exit code ${tc.exit_code ?? 0}`})`;
+        state.setTerminalLines((prev) => [
+          ...prev,
+          {
+            id: Math.random().toString(),
+            text: desc,
+            kind: isStart ? "system" : "success",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          }
+        ]);
+      }
+    } else if (data.event === "retry") {
+      const retryPayload = data.payload as any;
+      state.setTerminalLines((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(),
+          text: `⚠ [RETRY ${retryPayload.attempt}/${retryPayload.max}] Self-correcting: ${retryPayload.reason || "previous failure"}`,
+          kind: "warning",
+          timestamp: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        }
+      ]);
+    } else if (data.event === "session_metadata") {
+      const meta = data.payload as any;
+      state.setSessionMetadata(meta);
+      if (meta?.task_id) {
+        localStorage.setItem("archon_last_task_id", meta.task_id);
+      }
+      if (Array.isArray(meta?.plan_steps)) {
+        state.setPlanSteps(meta.plan_steps);
+      }
     } else if (data.event === "gate") {
-      state.setDangerousCommand({
-        id: data.id,
-        command: data.payload.command || data.payload.prompt || data.payload
-      });
       const gatePayload = data.payload as any;
+      state.setDangerousCommand({
+        id: data.id || lastReqId.current || "",
+        command: gatePayload.command || gatePayload.prompt || (typeof gatePayload === "string" ? gatePayload : ""),
+        action: gatePayload.action,
+        target_subproject: gatePayload.target_subproject,
+        files_affected: gatePayload.files_affected,
+        solution_preview: gatePayload.solution_preview,
+        retry_count: gatePayload.retry_count,
+        plan_steps: gatePayload.plan_steps,
+        reason: gatePayload.action ? `Action '${gatePayload.action}' requires user authorization` : undefined
+      });
       if (gatePayload?.urls) {
         state.setCitations(gatePayload.urls);
       }
@@ -480,6 +560,40 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     });
   }, [send]);
 
+  const fetchSessionHistory = useCallback(async (taskId: string) => {
+    try {
+      const host = localStorage.getItem("archon_daemon_host") || window.location.hostname;
+      const port = localStorage.getItem("archon_daemon_port") || "8765";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
+      const token = localStorage.getItem("archon_token") || "";
+      const res = await fetch(`${protocol}://${host}:${port}/agents/sessions/${taskId}/history`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.steps && Array.isArray(data.steps)) {
+          const state = useWebSocketStore.getState();
+          const restoredLines: any[] = [];
+          for (const step of data.steps) {
+            restoredLines.push({
+              id: `restored_${step.step_index}`,
+              text: `[RESTORED] Step ${step.step_index}: ${step.agent_name} (${step.node_name}) - ${step.status}`,
+              kind: step.status === "completed" ? "success" : "system",
+              timestamp: step.timestamp ? step.timestamp.substring(11, 19) : ""
+            });
+            if (step.output_payload?.plan_steps && Array.isArray(step.output_payload.plan_steps)) {
+              state.setPlanSteps(step.output_payload.plan_steps);
+            }
+          }
+          state.setTerminalLines(() => restoredLines);
+          toast.success(`Restored ${data.step_count} step(s) from session history`);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch session history:", err);
+    }
+  }, []);
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -492,7 +606,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         sendAgentCommand,
         approveCommand,
         denyCommand,
-        refreshCalendar: fetchCalendar
+        refreshCalendar: fetchCalendar,
+        fetchSessionHistory
       }}
     >
       {children}

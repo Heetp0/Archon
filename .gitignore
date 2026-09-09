@@ -1,4 +1,4 @@
-﻿# Environments
+# Environments
 .env
 .venv
 env/
@@ -50,6 +50,7 @@ graphify-out/
 Thumbs.db
 
 # Local runtime data, test logs, and assets
+backend/data/
 daemon/data/
 .local/
 attached_assets/

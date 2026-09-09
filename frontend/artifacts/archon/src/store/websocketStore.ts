@@ -30,6 +30,35 @@ export interface ResearchGraphData {
   edges: Array<{ from: string; to: string }>;
 }
 
+export interface PlanStep {
+  id: number;
+  title: string;
+  acceptance_criteria: string;
+  status?: 'pending' | 'running' | 'completed' | 'failed';
+}
+
+export interface ToolCall {
+  id: string;
+  tool: string;
+  input: string;
+  status: 'running' | 'done';
+  exit_code?: number;
+  result_count?: number;
+  timestamp: string;
+}
+
+export interface DangerousCommand {
+  id: string;
+  command: string;
+  reason?: string;
+  action?: string;
+  target_subproject?: string;
+  files_affected?: string[];
+  solution_preview?: string;
+  retry_count?: number;
+  plan_steps?: PlanStep[];
+}
+
 interface WebSocketState {
   activeChatId: string | null;
   setActiveChatId: (id: string | null) => void;
@@ -47,9 +76,12 @@ interface WebSocketState {
   taskQueue: any[];
   availableModels: any[];
   terminalLines: any[];
-  dangerousCommand: any;
+  dangerousCommand: DangerousCommand | null;
   calendarEvents: any[];
   lastStatus: string | null;
+  planSteps: PlanStep[];
+  toolCalls: ToolCall[];
+  sessionMetadata: { task_id?: string; status?: string; verdict?: string; retries?: number } | null;
   
   // Actions
   setMessagesMap: (updater: (prev: Record<string, Message[]>) => Record<string, Message[]>) => void;
@@ -65,9 +97,12 @@ interface WebSocketState {
   setTaskQueue: (updater: (prev: any[]) => any[]) => void;
   setAvailableModels: (models: any[]) => void;
   setTerminalLines: (updater: (prev: any[]) => any[]) => void;
-  setDangerousCommand: (cmd: any) => void;
+  setDangerousCommand: (cmd: DangerousCommand | null) => void;
   setCalendarEvents: (events: any[]) => void;
   setLastStatus: (status: string | null) => void;
+  setPlanSteps: (stepsOrUpdater: PlanStep[] | ((prev: PlanStep[]) => PlanStep[])) => void;
+  setToolCalls: (updater: (prev: ToolCall[]) => ToolCall[]) => void;
+  setSessionMetadata: (meta: { task_id?: string; status?: string; verdict?: string; retries?: number } | null) => void;
   clearChat: () => void;
 }
 
@@ -91,6 +126,9 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   dangerousCommand: null,
   calendarEvents: [],
   lastStatus: null,
+  planSteps: [],
+  toolCalls: [],
+  sessionMetadata: null,
   
   setMessagesMap: (updater) => set((state) => ({ messagesMap: updater(state.messagesMap) })),
   setCouncilMessages: (updater) => set((state) => ({ councilMessages: updater(state.councilMessages) })),
@@ -112,6 +150,11 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   setDangerousCommand: (cmd) => set({ dangerousCommand: cmd }),
   setCalendarEvents: (events) => set({ calendarEvents: events }),
   setLastStatus: (status) => set({ lastStatus: status }),
+  setPlanSteps: (stepsOrUpdater) => set((state) => ({
+    planSteps: typeof stepsOrUpdater === 'function' ? stepsOrUpdater(state.planSteps) : stepsOrUpdater
+  })),
+  setToolCalls: (updater) => set((state) => ({ toolCalls: updater(state.toolCalls) })),
+  setSessionMetadata: (meta) => set({ sessionMetadata: meta }),
   clearChat: () => set((state) => {
     const activeChatId = state.activeChatId;
     return {
