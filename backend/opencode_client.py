@@ -8,20 +8,26 @@ logger = logging.getLogger("opencode_client")
 
 class OpenCodeClient:
     def __init__(self, workspace_root: Optional[str] = None):
-        try:
-            import config
-            self.workspace_root = config.WORKSPACE_ROOT
-        except ImportError:
-            self.workspace_root = workspace_root or r"D:\The core"
+        if workspace_root:
+            self.workspace_root = workspace_root
+        else:
+            try:
+                import config
+                self.workspace_root = config.WORKSPACE_ROOT
+            except ImportError:
+                self.workspace_root = r"D:\The core"
 
     async def execute_task(self, prompt: str, subproject_path: Optional[str] = None) -> AsyncGenerator[str, None]:
         """
         Executes a coding/refactoring task using the OpenCode CLI.
         Streams stdout/stderr back line-by-line.
         """
-        target_dir = self.workspace_root
+        target_dir = os.path.abspath(self.workspace_root)
         if subproject_path:
-            target_dir = os.path.join(self.workspace_root, subproject_path)
+            resolved = os.path.abspath(os.path.join(self.workspace_root, subproject_path))
+            if not resolved.startswith(target_dir):
+                raise ValueError(f"Security error: path '{subproject_path}' traverses outside workspace root.")
+            target_dir = resolved
 
         # On Windows, opencode is installed as a npm ps1 script, so running via powershell is robust
         safe_prompt = prompt.replace('"', '\\"')

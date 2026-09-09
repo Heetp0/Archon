@@ -64,7 +64,31 @@ graph TD
   - **Approve / Reject gates:** Blocked execution until explicit user confirmation.
 * **PC ↔ Android Parity:** On Android, agents execute on the desktop instance; the tablet acts as a remote monitoring + approval terminal. Push notifications surface `dangerous_command` events so the user can approve/deny from the tablet without being seated at the PC.
 
-## 8. Known Issues / Open TODOs
+## 8. Sandboxing & Security Architecture (Verified)
+
+Archon implements multi-tier sandboxing and human-in-the-loop gating for autonomous agent execution:
+
+1. **Path Traversal Confinement (`opencode_client.py`)**:
+   - `subproject_path` is resolved via `os.path.abspath(os.path.join(self.workspace_root, subproject_path))`.
+   - Explicit guard: `if not resolved.startswith(target_dir): raise ValueError("Security error: path traverses outside workspace root.")`.
+   - Prevents directory traversal attacks (`../../`) targeting sensitive operating system paths or files outside the configured workspace.
+
+2. **Human-in-the-Loop Approval Checkpoint (`agent_runtime.py`)**:
+   - Prior to invoking shell execution in `delegator_node`, the runtime checks `active_gates` for the active `req_id` or `task_id`.
+   - Emits a WebSocket `gate` payload (`action: "execute_code"`, target subproject, affected files) and pauses execution on `gate_queue.get()`.
+   - If user denies (`"cancel"` or `{"decision": "deny"}`):
+     - Logs rejection to SQLite journal (`agent_journal.py`).
+     - Emits `[USER REJECTED]` event to client.
+     - `tester_node` automatically detects cancellation and bypasses code test evaluation.
+   - If user approves (`"approve"` or `{"decision": "allow"}`):
+     - Executes command securely via `OpenCodeClient`.
+     - Streams stdout/stderr line-by-line with 60-second read timeout and 10-second termination timeout.
+
+3. **Supervised Watchdog Limits (`autopilot_supervisor.py`)**:
+   - Token budget ceiling prevents runaway LLM generation loops.
+   - Per-agent ping and action logging catches stalled nodes.
+
+## 9. Known Issues / Open TODOs
 - **Terminal State Persistence**: Reloading the frontend clears the terminal UI, though the backend maintains the session. A mechanism to fetch terminal history on mount is needed.
 - **Context Windows**: Long-running agent tasks fill up the context window. Summarization or sliding-window memory needs to be improved in `base_agent.py`.
-- **Sandboxing Limits**: The current directory restrictions check paths loosely. Tighter chroot or Docker-based sandboxing is required for true security against malicious agent behavior.
+

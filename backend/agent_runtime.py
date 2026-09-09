@@ -64,6 +64,8 @@ class AgentRuntime(BaseAgent):
 
         # Resolve or generate a persistent task ID for journaling
         task_id = payload.get("task_id", f"task_{int(time.time())}")
+        req_id = payload.get("req_id") or payload.get("task_id")
+        gate_queue = self.active_gates.get(req_id) if (req_id and self.active_gates) else None
         self.journal.start_run(task_id)
 
         # Build state graph
@@ -200,8 +202,27 @@ class AgentRuntime(BaseAgent):
                 return {}
 
             await self._check_watchdog("OpenCode Delegator", "delegator_node")
-            await self.callback("status", {"status": "Delegator: Running OpenCode task execution...", "model": "OpenCode Delegator"})
             opencode_prompt = f"Run and test the code in solution.py in {WORKSPACE_ROOT}"
+
+            # Human-in-the-loop approval gate checkpoint
+            if gate_queue:
+                gate_payload = {
+                    "action": "execute_code",
+                    "command": opencode_prompt,
+                    "target_subproject": "Workspace/ProjectHub",
+                    "files_affected": ["solution.py"]
+                }
+                await self.callback("gate", gate_payload)
+                await self.callback("status", {"status": "Delegator: Waiting for user approval to execute code...", "model": "OpenCode Delegator"})
+                decision = await gate_queue.get()
+                if decision == "cancel" or (isinstance(decision, dict) and decision.get("decision") == "deny"):
+                    cancel_msg = "\n[USER REJECTED] Code execution denied by user approval checkpoint.\n"
+                    await self.callback("token", {"content": cancel_msg, "model": "OpenCode Delegator"})
+                    output = {"test_result": "Execution cancelled by user."}
+                    self.journal.log_step(task_id, 4, "OpenCode Delegator", "delegator_node", state, output)
+                    return output
+
+            await self.callback("status", {"status": "Delegator: Running OpenCode task execution...", "model": "OpenCode Delegator"})
             output_lines = []
             async for line in self.opencode.execute_task(opencode_prompt, subproject_path="Workspace/ProjectHub"):
                 output_lines.append(line)
@@ -223,6 +244,12 @@ class AgentRuntime(BaseAgent):
                 return {}
 
             await self._check_watchdog("Tester", "tester_node")
+            if "cancelled" in state.get("test_result", "").lower() or "rejected" in state.get("test_result", "").lower():
+                await self.callback("token", {"content": "Skipping testing: execution was cancelled by user.\n", "model": "Tester"})
+                output = {"test_result": state["test_result"]}
+                self.journal.log_step(task_id, 5, "Tester", "tester_node", state, output)
+                return output
+
             await self.callback("status", {"status": "Tester: Verifying execution logs and output...", "model": "Tester"})
             prompt = (
                 f"You are the Tester Agent. Verify if the following execution logs show success or fail:\n"
