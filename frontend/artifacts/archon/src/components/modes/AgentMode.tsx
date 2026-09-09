@@ -4,9 +4,10 @@ import {
   Cpu, Terminal, Loader2, CheckCircle2, Clock, XCircle,
   ChevronDown, ChevronUp, AlertTriangle, X, Send, LayoutDashboard,
   Paperclip, Plus, History, FileCode, RotateCcw, Check, Copy,
-  Columns, Code2, Sparkles, ShieldCheck
+  Columns, Code2, Sparkles, ShieldCheck, Download, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useWebSocketStore, PlanStep, ToolCall, DangerousCommand } from "@/store/websocketStore";
 import { useProjectsContext } from "@/context/ProjectsContext";
@@ -262,6 +263,49 @@ function ToolCallActivityCard({ toolCalls }: { toolCalls: ToolCall[] }) {
   );
 }
 
+// ── Supervisor Telemetry Meter Bar (Devin ACU & Cursor style) ───────────────
+function SupervisorMeterBar({
+  telemetry,
+  toolCallsCount,
+  planStepsCount
+}: {
+  telemetry: { tokens: number; cost: number; latency: number };
+  toolCallsCount: number;
+  planStepsCount: number;
+}) {
+  const tokenCount = telemetry?.tokens || 0;
+  const rawAcu = Math.max(0.1, (tokenCount / 10000) + (toolCallsCount * 0.25)).toFixed(1);
+  const acuTier = Number(rawAcu) <= 2 ? "XS" : Number(rawAcu) <= 5 ? "S" : Number(rawAcu) <= 10 ? "M" : "L";
+  const tierColor = acuTier === "XS" || acuTier === "S"
+    ? "bg-accent-emerald/10 text-accent-emerald border-accent-emerald/30"
+    : acuTier === "M"
+    ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+    : "bg-accent-rose/10 text-accent-rose border-accent-rose/30";
+
+  return (
+    <div className="flex items-center gap-2 font-mono text-xs">
+      <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded bg-app-bg border border-border-core text-[11px] text-text-secondary">
+        <span className="text-text-primary font-semibold">{tokenCount.toLocaleString()}</span> tokens
+        <span className="text-border-core">·</span>
+        <span className="text-text-primary font-semibold">{toolCallsCount}</span> tool calls
+        {planStepsCount > 0 && (
+          <>
+            <span className="text-border-core">·</span>
+            <span className="text-text-primary font-semibold">{planStepsCount}</span> steps
+          </>
+        )}
+      </div>
+
+      <div
+        title={`Supervisor Budget: ${rawAcu} ACU consumed (${tokenCount} tokens, ${toolCallsCount} tool operations)`}
+        className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold tracking-wider ${tierColor}`}
+      >
+        {acuTier} ({rawAcu} ACU)
+      </div>
+    </div>
+  );
+}
+
 // ── Session History Drawer Modal ─────────────────────────────────────────────
 function SessionHistoryModal({
   open,
@@ -370,6 +414,7 @@ export default function AgentMode() {
   const planSteps = useWebSocketStore(s => s.planSteps);
   const toolCalls = useWebSocketStore(s => s.toolCalls);
   const sessionMetadata = useWebSocketStore(s => s.sessionMetadata);
+  const telemetry = useWebSocketStore(s => s.telemetry);
 
   const { projects, activeProjectId } = useProjectsContext();
   const activeProject = projects.find((p) => p.id === activeProjectId);
@@ -384,6 +429,31 @@ export default function AgentMode() {
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastSentCmdRef = useRef<string>("");
+
+  const clearTerminal = useCallback(() => {
+    useWebSocketStore.getState().setTerminalLines(() => []);
+    toast.info("Terminal lines cleared");
+  }, []);
+
+  const copyTerminalText = useCallback(() => {
+    const lines = useWebSocketStore.getState().terminalLines;
+    const text = lines.map(l => `[${l.timestamp}] ${l.text}`).join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success("Terminal log copied to clipboard");
+  }, []);
+
+  const downloadTerminalLog = useCallback(() => {
+    const lines = useWebSocketStore.getState().terminalLines;
+    const text = lines.map(l => `[${l.timestamp}] ${l.text}`).join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `agent_session_${sessionMetadata?.task_id || "log"}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Session log downloaded");
+  }, [sessionMetadata]);
 
   useEffect(() => {
     if (terminalEndRef.current) {
@@ -465,6 +535,13 @@ export default function AgentMode() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Supervisor Telemetry Gauge */}
+          <SupervisorMeterBar
+            telemetry={telemetry}
+            toolCallsCount={toolCalls.length}
+            planStepsCount={planSteps.length}
+          />
+
           {/* Replay / History button */}
           <button
             onClick={() => setHistoryOpen(true)}
@@ -549,9 +626,32 @@ export default function AgentMode() {
                     Terminal Output & Verifier Stream
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-text-secondary">
-                  {terminalLines.length} lines
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono text-text-secondary mr-2">
+                    {terminalLines.length} lines
+                  </span>
+                  <button
+                    onClick={copyTerminalText}
+                    title="Copy terminal output"
+                    className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={downloadTerminalLog}
+                    title="Export session log"
+                    className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={clearTerminal}
+                    title="Clear terminal output"
+                    className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-accent-rose transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div
@@ -691,6 +791,41 @@ export default function AgentMode() {
         {/* VIEW 3: Full Terminal View */}
         {viewMode === "terminal" && (
           <div className="absolute inset-0 flex flex-col bg-app-bg">
+            <div className="flex items-center justify-between px-4 py-2 bg-panel-bg border-b border-border-core flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-3.5 h-3.5 text-accent-emerald" />
+                <span className="text-[11px] font-mono text-accent-emerald tracking-wider uppercase font-bold">
+                  Dedicated Agent Shell Console
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono text-text-secondary mr-2">
+                  {terminalLines.length} lines
+                </span>
+                <button
+                  onClick={copyTerminalText}
+                  title="Copy terminal output"
+                  className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={downloadTerminalLog}
+                  title="Export session log"
+                  className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={clearTerminal}
+                  title="Clear terminal output"
+                  className="p-1 rounded hover:bg-app-bg text-text-secondary hover:text-accent-rose transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed space-y-1 min-h-0">
               {terminalLines.map((line) => (
                 <div key={line.id} className={`flex gap-3 ${LINE_COLOR[line.kind as keyof typeof LINE_COLOR]}`}>

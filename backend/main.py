@@ -598,6 +598,77 @@ async def list_agent_sessions(limit: int = 20, current_user: UserContext = Depen
         return {"sessions": []}
 
 
+@app.get("/agents/files")
+async def get_agent_workspace_files(folder: Optional[str] = None):
+    """
+    Returns agent output files:
+    - Plan/current_plan.md
+    - Plan/current_plan.json
+    - Codes/solution.py
+    - Logs/dev_log.md
+    """
+    base_dirs = []
+    if folder and os.path.isdir(folder):
+        base_dirs.append(folder)
+    default_hub = os.path.join(WORKSPACE_ROOT, "Workspace", "ProjectHub")
+    if default_hub not in base_dirs and os.path.isdir(default_hub):
+        base_dirs.append(default_hub)
+    if WORKSPACE_ROOT not in base_dirs:
+        base_dirs.append(WORKSPACE_ROOT)
+
+    target_files = [
+        "Plan/current_plan.md",
+        "Plan/current_plan.json",
+        "Codes/solution.py",
+        "Logs/dev_log.md"
+    ]
+
+    results = []
+    for rel_path in target_files:
+        found_path = None
+        for base in base_dirs:
+            candidate = os.path.join(base, rel_path.replace("/", os.sep))
+            if os.path.isfile(candidate):
+                found_path = candidate
+                break
+
+        if found_path and os.path.isfile(found_path):
+            try:
+                stat = os.stat(found_path)
+                content = ""
+                with open(found_path, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read(200000)
+                results.append({
+                    "path": rel_path,
+                    "name": os.path.basename(rel_path),
+                    "size": stat.st_size,
+                    "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "exists": True,
+                    "content": content
+                })
+            except Exception as e:
+                logger.warning(f"Failed to read {found_path}: {e}")
+                results.append({
+                    "path": rel_path,
+                    "name": os.path.basename(rel_path),
+                    "size": 0,
+                    "modified_at": None,
+                    "exists": False,
+                    "content": ""
+                })
+        else:
+            results.append({
+                "path": rel_path,
+                "name": os.path.basename(rel_path),
+                "size": 0,
+                "modified_at": None,
+                "exists": False,
+                "content": ""
+            })
+
+    return {"files": results}
+
+
 @app.get("/alerts/recent")
 async def get_recent_alerts(limit: int = 10, current_user: UserContext = Depends(get_current_user)):
     import scaling_monitor
