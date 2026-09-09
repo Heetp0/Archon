@@ -89,6 +89,51 @@ Archon implements multi-tier sandboxing and human-in-the-loop gating for autonom
    - Per-agent ping and action logging catches stalled nodes.
 
 ## 9. Known Issues / Open TODOs
-- **Terminal State Persistence**: Reloading the frontend clears the terminal UI, though the backend maintains the session. A mechanism to fetch terminal history on mount is needed.
-- **Context Windows**: Long-running agent tasks fill up the context window. Summarization or sliding-window memory needs to be improved in `base_agent.py`.
+- **Android AgentsScreen WebSocket wiring**: Still uses static mock data. Needs live WebSocket wiring to stream `plan_steps` and `tool_call` events.
+- **Streaming diff viewer**: Gate shows `solution_preview` text but no syntax-highlighted diff UI on web or Android yet.
+- **Context window tuning**: Summarization threshold (6000 chars) may need tuning per model tier.
+
+## 10. Agentic Platform Parity — Backend v2 Improvements
+
+Based on research into Claude Code, Devin (cognition.ai), and OpenAI Codex autopilot, the following improvements were implemented. Research findings: Claude Code uses inline bulleted tool calls; Devin has explicit plan cards with 3-layer approval gates; Codex is async with PR as the single review gate.
+
+### 10.1 Structured JSON Planner *(Devin-style plan card)*
+`planner_node` emits a `json` fenced block of step objects `{id, title, acceptance_criteria}`. Parsed by `_parse_plan_steps()` with markdown-list fallback. A `plan_steps` WebSocket event immediately updates the frontend checklist. Steps saved to `current_plan.json`.
+
+### 10.2 Coder Retry Loop *(Codex Autopilot-style)*
+`tester_node` returns `VERDICT: FAIL / REASON / FIX`. Conditional edge `route_after_tester` loops to `retry_incrementor_node → coder_node` up to `MAX_RETRIES=3`. Each retry passes the failure reason so the model self-corrects. Tracked in `AgentState.retry_count`.
+
+### 10.3 Solution Preview in Approval Gate *(Claude Code inline diff)*
+`delegator_node` reads generated `solution.py` and embeds the first 4000 chars as `solution_preview` in the `gate` event. User sees the code before approving — no blind rubber-stamps.
+
+### 10.4 Context Sliding-Window Summarization *(Antigravity-style)*
+`_summarize_if_needed(text, label)` compresses text above 6000 chars via the fast model tier. Applied to vault context, plan, and execution output. Emits a `status` event when compression fires.
+
+### 10.5 Session History REST Endpoints *(Devin-style session replay)*
+- `GET /agents/sessions/{task_id}/history` — all journal steps for replay on reconnect.
+- `GET /agents/sessions` — list of recent runs for a session sidebar.
+Frontend fetches history using `task_id` from the `session_metadata` event.
+
+### 10.6 `session_metadata` Events *(state handoff)*
+Two events emitted: `{status:"started"}` at run start and `{status:"completed", verdict, retries, plan_steps}` at end. Enables frontend session reconstruction after disconnect.
+
+### 10.7 Tool Call Transparency Events
+`tool_call` WebSocket events emitted for `vault_search` and `opencode` with `status: running|done`. Enables Claude Code-style bulleted tool call UI.
+
+### 10.8 Updated Graph Topology
+
+```
+reader ──► planner ──► coder ──► delegator ──► tester
+                         ▲                        │
+                         │   (FAIL, retry<3)      │
+                    retry_incrementor ◄────────────┤
+                                                   │ (PASS or exhausted)
+                                                   ▼
+                                               logger ──► END
+```
+
+### 10.9 Beat-Them Opportunities (from research)
+- **Interactive plan card** — Claude Code only narrates prose; we emit structured JSON steps.
+- **Intent-based approval** — we show `solution_preview` diff outcome, not raw shell commands.
+- **Burn/loop detection** — `AutopilotSupervisor` watches for repeated action loops and halts.
 

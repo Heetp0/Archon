@@ -535,10 +535,9 @@ async def get_job_status(job_id: str, current_user: UserContext = Depends(get_cu
 async def get_news(category: str = "all", limit: int = 10):
     import news_service
     articles = await news_service.aggregate_news()
-    
+
     cat = category.lower()
     if cat != "all":
-        # Match source
         source_map = {
             "hackernews": "HackerNews",
             "arxiv": "ArXiv",
@@ -547,9 +546,56 @@ async def get_news(category: str = "all", limit: int = 10):
         target_source = source_map.get(cat)
         if target_source:
             articles = [a for a in articles if a["source"] == target_source]
-            
+
     return articles[:limit]
 
+
+# --- Agent Session History Endpoints ---
+
+@app.get("/agents/sessions/{task_id}/history")
+async def get_agent_session_history(task_id: str, current_user: UserContext = Depends(get_current_user)):
+    """
+    Returns all journal steps for a given agent task_id.
+    Enables frontend to replay terminal output on reconnect / page reload.
+    Called with the task_id received in the session_metadata WebSocket event.
+    """
+    steps = runtime_agent.journal.get_all_steps(task_id)
+    if not steps:
+        raise HTTPException(status_code=404, detail=f"No session found for task_id: {task_id}")
+    checkpoint = runtime_agent.journal.get_last_checkpoint(task_id)
+    run_status = checkpoint.get("status", "unknown") if checkpoint else "unknown"
+    return {
+        "task_id": task_id,
+        "status": run_status,
+        "step_count": len(steps),
+        "steps": steps,
+    }
+
+
+@app.get("/agents/sessions")
+async def list_agent_sessions(limit: int = 20, current_user: UserContext = Depends(get_current_user)):
+    """
+    Lists recent agent sessions from the SQLite journal.
+    Devin-style session list sidebar support.
+    """
+    import sqlite3 as _sqlite3
+    db_path = runtime_agent.journal.db_path
+    try:
+        conn = _sqlite3.connect(db_path, check_same_thread=False)
+        conn.row_factory = _sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT task_id, status, started_at, updated_at
+            FROM agent_runs
+            ORDER BY updated_at DESC
+            LIMIT ?
+        """, (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        return {"sessions": [dict(r) for r in rows]}
+    except Exception as e:
+        logger.error(f"Error listing agent sessions: {e}")
+        return {"sessions": []}
 
 
 @app.get("/alerts/recent")
@@ -557,6 +603,7 @@ async def get_recent_alerts(limit: int = 10, current_user: UserContext = Depends
     import scaling_monitor
     scaling_monitor.check_resources()
     return scaling_monitor.get_recent_alerts(limit)
+
 
 @app.post("/alerts/acknowledge/{alert_id}")
 async def acknowledge_alert(alert_id: str, current_user: UserContext = Depends(get_current_user)):
@@ -566,11 +613,13 @@ async def acknowledge_alert(alert_id: str, current_user: UserContext = Depends(g
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"status": "success", "alert_id": alert_id}
 
+
 @app.get("/metrics")
 @app.get("/metrics/summary")
 async def get_metrics_summary(period: str = "1h", current_user: UserContext = Depends(get_current_user)):
     import monitoring_metrics
     return monitoring_metrics.get_metrics_summary(period)
+
 
 @app.post("/cache/clear")
 async def clear_cache(notebook_id: Optional[str] = None, current_user: UserContext = Depends(get_current_user)):
