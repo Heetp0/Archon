@@ -9,7 +9,7 @@ This document establishes the real-world shipping products and architectural ins
 | Mode | Primary Benchmark Products | Key Visual & UX Patterns to Copy | Backend & Technical Parity |
 | :--- | :--- | :--- | :--- |
 | **Chat Mode** | **Perplexity AI** | Anchored citation drawer; sources stay visible alongside the streaming answer without navigating away; instant web search / vault toggle pills. | Rolling token window (8k); non-blocking async vault retrieval; retry with exponential backoff & jitter. |
-| **Notebook / Research Mode** | **Google NotebookLM** + **Stanford STORM** | 3-pane layout (Sources $\rightarrow$ Grounded Chat $\rightarrow$ Studio Notes); multi-document source grounding with clickable inline badges. | Chunk provenance tracking; CitationVerifier two-pass draft-then-verify pipeline; source embedding in LanceDB. |
+| **Research Mode** | **Perplexity AI** + **Google NotebookLM** + **Stanford STORM** | Perplexity-style `[favicon][domain][N]` inline citation badges with hover/tap detail tooltips; STORM outline progress strip (5–8 section pills); collapsible sources accordion with favicons & snippets; 5 follow-up suggestion chips; server-side concept graph (`graph_nodes` WS event); "Save to Notebook" modal. **Android**: tappable `[N]` badges → Material 3 `ModalBottomSheet`; tablet-only 2D knowledge graph on Compose `Canvas`; phone single-column high-density layout; Room DB notebook persistence. | `asyncio.gather` parallel Tavily search → `ResearchSource` dataclass (id, url, title, snippet, summary); `asyncio.Semaphore(5)` concurrency cap on crawl phase; STORM outline-first LLM call before crawl; numbered `[N]` inline citation synthesis prompt; `graph_nodes` server-side extraction (regex headings + bold terms, ≤12 nodes); full PC ↔ Android feature parity (see `docs/modes/3_Research_Mode.md`). |
 | **Council Mode** | **ChatHub** | Parallel multi-panel comparison; same prompt broadcast live to multiple LLMs simultaneously; side-by-side token streaming; consensus/debate synthesis panel. | WebSocket multi-agent channel; parallel model inference; latency and cost telemetry per model. |
 | **Agents Mode** | **Devin** + **Cursor** | Step-by-step plan execution (Analyze $\rightarrow$ Generate $\rightarrow$ Test $\rightarrow$ Deploy); user approval checkpoints; live collapsible tool logs; code diff viewers. | Autonomous tool execution sandbox; task lifecycle state machine (`running`, `waiting_for_input`, `done`); rollback capability. |
 | **Canvas Mode** | **StarNote**, **GoodNotes 6**, **Apple Notes**, **MyScript Notes** | Low-latency stylus inking; 8-tool floating palette; **Real Vector Lasso** (selection, drag-to-move, duplicate, recolor); **Study Tape Tool** (masking + tap-to-reveal); **Shape Snapping**; **Scratch-to-Erase**. | Front-buffered OpenGL rendering; MyScript Interactive Ink math recognition; LoRA on-device handwriting fine-tuning dashboard. |
@@ -22,10 +22,50 @@ This document establishes the real-world shipping products and architectural ins
 
 ## 2. Deep Dive by Mode
 
-### 1. Chat & Research Mode — The Perplexity & NotebookLM Benchmark
+### 1. Chat Mode — The Perplexity Benchmark
 * **The Problem It Solves:** Traditional AI chat loses context when sources are dumped into the conversation stream.
 * **The Benchmark Solution (Perplexity):** An anchored side panel displays all cited sources, URLs, and vault documents. Clicking a citation jumps directly to the source highlight without leaving or resetting the conversation.
 * **The Studio Solution (NotebookLM):** Users can pin extracted citations and notes directly into an adjacent "Studio" notepad.
+
+### 2. Research Mode — Perplexity + STORM + NotebookLM Benchmark
+
+#### What Changed (v2 Upgrade)
+
+The backend pipeline was upgraded from a sequential crawl loop to a fully concurrent, citation-aware research engine. Key changes:
+
+| Concern | Before | After |
+| :--- | :--- | :--- |
+| Web search | Sequential `for q in queries` | `asyncio.gather` parallel Tavily calls |
+| Source model | Plain URL strings | `ResearchSource` dataclass (id, url, title, snippet, summary) |
+| Crawl concurrency | Sequential, one URL at a time | `asyncio.gather` + `asyncio.Semaphore(5)` |
+| Outline | None | STORM-style outline LLM call before crawl; emitted via `outline` WS event |
+| Citations | Generic "cite source URLs" | Numbered `[N]` inline citations with a structured reference list |
+| Post-synthesis events | None | `sources`, `graph_nodes`, `suggestions` WS events |
+| Android graph | Flat term list | Compose `Canvas` 2D knowledge graph (tablets ≥840dp) |
+
+#### Perplexity-Style Citations
+* Numbered `[N]` references appear inline in the streamed report body.
+* Web: hovering shows a floating tooltip (favicon + title + snippet).
+* Android: tapping opens a Material 3 `ModalBottomSheet` with Open in Browser and Copy URL actions.
+* The source list is always accessible via the sources accordion below the report.
+
+#### STORM Outline-First Pipeline
+Inspired by Stanford STORM: the LLM generates a 5–8 section Wikipedia-style outline **before**
+any crawling begins. This outline is emitted to the UI (`outline` WS event) so users see the
+planned structure immediately, and it drives the section headings injected into the final
+synthesis prompt, reducing hallucination and improving coverage.
+
+#### Server-Side Knowledge Graph
+The concept graph is extracted entirely on the backend from the finished report (`_extract_graph_nodes`):
+regex pulls `## headings` and `**bold terms**`, caps at 12 nodes, and lays them out as a
+primary-center + satellite circle with coordinates ready for direct rendering. The `graph_nodes`
+WS event payload is consumed by D3/Sigma on Web and a Compose `Canvas` on Android tablets.
+
+#### PC ↔ Android Full Parity
+All Research Mode features ship on both platforms. See `docs/modes/3_Research_Mode.md §6` for
+the complete feature-by-feature parity matrix.
+
+
 
 ### 2. Council Mode — The ChatHub Benchmark
 * **The Problem It Solves:** Static 4-box layouts look artificial and clunky.
